@@ -1,0 +1,37 @@
+16:56:05 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:111:10: warning: unused variable 'i' [-Wunused-variable]
+  111 |   int c, i;
+      |          ^
+../Core/Src/main.c:111:7: warning: unused variable 'c' [-Wunused-variable]
+  111 |   int c, i;
+      |       ^
+At top level:
+../Core/Src/main.c:546:13: warning: 'MX_DMA_Init' defined but not used [-Wunused-function]
+  546 | static void MX_DMA_Init(void)
+      |             ^~~~~~~~~~~
+../Core/Src/main.c:500:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  500 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:352:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  352 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:275:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  275 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4.elf
+ 
+arm-none-eabi-size   ESC_G4.elf 
+arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
+   text	   data	    bss	    dec	    hex	filename
+  10256	     20	   1836	  12112	   2f50	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4.list
+ 
+
+16:56:06 Build Finished. 0 errors, 6 warnings. (took 391ms)
+
