@@ -1,4 +1,4 @@
-19:07:54 **** Incremental Build of configuration Debug for project ESC_F0 ****
+00:36:12 **** Incremental Build of configuration Debug for project ESC_F0 ****
 make -j20 all 
 arm-none-eabi-size   ESC_F0.elf 
    text	   data	    bss	    dec	    hex	filename
@@ -6,5 +6,5 @@ arm-none-eabi-size   ESC_F0.elf
 Finished building: default.size.stdout
  
 
-19:07:55 Build Finished. 0 errors, 0 warnings. (took 189ms)
+00:36:12 Build Finished. 0 errors, 0 warnings. (took 146ms)
 

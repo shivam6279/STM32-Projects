@@ -131,10 +131,10 @@ int main(void)
 // 	TIM1->CCER |= TIM_CCER_CC1NP;
 // 	TIM1->CCER |= TIM_CCER_CC2NP;
 // 	TIM1->CCER |= TIM_CCER_CC3NP;
-// 	TIM1->CCR1 = 250;
-//	TIM1->CCR2 = 250;
-//	TIM1->CCR3 = 250;
-//	while(1);
+ 	TIM1->CCR1 = 250;
+	TIM1->CCR2 = 250;
+	TIM1->CCR3 = 250;
+	while(1);
 
 	//U, V, W: TIM1, TIM2, TIM3
 	//U, V, W, X: val2[0], val1[0], val1[1], val2[1]

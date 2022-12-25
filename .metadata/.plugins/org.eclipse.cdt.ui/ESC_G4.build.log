@@ -1,4 +1,4 @@
-19:07:55 **** Incremental Build of configuration Debug for project ESC_G4 ****
+00:36:12 **** Incremental Build of configuration Debug for project ESC_G4 ****
 make -j20 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'main':
@@ -28,11 +28,11 @@ Finished building target: ESC_G4.elf
 arm-none-eabi-size   ESC_G4.elf 
 arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
    text	   data	    bss	    dec	    hex	filename
-  28948	    120	   2384	  31452	   7adc	ESC_G4.elf
+  25216	     20	   2364	  27600	   6bd0	ESC_G4.elf
 Finished building: default.size.stdout
  
 Finished building: ESC_G4.list
  
 
-19:07:55 Build Finished. 0 errors, 4 warnings. (took 732ms)
+00:36:12 Build Finished. 0 errors, 4 warnings. (took 600ms)
 
