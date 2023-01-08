@@ -1,0 +1,12 @@
+../Core/Src/main.c:79:6:HAL_ADC_ConvCpltCallback	16	static
+../Core/Src/main.c:90:6:ADC_Select_CH	16	static
+../Core/Src/main.c:98:5:main	152	static
+../Core/Src/main.c:406:6:SystemClock_Config	88	static
+../Core/Src/main.c:453:13:MX_ADC1_Init	56	static
+../Core/Src/main.c:517:13:MX_ADC2_Init	40	static
+../Core/Src/main.c:577:13:MX_TIM1_Init	120	static
+../Core/Src/main.c:679:13:MX_TIM2_Init	64	static
+../Core/Src/main.c:737:13:MX_TIM6_Init	24	static
+../Core/Src/main.c:775:13:MX_USART2_UART_Init	8	static
+../Core/Src/main.c:823:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:852:6:Error_Handler	4	static,ignoring_inline_asm

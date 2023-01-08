@@ -1,38 +1,49 @@
-00:36:12 **** Incremental Build of configuration Debug for project ESC_G4 ****
+17:13:30 **** Incremental Build of configuration Debug for project ESC_G4 ****
 make -j20 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'main':
-../Core/Src/main.c:142:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
-  142 |   c = snprintf(temp, sizeof(temp),"U, V, W, X\n");
+../Core/Src/main.c:448:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  448 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
       |       ^~~~~~~~
-../Core/Src/main.c:142:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:448:7: warning: incompatible implicit declaration of built-in function 'snprintf'
 ../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
    20 | #include "main.h"
   +++ |+#include <stdio.h>
    21 | 
-../Core/Src/main.c:142:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
-  142 |   c = snprintf(temp, sizeof(temp),"U, V, W, X\n");
+../Core/Src/main.c:448:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  448 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
       |                ^~~~
       |                |
       |                unsigned char *
-../Core/Src/main.c:142:16: note: expected 'char *' but argument is of type 'unsigned char *'
-../Core/Src/main.c:163:18: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
-  163 |     c = snprintf(temp, sizeof(temp),"%d, %d\n", val2[0], val2[1]);
-      |                  ^~~~
-      |                  |
-      |                  unsigned char *
-../Core/Src/main.c:163:18: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:448:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:305:49: warning: unused variable 'max_time' [-Wunused-variable]
+  305 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:305:39: warning: unused variable 'tt' [-Wunused-variable]
+  305 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:268:27: warning: unused variable 'save_i' [-Wunused-variable]
+  268 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_ADC1_Init':
+../Core/Src/main.c:514:24: warning: unused variable 'multimode' [-Wunused-variable]
+  514 |   ADC_MultiModeTypeDef multimode = {0};
+      |                        ^~~~~~~~~
+At top level:
+../Core/Src/main.c:826:13: warning: 'MX_TIM6_Init' defined but not used [-Wunused-function]
+  826 | static void MX_TIM6_Init(void)
+      |             ^~~~~~~~~~~~
 arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 Finished building target: ESC_G4.elf
  
 arm-none-eabi-size   ESC_G4.elf 
 arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
    text	   data	    bss	    dec	    hex	filename
-  25216	     20	   2364	  27600	   6bd0	ESC_G4.elf
+  30244	     20	  22172	  52436	   ccd4	ESC_G4.elf
 Finished building: default.size.stdout
  
 Finished building: ESC_G4.list
  
 
-00:36:12 Build Finished. 0 errors, 4 warnings. (took 600ms)
+17:13:31 Build Finished. 0 errors, 8 warnings. (took 474ms)
 
