@@ -86,15 +86,7 @@ unsigned int p = 0;
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-    if(hadc->Instance == ADC1 && i_1 < 5000) {
-//    	HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
-    	adc_uvw[0] = HAL_ADC_GetValue(&hadc1);
-//    	adc_uvw[i_1++] = HAL_ADC_GetValue(&hadc1);
-    } else if(hadc->Instance == ADC2 && i_2 < 5000) {
-//		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
-		adc_x[0] = HAL_ADC_GetValue(&hadc2);
-//		adc_x[i_2++] = HAL_ADC_GetValue(&hadc2);
-	}
+
 }
 
 void ADC_Select_CH(unsigned char ch)
@@ -210,27 +202,11 @@ void BLDC_phase(unsigned char phase, float p) {
 
 int main(void)
 {
-	/* USER CODE BEGIN 1 */
 
-	/* USER CODE END 1 */
-
-	/* MCU Configuration--------------------------------------------------------*/
-
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
 
-	/* USER CODE BEGIN Init */
-
-	/* USER CODE END Init */
-
-	/* Configure the system clock */
 	SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
-
-	/* USER CODE END SysInit */
-
-	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_ADC1_Init();
 	MX_ADC2_Init();
@@ -281,14 +257,15 @@ int main(void)
 
 //	HAL_ADC_Start_IT(&hadc1);
 //	HAL_ADC_Start_IT(&hadc2);
-//	TIM1->CCER &= ~TIM_CCER_CC1NP;
-//	TIM1->CCER &= ~TIM_CCER_CC2NP;
-//	TIM1->CCER &= ~TIM_CCER_CC3NP;
-//	TIM1->EGR |= TIM_EGR_COMG;
-//	TIM1->CCR1 = 0; //CH1
-//	TIM1->CCR2 = 0; //CH2
-//	TIM1->CCR3 = 1000; //CH4
-//	while(1);
+
+	TIM1->CCER &= ~TIM_CCER_CC1NP;
+	TIM1->CCER &= ~TIM_CCER_CC2NP;
+	TIM1->CCER &= ~TIM_CCER_CC3NP;
+	TIM1->EGR |= TIM_EGR_COMG;
+	TIM1->CCR1 = 0; //CH1
+	TIM1->CCR2 = 0; //CH2
+	TIM1->CCR3 = 1000; //CH4
+	while(1);
 
 	TIM1->CCER |= TIM_CCER_CC1NP;
 	TIM1->CCER |= TIM_CCER_CC2NP;

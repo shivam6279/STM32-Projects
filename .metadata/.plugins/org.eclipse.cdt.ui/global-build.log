@@ -8069,3 +8069,1925 @@ Finished building: default.size.stdout
  
 Finished building: ESC_G4.list
  
+22:28:09 **** Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:212:2: error: expected declaration specifiers before 'HAL_Init'
+  212 |  HAL_Init();
+      |  ^~~~~~~~
+../Core/Src/main.c:214:2: error: expected declaration specifiers before 'SystemClock_Config'
+  214 |  SystemClock_Config();
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:216:2: error: expected declaration specifiers before 'MX_GPIO_Init'
+  216 |  MX_GPIO_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:217:2: error: expected declaration specifiers before 'MX_ADC1_Init'
+  217 |  MX_ADC1_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:218:2: error: expected declaration specifiers before 'MX_ADC2_Init'
+  218 |  MX_ADC2_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:219:2: error: expected declaration specifiers before 'MX_TIM1_Init'
+  219 |  MX_TIM1_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:220:2: error: expected declaration specifiers before 'MX_TIM2_Init'
+  220 |  MX_TIM2_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:221:2: error: expected declaration specifiers before 'MX_TIM4_Init'
+  221 |  MX_TIM4_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:223:2: error: expected declaration specifiers before 'MX_USART2_UART_Init'
+  223 |  MX_USART2_UART_Init();
+      |  ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:228:2: error: expected declaration specifiers before 'HAL_TIM_PWM_Start'
+  228 |  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+      |  ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:229:2: error: expected declaration specifiers before 'HAL_TIMEx_PWMN_Start'
+  229 |  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+      |  ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:230:2: error: expected declaration specifiers before 'HAL_TIM_PWM_Start'
+  230 |  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+      |  ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:231:2: error: expected declaration specifiers before 'HAL_TIMEx_PWMN_Start'
+  231 |  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+      |  ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:232:2: error: expected declaration specifiers before 'HAL_TIM_PWM_Start'
+  232 |  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+      |  ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:233:2: error: expected declaration specifiers before 'HAL_TIMEx_PWMN_Start'
+  233 |  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+      |  ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:235:2: error: expected declaration specifiers before 'HAL_TIM_OC_Start'
+  235 |  HAL_TIM_OC_Start(&htim1, TIM_CHANNEL_4);
+      |  ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:237:2: error: expected declaration specifiers before 'HAL_TIM_Base_Start'
+  237 |  HAL_TIM_Base_Start(&htim1);
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:238:2: error: expected declaration specifiers before 'HAL_TIM_Base_Start'
+  238 |  HAL_TIM_Base_Start(&htim2);
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:239:2: error: expected declaration specifiers before 'HAL_TIM_Base_Start'
+  239 |  HAL_TIM_Base_Start(&htim4);
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:250:2: error: parameter 'save_i' is initialized
+  250 |  unsigned int save[5000], save_i = 0;
+      |  ^~~~~~~~
+In file included from ../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g4xx.h:107,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_def.h:29,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_rcc.h:27,
+                 from ../Core/Inc/stm32g4xx_hal_conf.h:212,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:261:2: note: in expansion of macro 'TIM1'
+  261 |  TIM1->CCR4 = 450;
+      |  ^~~~
+../Core/Src/main.c:262:2: error: expected declaration specifiers before 'ADC_Select_CH'
+  262 |  ADC_Select_CH(1);
+      |  ^~~~~~~~~~~~~
+In file included from ../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g4xx.h:107,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_def.h:29,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_rcc.h:27,
+                 from ../Core/Inc/stm32g4xx_hal_conf.h:212,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:275:2: note: in expansion of macro 'TIM1'
+  275 |  TIM1->CCER |= TIM_CCER_CC1NP;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:276:2: note: in expansion of macro 'TIM1'
+  276 |  TIM1->CCER |= TIM_CCER_CC2NP;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:277:2: note: in expansion of macro 'TIM1'
+  277 |  TIM1->CCER |= TIM_CCER_CC3NP;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:278:2: note: in expansion of macro 'TIM1'
+  278 |  TIM1->EGR |= TIM_EGR_COMG;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:279:2: note: in expansion of macro 'TIM1'
+  279 |  TIM1->CCR1 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:280:2: note: in expansion of macro 'TIM1'
+  280 |  TIM1->CCR2 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:281:2: note: in expansion of macro 'TIM1'
+  281 |  TIM1->CCR3 = 0;
+      |  ^~~~
+../Core/Src/main.c:282:2: error: expected declaration specifiers before 'for'
+  282 |  for(i = 0 ; i < 5000; i++) {
+      |  ^~~
+../Core/Src/main.c:282:14: error: expected declaration specifiers before 'i'
+  282 |  for(i = 0 ; i < 5000; i++) {
+      |              ^
+../Core/Src/main.c:282:24: error: expected declaration specifiers before 'i'
+  282 |  for(i = 0 ; i < 5000; i++) {
+      |                        ^
+../Core/Src/main.c:287:2: error: parameter 'c' is initialized
+  287 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |  ^~~~~~~~
+../Core/Src/main.c:287:2: error: parameter 'd' is initialized
+../Core/Src/main.c:287:2: error: parameter 't' is initialized
+../Core/Src/main.c:287:2: error: parameter 'tt' is initialized
+../Core/Src/main.c:287:2: error: parameter 'max_time' is initialized
+../Core/Src/main.c:289:2: error: parameter 'commutation_time' is initialized
+  289 |  float commutation_time = 6000;
+      |  ^~~~~
+In file included from ../Core/Inc/stm32g4xx_hal_conf.h:344,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim.h:1549:57: error: expected declaration specifiers before '(' token
+ 1549 | #define __HAL_TIM_SET_COUNTER(__HANDLE__, __COUNTER__)  ((__HANDLE__)->Instance->CNT = (__COUNTER__))
+      |                                                         ^
+../Core/Src/main.c:294:2: note: in expansion of macro '__HAL_TIM_SET_COUNTER'
+  294 |  __HAL_TIM_SET_COUNTER(&htim4,0);
+      |  ^~~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:295:2: error: expected declaration specifiers before 'p'
+  295 |  p = 550;
+      |  ^
+../Core/Src/main.c:297:3: error: expected declaration specifiers before 'while'
+  297 |   while (1) {
+      |   ^~~~~
+../Core/Src/main.c:419:3: error: expected declaration specifiers before 'HAL_ADC_Stop_IT'
+  419 |   HAL_ADC_Stop_IT(&hadc1);
+      |   ^~~~~~~~~~~~~~~
+../Core/Src/main.c:420:2: error: expected declaration specifiers before 'HAL_ADC_Stop_IT'
+  420 |  HAL_ADC_Stop_IT(&hadc2);
+      |  ^~~~~~~~~~~~~~~
+In file included from ../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g4xx.h:107,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_def.h:29,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_rcc.h:27,
+                 from ../Core/Inc/stm32g4xx_hal_conf.h:212,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:421:3: note: in expansion of macro 'TIM1'
+  421 |   TIM1->CCER |= TIM_CCER_CC1NP;
+      |   ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:422:3: note: in expansion of macro 'TIM1'
+  422 |   TIM1->CCER |= TIM_CCER_CC2NP;
+      |   ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:423:3: note: in expansion of macro 'TIM1'
+  423 |   TIM1->CCER |= TIM_CCER_CC3NP;
+      |   ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:424:2: note: in expansion of macro 'TIM1'
+  424 |  TIM1->EGR |= TIM_EGR_COMG;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:425:2: note: in expansion of macro 'TIM1'
+  425 |  TIM1->CCR1 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:426:2: note: in expansion of macro 'TIM1'
+  426 |  TIM1->CCR2 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:427:2: note: in expansion of macro 'TIM1'
+  427 |  TIM1->CCR3 = 0;
+      |  ^~~~
+../Core/Src/main.c:428:2: error: expected declaration specifiers before 'for'
+  428 |  for(i = 0; i < i_1; i++) {
+      |  ^~~
+../Core/Src/main.c:428:13: error: expected declaration specifiers before 'i'
+  428 |  for(i = 0; i < i_1; i++) {
+      |             ^
+../Core/Src/main.c:428:22: error: expected declaration specifiers before 'i'
+  428 |  for(i = 0; i < i_1; i++) {
+      |                      ^
+../Core/Src/main.c:435:2: error: expected declaration specifiers before 'while'
+  435 |  while(1);
+      |  ^~~~~
+../Core/Src/main.c:436:1: error: expected declaration specifiers before '}' token
+  436 | }
+      | ^
+../Core/Src/main.c:443:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  443 | {
+      | ^
+../Core/Src/main.c:490:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  490 | {
+      | ^
+../Core/Src/main.c:554:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  554 | {
+      | ^
+../Core/Src/main.c:614:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  614 | {
+      | ^
+../Core/Src/main.c:716:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  716 | {
+      | ^
+../Core/Src/main.c:769:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  769 | {
+      | ^
+../Core/Src/main.c:809:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  809 | {
+      | ^
+../Core/Src/main.c:847:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  847 | {
+      | ^
+../Core/Src/main.c:895:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  895 | {
+      | ^
+../Core/Src/main.c:924:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  924 | {
+      | ^
+../Core/Src/main.c:211:5: error: old-style parameter declarations in prototyped function definition
+  211 | int main(void)
+      |     ^~~~
+../Core/Src/main.c:950: error: expected '{' at end of input
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:58:13: warning: 'MX_GPIO_Init' declared 'static' but never defined [-Wunused-function]
+   58 | static void MX_GPIO_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:59:13: warning: 'MX_ADC1_Init' declared 'static' but never defined [-Wunused-function]
+   59 | static void MX_ADC1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:60:13: warning: 'MX_ADC2_Init' declared 'static' but never defined [-Wunused-function]
+   60 | static void MX_ADC2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:61:13: warning: 'MX_TIM1_Init' declared 'static' but never defined [-Wunused-function]
+   61 | static void MX_TIM1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:62:13: warning: 'MX_USART2_UART_Init' declared 'static' but never defined [-Wunused-function]
+   62 | static void MX_USART2_UART_Init(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:63:13: warning: 'MX_TIM6_Init' declared 'static' but never defined [-Wunused-function]
+   63 | static void MX_TIM6_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:64:13: warning: 'MX_TIM4_Init' declared 'static' but never defined [-Wunused-function]
+   64 | static void MX_TIM4_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:65:13: warning: 'MX_TIM2_Init' declared 'static' but never defined [-Wunused-function]
+   65 | static void MX_TIM2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:157:6: warning: 'BLDC_phase' defined but not used [-Wunused-function]
+  157 | void BLDC_phase(unsigned char phase, float p) {
+      |      ^~~~~~~~~~
+../Core/Src/main.c:100:6: warning: 'ADC_Select_CH' defined but not used [-Wunused-function]
+  100 | void ADC_Select_CH(unsigned char ch)
+      |      ^~~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:28:25 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:448:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  448 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:448:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:448:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  448 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:448:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:305:49: warning: unused variable 'max_time' [-Wunused-variable]
+  305 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:305:39: warning: unused variable 'tt' [-Wunused-variable]
+  305 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:268:27: warning: unused variable 'save_i' [-Wunused-variable]
+  268 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_ADC1_Init':
+../Core/Src/main.c:514:24: warning: unused variable 'multimode' [-Wunused-variable]
+  514 |   ADC_MultiModeTypeDef multimode = {0};
+      |                        ^~~~~~~~~
+At top level:
+../Core/Src/main.c:826:13: warning: 'MX_TIM6_Init' defined but not used [-Wunused-function]
+  826 | static void MX_TIM6_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4.elf
+ 
+arm-none-eabi-size   ESC_G4.elf 
+arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
+   text	   data	    bss	    dec	    hex	filename
+  30244	     20	  22172	  52436	   ccd4	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4.list
+ 
+22:28:38 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:212:2: error: expected declaration specifiers before 'HAL_Init'
+  212 |  HAL_Init();
+      |  ^~~~~~~~
+../Core/Src/main.c:214:2: error: expected declaration specifiers before 'SystemClock_Config'
+  214 |  SystemClock_Config();
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:216:2: error: expected declaration specifiers before 'MX_GPIO_Init'
+  216 |  MX_GPIO_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:217:2: error: expected declaration specifiers before 'MX_ADC1_Init'
+  217 |  MX_ADC1_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:218:2: error: expected declaration specifiers before 'MX_ADC2_Init'
+  218 |  MX_ADC2_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:219:2: error: expected declaration specifiers before 'MX_TIM1_Init'
+  219 |  MX_TIM1_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:220:2: error: expected declaration specifiers before 'MX_TIM2_Init'
+  220 |  MX_TIM2_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:221:2: error: expected declaration specifiers before 'MX_TIM4_Init'
+  221 |  MX_TIM4_Init();
+      |  ^~~~~~~~~~~~
+../Core/Src/main.c:223:2: error: expected declaration specifiers before 'MX_USART2_UART_Init'
+  223 |  MX_USART2_UART_Init();
+      |  ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:228:2: error: expected declaration specifiers before 'HAL_TIM_PWM_Start'
+  228 |  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+      |  ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:229:2: error: expected declaration specifiers before 'HAL_TIMEx_PWMN_Start'
+  229 |  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+      |  ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:230:2: error: expected declaration specifiers before 'HAL_TIM_PWM_Start'
+  230 |  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+      |  ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:231:2: error: expected declaration specifiers before 'HAL_TIMEx_PWMN_Start'
+  231 |  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+      |  ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:232:2: error: expected declaration specifiers before 'HAL_TIM_PWM_Start'
+  232 |  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+      |  ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:233:2: error: expected declaration specifiers before 'HAL_TIMEx_PWMN_Start'
+  233 |  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+      |  ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:235:2: error: expected declaration specifiers before 'HAL_TIM_OC_Start'
+  235 |  HAL_TIM_OC_Start(&htim1, TIM_CHANNEL_4);
+      |  ^~~~~~~~~~~~~~~~
+../Core/Src/main.c:237:2: error: expected declaration specifiers before 'HAL_TIM_Base_Start'
+  237 |  HAL_TIM_Base_Start(&htim1);
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:238:2: error: expected declaration specifiers before 'HAL_TIM_Base_Start'
+  238 |  HAL_TIM_Base_Start(&htim2);
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:239:2: error: expected declaration specifiers before 'HAL_TIM_Base_Start'
+  239 |  HAL_TIM_Base_Start(&htim4);
+      |  ^~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:250:2: error: parameter 'save_i' is initialized
+  250 |  unsigned int save[5000], save_i = 0;
+      |  ^~~~~~~~
+In file included from ../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g4xx.h:107,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_def.h:29,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_rcc.h:27,
+                 from ../Core/Inc/stm32g4xx_hal_conf.h:212,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:261:2: note: in expansion of macro 'TIM1'
+  261 |  TIM1->CCR4 = 450;
+      |  ^~~~
+../Core/Src/main.c:262:2: error: expected declaration specifiers before 'ADC_Select_CH'
+  262 |  ADC_Select_CH(1);
+      |  ^~~~~~~~~~~~~
+In file included from ../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g4xx.h:107,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_def.h:29,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_rcc.h:27,
+                 from ../Core/Inc/stm32g4xx_hal_conf.h:212,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:275:2: note: in expansion of macro 'TIM1'
+  275 |  TIM1->CCER |= TIM_CCER_CC1NP;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:276:2: note: in expansion of macro 'TIM1'
+  276 |  TIM1->CCER |= TIM_CCER_CC2NP;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:277:2: note: in expansion of macro 'TIM1'
+  277 |  TIM1->CCER |= TIM_CCER_CC3NP;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:278:2: note: in expansion of macro 'TIM1'
+  278 |  TIM1->EGR |= TIM_EGR_COMG;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:279:2: note: in expansion of macro 'TIM1'
+  279 |  TIM1->CCR1 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:280:2: note: in expansion of macro 'TIM1'
+  280 |  TIM1->CCR2 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:281:2: note: in expansion of macro 'TIM1'
+  281 |  TIM1->CCR3 = 0;
+      |  ^~~~
+../Core/Src/main.c:282:2: error: expected declaration specifiers before 'for'
+  282 |  for(i = 0 ; i < 5000; i++) {
+      |  ^~~
+../Core/Src/main.c:282:14: error: expected declaration specifiers before 'i'
+  282 |  for(i = 0 ; i < 5000; i++) {
+      |              ^
+../Core/Src/main.c:282:24: error: expected declaration specifiers before 'i'
+  282 |  for(i = 0 ; i < 5000; i++) {
+      |                        ^
+../Core/Src/main.c:287:2: error: parameter 'c' is initialized
+  287 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |  ^~~~~~~~
+../Core/Src/main.c:287:2: error: parameter 'd' is initialized
+../Core/Src/main.c:287:2: error: parameter 't' is initialized
+../Core/Src/main.c:287:2: error: parameter 'tt' is initialized
+../Core/Src/main.c:287:2: error: parameter 'max_time' is initialized
+../Core/Src/main.c:289:2: error: parameter 'commutation_time' is initialized
+  289 |  float commutation_time = 6000;
+      |  ^~~~~
+In file included from ../Core/Inc/stm32g4xx_hal_conf.h:344,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim.h:1549:57: error: expected declaration specifiers before '(' token
+ 1549 | #define __HAL_TIM_SET_COUNTER(__HANDLE__, __COUNTER__)  ((__HANDLE__)->Instance->CNT = (__COUNTER__))
+      |                                                         ^
+../Core/Src/main.c:294:2: note: in expansion of macro '__HAL_TIM_SET_COUNTER'
+  294 |  __HAL_TIM_SET_COUNTER(&htim4,0);
+      |  ^~~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:295:2: error: expected declaration specifiers before 'p'
+  295 |  p = 550;
+      |  ^
+../Core/Src/main.c:297:3: error: expected declaration specifiers before 'while'
+  297 |   while (1) {
+      |   ^~~~~
+../Core/Src/main.c:419:3: error: expected declaration specifiers before 'HAL_ADC_Stop_IT'
+  419 |   HAL_ADC_Stop_IT(&hadc1);
+      |   ^~~~~~~~~~~~~~~
+../Core/Src/main.c:420:2: error: expected declaration specifiers before 'HAL_ADC_Stop_IT'
+  420 |  HAL_ADC_Stop_IT(&hadc2);
+      |  ^~~~~~~~~~~~~~~
+In file included from ../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g4xx.h:107,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_def.h:29,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_rcc.h:27,
+                 from ../Core/Inc/stm32g4xx_hal_conf.h:212,
+                 from ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:421:3: note: in expansion of macro 'TIM1'
+  421 |   TIM1->CCER |= TIM_CCER_CC1NP;
+      |   ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:422:3: note: in expansion of macro 'TIM1'
+  422 |   TIM1->CCER |= TIM_CCER_CC2NP;
+      |   ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:423:3: note: in expansion of macro 'TIM1'
+  423 |   TIM1->CCER |= TIM_CCER_CC3NP;
+      |   ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:424:2: note: in expansion of macro 'TIM1'
+  424 |  TIM1->EGR |= TIM_EGR_COMG;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:425:2: note: in expansion of macro 'TIM1'
+  425 |  TIM1->CCR1 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:426:2: note: in expansion of macro 'TIM1'
+  426 |  TIM1->CCR2 = 0;
+      |  ^~~~
+../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h:1114:29: error: expected declaration specifiers before '(' token
+ 1114 | #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
+      |                             ^
+../Core/Src/main.c:427:2: note: in expansion of macro 'TIM1'
+  427 |  TIM1->CCR3 = 0;
+      |  ^~~~
+../Core/Src/main.c:428:2: error: expected declaration specifiers before 'for'
+  428 |  for(i = 0; i < i_1; i++) {
+      |  ^~~
+../Core/Src/main.c:428:13: error: expected declaration specifiers before 'i'
+  428 |  for(i = 0; i < i_1; i++) {
+      |             ^
+../Core/Src/main.c:428:22: error: expected declaration specifiers before 'i'
+  428 |  for(i = 0; i < i_1; i++) {
+      |                      ^
+../Core/Src/main.c:435:2: error: expected declaration specifiers before 'while'
+  435 |  while(1);
+      |  ^~~~~
+../Core/Src/main.c:436:1: error: expected declaration specifiers before '}' token
+  436 | }
+      | ^
+../Core/Src/main.c:443:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  443 | {
+      | ^
+../Core/Src/main.c:490:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  490 | {
+      | ^
+../Core/Src/main.c:554:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  554 | {
+      | ^
+../Core/Src/main.c:614:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  614 | {
+      | ^
+../Core/Src/main.c:716:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  716 | {
+      | ^
+../Core/Src/main.c:769:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  769 | {
+      | ^
+../Core/Src/main.c:809:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  809 | {
+      | ^
+../Core/Src/main.c:847:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  847 | {
+      | ^
+../Core/Src/main.c:895:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  895 | {
+      | ^
+../Core/Src/main.c:924:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+  924 | {
+      | ^
+../Core/Src/main.c:211:5: error: old-style parameter declarations in prototyped function definition
+  211 | int main(void)
+      |     ^~~~
+../Core/Src/main.c:950: error: expected '{' at end of input
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:58:13: warning: 'MX_GPIO_Init' declared 'static' but never defined [-Wunused-function]
+   58 | static void MX_GPIO_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:59:13: warning: 'MX_ADC1_Init' declared 'static' but never defined [-Wunused-function]
+   59 | static void MX_ADC1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:60:13: warning: 'MX_ADC2_Init' declared 'static' but never defined [-Wunused-function]
+   60 | static void MX_ADC2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:61:13: warning: 'MX_TIM1_Init' declared 'static' but never defined [-Wunused-function]
+   61 | static void MX_TIM1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:62:13: warning: 'MX_USART2_UART_Init' declared 'static' but never defined [-Wunused-function]
+   62 | static void MX_USART2_UART_Init(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:63:13: warning: 'MX_TIM6_Init' declared 'static' but never defined [-Wunused-function]
+   63 | static void MX_TIM6_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:64:13: warning: 'MX_TIM4_Init' declared 'static' but never defined [-Wunused-function]
+   64 | static void MX_TIM4_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:65:13: warning: 'MX_TIM2_Init' declared 'static' but never defined [-Wunused-function]
+   65 | static void MX_TIM2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:157:6: warning: 'BLDC_phase' defined but not used [-Wunused-function]
+  157 | void BLDC_phase(unsigned char phase, float p) {
+      |      ^~~~~~~~~~
+../Core/Src/main.c:100:6: warning: 'ADC_Select_CH' defined but not used [-Wunused-function]
+  100 | void ADC_Select_CH(unsigned char ch)
+      |      ^~~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:28:44 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:448:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  448 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:448:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:448:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  448 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:448:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:305:49: warning: unused variable 'max_time' [-Wunused-variable]
+  305 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:305:39: warning: unused variable 'tt' [-Wunused-variable]
+  305 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:268:27: warning: unused variable 'save_i' [-Wunused-variable]
+  268 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_ADC1_Init':
+../Core/Src/main.c:514:24: warning: unused variable 'multimode' [-Wunused-variable]
+  514 |   ADC_MultiModeTypeDef multimode = {0};
+      |                        ^~~~~~~~~
+At top level:
+../Core/Src/main.c:826:13: warning: 'MX_TIM6_Init' defined but not used [-Wunused-function]
+  826 | static void MX_TIM6_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4.elf
+ 
+arm-none-eabi-size   ESC_G4.elf 
+arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
+   text	   data	    bss	    dec	    hex	filename
+  30244	     20	  22172	  52436	   ccd4	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4.list
+ 
+22:28:51 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:443:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  443 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:443:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:443:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  443 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:443:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:300:49: warning: unused variable 'max_time' [-Wunused-variable]
+  300 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:300:39: warning: unused variable 'tt' [-Wunused-variable]
+  300 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:263:27: warning: unused variable 'save_i' [-Wunused-variable]
+  263 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_ADC1_Init':
+../Core/Src/main.c:509:24: warning: unused variable 'multimode' [-Wunused-variable]
+  509 |   ADC_MultiModeTypeDef multimode = {0};
+      |                        ^~~~~~~~~
+At top level:
+../Core/Src/main.c:821:13: warning: 'MX_TIM6_Init' defined but not used [-Wunused-function]
+  821 | static void MX_TIM6_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4.elf
+ 
+arm-none-eabi-size   ESC_G4.elf 
+arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
+   text	   data	    bss	    dec	    hex	filename
+  30244	     20	  22172	  52436	   ccd4	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4.list
+ 
+22:28:56 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:438:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  438 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:438:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:438:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  438 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:438:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:295:49: warning: unused variable 'max_time' [-Wunused-variable]
+  295 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:295:39: warning: unused variable 'tt' [-Wunused-variable]
+  295 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:258:27: warning: unused variable 'save_i' [-Wunused-variable]
+  258 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_ADC1_Init':
+../Core/Src/main.c:504:24: warning: unused variable 'multimode' [-Wunused-variable]
+  504 |   ADC_MultiModeTypeDef multimode = {0};
+      |                        ^~~~~~~~~
+At top level:
+../Core/Src/main.c:816:13: warning: 'MX_TIM6_Init' defined but not used [-Wunused-function]
+  816 | static void MX_TIM6_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4.elf
+ 
+arm-none-eabi-size   ESC_G4.elf 
+arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
+   text	   data	    bss	    dec	    hex	filename
+  30244	     20	  22172	  52436	   ccd4	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4.list
+ 
+22:29:02 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:432:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  432 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:432:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:432:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  432 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:432:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:289:49: warning: unused variable 'max_time' [-Wunused-variable]
+  289 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:289:39: warning: unused variable 'tt' [-Wunused-variable]
+  289 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:252:27: warning: unused variable 'save_i' [-Wunused-variable]
+  252 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_ADC1_Init':
+../Core/Src/main.c:498:24: warning: unused variable 'multimode' [-Wunused-variable]
+  498 |   ADC_MultiModeTypeDef multimode = {0};
+      |                        ^~~~~~~~~
+At top level:
+../Core/Src/main.c:810:13: warning: 'MX_TIM6_Init' defined but not used [-Wunused-function]
+  810 | static void MX_TIM6_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4.elf
+ 
+arm-none-eabi-size   ESC_G4.elf 
+arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
+   text	   data	    bss	    dec	    hex	filename
+  30244	     20	  22172	  52436	   ccd4	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4.list
+ 
+22:33:31 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:425:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  425 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:425:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:425:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  425 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:425:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:282:49: warning: unused variable 'max_time' [-Wunused-variable]
+  282 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:282:39: warning: unused variable 'tt' [-Wunused-variable]
+  282 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:244:27: warning: unused variable 'save_i' [-Wunused-variable]
+  244 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_ADC1_Init':
+../Core/Src/main.c:491:24: warning: unused variable 'multimode' [-Wunused-variable]
+  491 |   ADC_MultiModeTypeDef multimode = {0};
+      |                        ^~~~~~~~~
+At top level:
+../Core/Src/main.c:803:13: warning: 'MX_TIM6_Init' defined but not used [-Wunused-function]
+  803 | static void MX_TIM6_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4.elf
+ 
+arm-none-eabi-size   ESC_G4.elf 
+arm-none-eabi-objdump -h -S  ESC_G4.elf  > "ESC_G4.list"
+   text	   data	    bss	    dec	    hex	filename
+  24960	     20	   2164	  27144	   6a08	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4.list
+ 
+22:34:21 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  24960	     20	   2164	  27144	   6a08	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+22:34:38 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  24960	     20	   2164	  27144	   6a08	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+22:43:15 **** Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_hal_msp.d" -MT"Core/Src/stm32g4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_hal_msp.o"
+../Core/Src/main.c:21:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   21 | ADC_HandleTypeDef hadc1;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+../Core/Src/main.c:22:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   22 | ADC_HandleTypeDef hadc2;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+../Core/Src/main.c:66:31: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   66 | void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+      |                               ^~~~~~~~~~~~~~~~~
+      |                               UART_HandleTypeDef
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:366:5: warning: implicit declaration of function 'HAL_ADC_Start_IT'; did you mean 'HAL_DMA_Start_IT'? [-Wimplicit-function-declaration]
+  366 |     HAL_ADC_Start_IT(&hadc1);
+      |     ^~~~~~~~~~~~~~~~
+      |     HAL_DMA_Start_IT
+../Core/Src/main.c:393:3: warning: implicit declaration of function 'HAL_ADC_Stop_IT'; did you mean 'HAL_TIM_IC_Stop_IT'? [-Wimplicit-function-declaration]
+  393 |   HAL_ADC_Stop_IT(&hadc1);
+      |   ^~~~~~~~~~~~~~~
+      |   HAL_TIM_IC_Stop_IT
+../Core/Src/main.c:404:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  404 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:404:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | ADC_HandleTypeDef hadc1;
+../Core/Src/main.c:404:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  404 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:404:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:261:49: warning: unused variable 'max_time' [-Wunused-variable]
+  261 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:261:39: warning: unused variable 'tt' [-Wunused-variable]
+  261 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:223:27: warning: unused variable 'save_i' [-Wunused-variable]
+  223 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_COMP1_Init':
+../Core/Src/main.c:473:3: error: 'hcomp1' undeclared (first use in this function)
+  473 |   hcomp1.Instance = COMP1;
+      |   ^~~~~~
+../Core/Src/main.c:473:3: note: each undeclared identifier is reported only once for each function it appears in
+../Core/Src/main.c: In function 'MX_COMP2_Init':
+../Core/Src/main.c:505:3: error: 'hcomp2' undeclared (first use in this function)
+  505 |   hcomp2.Instance = COMP2;
+      |   ^~~~~~
+../Core/Src/main.c: In function 'MX_TIM8_Init':
+../Core/Src/main.c:641:3: error: 'htim8' undeclared (first use in this function); did you mean 'htim6'?
+  641 |   htim8.Instance = TIM8;
+      |   ^~~~~
+      |   htim6
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:38:13: warning: 'MX_ADC1_Init' used but never defined
+   38 | static void MX_ADC1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:39:13: warning: 'MX_ADC2_Init' used but never defined
+   39 | static void MX_ADC2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:42:13: warning: 'MX_TIM6_Init' declared 'static' but never defined [-Wunused-function]
+   42 | static void MX_TIM6_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:43:13: warning: 'MX_TIM4_Init' used but never defined
+   43 | static void MX_TIM4_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:44:13: warning: 'MX_TIM2_Init' used but never defined
+   44 | static void MX_TIM2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:627:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  627 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:495:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  495 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:463:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  463 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:44:35 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_it.d" -MT"Core/Src/stm32g4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_it.o"
+arm-none-eabi-gcc "../Core/Src/system_stm32g4xx.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/system_stm32g4xx.d" -MT"Core/Src/system_stm32g4xx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/system_stm32g4xx.o"
+../Core/Src/main.c:22:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   22 | ADC_HandleTypeDef hadc1;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+../Core/Src/main.c:23:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   23 | ADC_HandleTypeDef hadc2;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+../Core/Src/main.c:67:31: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   67 | void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+      |                               ^~~~~~~~~~~~~~~~~
+      |                               UART_HandleTypeDef
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:367:5: warning: implicit declaration of function 'HAL_ADC_Start_IT'; did you mean 'HAL_DMA_Start_IT'? [-Wimplicit-function-declaration]
+  367 |     HAL_ADC_Start_IT(&hadc1);
+      |     ^~~~~~~~~~~~~~~~
+      |     HAL_DMA_Start_IT
+../Core/Src/main.c:394:3: warning: implicit declaration of function 'HAL_ADC_Stop_IT'; did you mean 'HAL_TIM_IC_Stop_IT'? [-Wimplicit-function-declaration]
+  394 |   HAL_ADC_Stop_IT(&hadc1);
+      |   ^~~~~~~~~~~~~~~
+      |   HAL_TIM_IC_Stop_IT
+../Core/Src/main.c:405:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  405 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:405:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:405:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  405 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:405:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:262:49: warning: unused variable 'max_time' [-Wunused-variable]
+  262 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:262:39: warning: unused variable 'tt' [-Wunused-variable]
+  262 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:224:27: warning: unused variable 'save_i' [-Wunused-variable]
+  224 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_COMP1_Init':
+../Core/Src/main.c:474:3: error: 'hcomp1' undeclared (first use in this function)
+  474 |   hcomp1.Instance = COMP1;
+      |   ^~~~~~
+../Core/Src/main.c:474:3: note: each undeclared identifier is reported only once for each function it appears in
+../Core/Src/main.c: In function 'MX_COMP2_Init':
+../Core/Src/main.c:506:3: error: 'hcomp2' undeclared (first use in this function)
+  506 |   hcomp2.Instance = COMP2;
+      |   ^~~~~~
+../Core/Src/main.c: In function 'MX_TIM8_Init':
+../Core/Src/main.c:642:3: error: 'htim8' undeclared (first use in this function); did you mean 'htim6'?
+  642 |   htim8.Instance = TIM8;
+      |   ^~~~~
+      |   htim6
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:39:13: warning: 'MX_ADC1_Init' used but never defined
+   39 | static void MX_ADC1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:40:13: warning: 'MX_ADC2_Init' used but never defined
+   40 | static void MX_ADC2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:43:13: warning: 'MX_TIM6_Init' declared 'static' but never defined [-Wunused-function]
+   43 | static void MX_TIM6_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:44:13: warning: 'MX_TIM4_Init' used but never defined
+   44 | static void MX_TIM4_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:45:13: warning: 'MX_TIM2_Init' used but never defined
+   45 | static void MX_TIM2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:628:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  628 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:496:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  496 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:464:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  464 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:47:46 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  24960	     20	   2164	  27144	   6a08	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+22:47:51 **** Incremental Build of configuration Debug for project ESC_G4 ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4.elf 
+   text	   data	    bss	    dec	    hex	filename
+  24960	     20	   2164	  27144	   6a08	ESC_G4.elf
+Finished building: default.size.stdout
+ 
+22:48:03 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:22:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   22 | ADC_HandleTypeDef hadc1;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+../Core/Src/main.c:23:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   23 | ADC_HandleTypeDef hadc2;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+../Core/Src/main.c:67:31: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   67 | void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+      |                               ^~~~~~~~~~~~~~~~~
+      |                               UART_HandleTypeDef
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:367:5: warning: implicit declaration of function 'HAL_ADC_Start_IT'; did you mean 'HAL_DMA_Start_IT'? [-Wimplicit-function-declaration]
+  367 |     HAL_ADC_Start_IT(&hadc1);
+      |     ^~~~~~~~~~~~~~~~
+      |     HAL_DMA_Start_IT
+../Core/Src/main.c:394:3: warning: implicit declaration of function 'HAL_ADC_Stop_IT'; did you mean 'HAL_TIM_IC_Stop_IT'? [-Wimplicit-function-declaration]
+  394 |   HAL_ADC_Stop_IT(&hadc1);
+      |   ^~~~~~~~~~~~~~~
+      |   HAL_TIM_IC_Stop_IT
+../Core/Src/main.c:405:7: warning: implicit declaration of function 'snprintf' [-Wimplicit-function-declaration]
+  405 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |       ^~~~~~~~
+../Core/Src/main.c:405:7: warning: incompatible implicit declaration of built-in function 'snprintf'
+../Core/Src/main.c:21:1: note: include '<stdio.h>' or provide a declaration of 'snprintf'
+   20 | #include "main.h"
+  +++ |+#include <stdio.h>
+   21 | 
+../Core/Src/main.c:405:16: warning: pointer targets in passing argument 1 of 'snprintf' differ in signedness [-Wpointer-sign]
+  405 |   c = snprintf(temp, sizeof(temp),"%d\n", save[i]);
+      |                ^~~~
+      |                |
+      |                unsigned char *
+../Core/Src/main.c:405:16: note: expected 'char *' but argument is of type 'unsigned char *'
+../Core/Src/main.c:262:49: warning: unused variable 'max_time' [-Wunused-variable]
+  262 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                                 ^~~~~~~~
+../Core/Src/main.c:262:39: warning: unused variable 'tt' [-Wunused-variable]
+  262 |  unsigned int c = 0, d = 0, t = 2000, tt = 100, max_time = 50000;
+      |                                       ^~
+../Core/Src/main.c:224:27: warning: unused variable 'save_i' [-Wunused-variable]
+  224 |  unsigned int save[5000], save_i = 0;
+      |                           ^~~~~~
+../Core/Src/main.c: In function 'MX_COMP1_Init':
+../Core/Src/main.c:474:3: error: 'hcomp1' undeclared (first use in this function)
+  474 |   hcomp1.Instance = COMP1;
+      |   ^~~~~~
+../Core/Src/main.c:474:3: note: each undeclared identifier is reported only once for each function it appears in
+../Core/Src/main.c: In function 'MX_COMP2_Init':
+../Core/Src/main.c:506:3: error: 'hcomp2' undeclared (first use in this function)
+  506 |   hcomp2.Instance = COMP2;
+      |   ^~~~~~
+../Core/Src/main.c: In function 'MX_TIM8_Init':
+../Core/Src/main.c:642:3: error: 'htim8' undeclared (first use in this function); did you mean 'htim6'?
+  642 |   htim8.Instance = TIM8;
+      |   ^~~~~
+      |   htim6
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:39:13: warning: 'MX_ADC1_Init' used but never defined
+   39 | static void MX_ADC1_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:40:13: warning: 'MX_ADC2_Init' used but never defined
+   40 | static void MX_ADC2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:43:13: warning: 'MX_TIM6_Init' declared 'static' but never defined [-Wunused-function]
+   43 | static void MX_TIM6_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:44:13: warning: 'MX_TIM4_Init' used but never defined
+   44 | static void MX_TIM4_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:45:13: warning: 'MX_TIM2_Init' used but never defined
+   45 | static void MX_TIM2_Init(void);
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:628:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  628 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:496:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  496 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:464:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  464 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:48:26 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_hal_msp.d" -MT"Core/Src/stm32g4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_hal_msp.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_it.d" -MT"Core/Src/stm32g4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_it.o"
+arm-none-eabi-gcc "../Core/Src/system_stm32g4xx.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/system_stm32g4xx.d" -MT"Core/Src/system_stm32g4xx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/system_stm32g4xx.o"
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  18180	     20	   1940	  20140	   4eac	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+22:48:40 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:42:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   42 | ADC_HandleTypeDef hadc1;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+../Core/Src/main.c:43:1: error: unknown type name 'ADC_HandleTypeDef'; did you mean 'UART_HandleTypeDef'?
+   43 | ADC_HandleTypeDef hadc2;
+      | ^~~~~~~~~~~~~~~~~
+      | UART_HandleTypeDef
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:50:14 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_ll_adc.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_hal_msp.d" -MT"Core/Src/stm32g4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_hal_msp.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_it.d" -MT"Core/Src/stm32g4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_it.o"
+arm-none-eabi-gcc "../Core/Src/system_stm32g4xx.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/system_stm32g4xx.d" -MT"Core/Src/system_stm32g4xx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/system_stm32g4xx.o"
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  23080	     20	   2156	  25256	   62a8	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+22:53:34 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:35:4: warning: implicit declaration of function 'MX_TIM2_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   35 |    MX_TIM2_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+../Core/Src/main.c:36:4: warning: implicit declaration of function 'MX_TIM4_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   36 |    MX_TIM4_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+../Core/Src/main.c:53:24: error: 'htim2' undeclared (first use in this function); did you mean 'htim8'?
+   53 |    HAL_TIM_Base_Start(&htim2);
+      |                        ^~~~~
+      |                        htim8
+../Core/Src/main.c:53:24: note: each undeclared identifier is reported only once for each function it appears in
+../Core/Src/main.c:54:24: error: 'htim4' undeclared (first use in this function); did you mean 'htim8'?
+   54 |    HAL_TIM_Base_Start(&htim4);
+      |                        ^~~~~
+      |                        htim8
+At top level:
+../Core/Src/main.c:409:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  409 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:277:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  277 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:245:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  245 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:53:44 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:35:4: warning: implicit declaration of function 'MX_TIM2_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   35 |    MX_TIM2_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+../Core/Src/main.c:36:4: warning: implicit declaration of function 'MX_TIM4_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   36 |    MX_TIM4_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+At top level:
+../Core/Src/main.c:406:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  406 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:274:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  274 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:242:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  242 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+c:\program files (x86)\stm32cubeide_1.10.1\stm32cubeide\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127\tools\arm-none-eabi\bin\ld.exe: ./Core/Src/main.o: in function `main':
+D:/Projects/STM32-Projects/ESC_G4_COMP/Debug/../Core/Src/main.c:35: undefined reference to `MX_TIM2_Init'
+c:\program files (x86)\stm32cubeide_1.10.1\stm32cubeide\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127\tools\arm-none-eabi\bin\ld.exe: D:/Projects/STM32-Projects/ESC_G4_COMP/Debug/../Core/Src/main.c:36: undefined reference to `MX_TIM4_Init'
+collect2.exe: error: ld returned 1 exit status
+make: *** [makefile:64: ESC_G4_COMP.elf] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+22:54:13 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:459:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  459 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:397:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  397 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:265:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  265 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:233:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  233 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:174:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  174 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:106:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  106 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  12740	     20	   1644	  14404	   3844	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+22:55:23 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+   text	   data	    bss	    dec	    hex	filename
+  12740	     20	   1644	  14404	   3844	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+23:00:08 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:459:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  459 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:397:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  397 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:265:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  265 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:233:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  233 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:174:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  174 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:106:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  106 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  12744	     20	   1644	  14408	   3848	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:04:00 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:85:4: warning: implicit declaration of function 'MX_TIM2_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   85 |    MX_TIM2_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+../Core/Src/main.c:97:24: error: 'htim2' undeclared (first use in this function); did you mean 'htim8'?
+   97 |    HAL_TIM_Base_Start(&htim2);
+      |                        ^~~~~
+      |                        htim8
+../Core/Src/main.c:97:24: note: each undeclared identifier is reported only once for each function it appears in
+At top level:
+../Core/Src/main.c:520:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  520 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:458:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  458 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:326:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  326 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:294:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  294 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:235:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  235 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:167:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  167 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+23:06:27 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_hal_msp.d" -MT"Core/Src/stm32g4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_hal_msp.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_it.d" -MT"Core/Src/stm32g4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_it.o"
+arm-none-eabi-gcc "../Core/Src/system_stm32g4xx.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/system_stm32g4xx.d" -MT"Core/Src/system_stm32g4xx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/system_stm32g4xx.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:85:4: warning: implicit declaration of function 'MX_TIM2_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   85 |    MX_TIM2_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+../Core/Src/main.c:97:24: error: 'htim2' undeclared (first use in this function); did you mean 'htim8'?
+   97 |    HAL_TIM_Base_Start(&htim2);
+      |                        ^~~~~
+      |                        htim8
+../Core/Src/main.c:97:24: note: each undeclared identifier is reported only once for each function it appears in
+At top level:
+../Core/Src/main.c:520:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  520 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:458:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  458 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:326:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  326 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:294:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  294 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:235:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  235 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:167:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  167 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+23:06:38 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:86:4: warning: implicit declaration of function 'MX_TIM2_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   86 |    MX_TIM2_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+At top level:
+../Core/Src/main.c:521:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  521 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:459:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  459 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:327:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  327 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:295:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  295 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:236:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  236 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:168:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  168 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+c:\program files (x86)\stm32cubeide_1.10.1\stm32cubeide\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127\tools\arm-none-eabi\bin\ld.exe: ./Core/Src/main.o: in function `main':
+D:/Projects/STM32-Projects/ESC_G4_COMP/Debug/../Core/Src/main.c:86: undefined reference to `MX_TIM2_Init'
+collect2.exe: error: ld returned 1 exit status
+make: *** [makefile:64: ESC_G4_COMP.elf] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+23:07:47 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:86:4: warning: implicit declaration of function 'MX_TIM2_Init'; did you mean 'MX_TIM8_Init'? [-Wimplicit-function-declaration]
+   86 |    MX_TIM2_Init();
+      |    ^~~~~~~~~~~~
+      |    MX_TIM8_Init
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:454:13: warning: conflicting types for 'MX_TIM2_Init'
+  454 | static void MX_TIM2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:454:13: error: static declaration of 'MX_TIM2_Init' follows non-static declaration
+../Core/Src/main.c:86:4: note: previous implicit declaration of 'MX_TIM2_Init' was here
+   86 |    MX_TIM2_Init();
+      |    ^~~~~~~~~~~~
+../Core/Src/main.c:574:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  574 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:512:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  512 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:454:13: warning: 'MX_TIM2_Init' defined but not used [-Wunused-function]
+  454 | static void MX_TIM2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:327:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  327 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:295:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  295 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:236:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  236 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:168:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  168 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+23:07:59 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:575:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  575 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:513:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  513 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:328:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  328 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:296:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  296 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:237:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  237 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:169:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  169 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13616	     20	   1724	  15360	   3c00	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:09:06 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c:575:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  575 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:513:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  513 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:328:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  328 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:296:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  296 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:237:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  237 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:169:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  169 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13616	     20	   1724	  15360	   3c00	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:09:51 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:106:11: warning: unused variable 'j' [-Wunused-variable]
+  106 |    int i, j;
+      |           ^
+At top level:
+../Core/Src/main.c:573:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  573 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:511:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  511 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:326:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  326 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:294:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  294 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:235:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  235 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:167:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  167 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13604	     20	   1724	  15348	   3bf4	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:12:26 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:106:11: warning: unused variable 'j' [-Wunused-variable]
+  106 |    int i, j;
+      |           ^
+At top level:
+../Core/Src/main.c:573:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  573 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:511:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  511 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:326:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  326 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:294:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  294 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:235:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  235 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:167:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  167 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13600	     20	   1724	  15344	   3bf0	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:15:26 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:104:11: warning: unused variable 'j' [-Wunused-variable]
+  104 |    int i, j;
+      |           ^
+At top level:
+../Core/Src/main.c:571:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  571 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:509:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  509 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:324:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  324 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:292:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  292 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:233:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  233 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:165:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  165 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13076	     20	   1724	  14820	   39e4	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:17:23 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_comp.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart.o"
+arm-none-eabi-gcc "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.d" -MT"Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_hal_msp.d" -MT"Core/Src/stm32g4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_hal_msp.o"
+arm-none-eabi-gcc "../Core/Src/stm32g4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/stm32g4xx_it.d" -MT"Core/Src/stm32g4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32g4xx_it.o"
+arm-none-eabi-gcc "../Core/Src/system_stm32g4xx.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/system_stm32g4xx.d" -MT"Core/Src/system_stm32g4xx.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/system_stm32g4xx.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:104:11: warning: unused variable 'j' [-Wunused-variable]
+  104 |    int i, j;
+      |           ^
+At top level:
+../Core/Src/main.c:571:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  571 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:509:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  509 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:324:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  324 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:292:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  292 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:233:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  233 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:165:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  165 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13072	     20	   1724	  14816	   39e0	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:19:55 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:104:11: warning: unused variable 'j' [-Wunused-variable]
+  104 |    int i, j;
+      |           ^
+At top level:
+../Core/Src/main.c:571:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  571 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:509:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  509 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:324:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  324 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:292:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  292 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:233:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  233 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:165:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  165 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13072	     20	   1724	  14816	   39e0	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:22:58 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:104:11: warning: unused variable 'j' [-Wunused-variable]
+  104 |    int i, j;
+      |           ^
+At top level:
+../Core/Src/main.c:571:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  571 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:509:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  509 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:324:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  324 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:292:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  292 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:233:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  233 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:165:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  165 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13072	     20	   1724	  14816	   39e0	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
+23:23:12 **** Incremental Build of configuration Debug for project ESC_G4_COMP ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:104:11: warning: unused variable 'j' [-Wunused-variable]
+  104 |    int i, j;
+      |           ^
+At top level:
+../Core/Src/main.c:571:13: warning: 'MX_USART2_UART_Init' defined but not used [-Wunused-function]
+  571 | static void MX_USART2_UART_Init(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:509:13: warning: 'MX_TIM8_Init' defined but not used [-Wunused-function]
+  509 | static void MX_TIM8_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:324:13: warning: 'MX_COMP2_Init' defined but not used [-Wunused-function]
+  324 | static void MX_COMP2_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:292:13: warning: 'MX_COMP1_Init' defined but not used [-Wunused-function]
+  292 | static void MX_COMP1_Init(void)
+      |             ^~~~~~~~~~~~~
+../Core/Src/main.c:233:13: warning: 'MX_ADC2_Init' defined but not used [-Wunused-function]
+  233 | static void MX_ADC2_Init(void)
+      |             ^~~~~~~~~~~~
+../Core/Src/main.c:165:13: warning: 'MX_ADC1_Init' defined but not used [-Wunused-function]
+  165 | static void MX_ADC1_Init(void)
+      |             ^~~~~~~~~~~~
+arm-none-eabi-gcc -o "ESC_G4_COMP.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4_COMP\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4_COMP.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4_COMP.elf
+ 
+arm-none-eabi-size   ESC_G4_COMP.elf 
+arm-none-eabi-objdump -h -S  ESC_G4_COMP.elf  > "ESC_G4_COMP.list"
+   text	   data	    bss	    dec	    hex	filename
+  13072	     20	   1724	  14816	   39e0	ESC_G4_COMP.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4_COMP.list
+ 
