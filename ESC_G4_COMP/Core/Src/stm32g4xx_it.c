@@ -55,7 +55,8 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-
+extern COMP_HandleTypeDef hcomp1;
+extern COMP_HandleTypeDef hcomp2;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -197,6 +198,21 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32g4xx.s).                    */
 /******************************************************************************/
+
+/**
+  * @brief This function handles COMP1, COMP2 and COMP3 interrupts through EXTI lines 21, 22 and 29.
+  */
+void COMP1_2_3_IRQHandler(void)
+{
+  /* USER CODE BEGIN COMP1_2_3_IRQn 0 */
+
+  /* USER CODE END COMP1_2_3_IRQn 0 */
+  HAL_COMP_IRQHandler(&hcomp1);
+  HAL_COMP_IRQHandler(&hcomp2);
+  /* USER CODE BEGIN COMP1_2_3_IRQn 1 */
+
+  /* USER CODE END COMP1_2_3_IRQn 1 */
+}
 
 /* USER CODE BEGIN 1 */
 

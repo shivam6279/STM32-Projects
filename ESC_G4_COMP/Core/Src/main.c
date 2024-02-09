@@ -1,5 +1,45 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2023 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
@@ -10,18 +50,33 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim8;
 
-UART_HandleTypeDef huart2;
+/* USER CODE BEGIN PV */
 
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_COMP1_Init(void);
 static void MX_COMP2_Init(void);
 static void MX_TIM8_Init(void);
-static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
+static void MX_TIM2_Init(void);
+
+/*void COMP1_2_3_IRQHandler(void) {
+
+	if((EXTI->PR1 >> 21) & 1) {
+		EXTI->PR1 |= 1 << 21;
+
+		GPIOB->ODR ^= 1<<3;
+	}
+
+	GPIOB->ODR ^= 1<<3;
+
+//	HAL_COMP_IRQHandler(&hcomp1);
+//	HAL_COMP_IRQHandler(&hcomp2);
+} */
 
 void BLDC_phase(unsigned char phase, float p) {
 	if(phase == 1) {
@@ -75,40 +130,100 @@ void BLDC_phase(unsigned char phase, float p) {
 	}
 }
 
+void bemf_rising_U() {
+
+}
+
 int main(void)
 {
+	HAL_Init();
 
-  HAL_Init();
+	SystemClock_Config();
 
-  	SystemClock_Config();
+	RCC->AHB2ENR |= 0b1111111;
 
-  	MX_GPIO_Init();
-  	MX_TIM1_Init();
-  	MX_TIM2_Init();
+	GPIOB->OTYPER &= ~(1<<3);
+	GPIOB->OTYPER &= ~(1<<4);
+	GPIOB->OSPEEDR |= (1<<7);
+	GPIOB->OSPEEDR |= (1<9);
 
-  	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
-  	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-  	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+	GPIOB->MODER |= 1<<6;
+	GPIOB->MODER &= ~(1<<7);
+	GPIOB->MODER |= 1<<8;
+	GPIOB->MODER &= ~(1<<9);
 
-  	HAL_TIM_Base_Start(&htim1);
-  	HAL_TIM_Base_Start(&htim2);
+	MX_TIM1_Init();
+//	MX_COMP1_Init();
+//	MX_COMP2_Init();
 
-  	TIM1->CCER &= ~TIM_CCER_CC1NP;
-  	TIM1->CCER &= ~TIM_CCER_CC2NP;
-  	TIM1->CCER &= ~TIM_CCER_CC3NP;
-  	TIM1->EGR |= TIM_EGR_COMG;
+	GPIOA->MODER |= 0b11111111111111;
 
-  	int i, j;
-  	while(1) {
-  		for(i = 1; i <= 6; i++) {
-  			BLDC_phase(i, 100);
+//	COMP1->CSR = 0;
+	COMP1->CSR &= ~(0b11111111 << 16);
+
+//	COMP1->CSR |= (0b1 << 16);
+//	COMP1->CSR |= (0b111 << 15);
+
+	COMP1->CSR &= ~(1 << 8);
+
+	COMP1->CSR |= (0b111 << 4);
+	COMP1->CSR |= 0b1;
+
+	MX_TIM8_Init();
+	MX_ADC1_Init();
+	MX_ADC2_Init();
+	MX_TIM2_Init();
+
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+
+	HAL_TIM_OC_Start(&htim1, TIM_CHANNEL_4);
+
+	HAL_TIM_Base_Start(&htim1);
+	HAL_TIM_Base_Start(&htim2);
+
+	uint32_t flag;
+
+	int i;
+	float p = 1000;
+	while(1) {
+		for(i = 1; i <= 6; i++) {
+			BLDC_phase(i, p);
 			__HAL_TIM_SET_COUNTER(&htim2,0);
-			while (__HAL_TIM_GET_COUNTER(&htim2) < 5000);
-  		}
-  	}
+			while (__HAL_TIM_GET_COUNTER(&htim2) < 2000) {
+//				flag = (COMP1->CSR >> 30) & 1;
+				flag = COMP1->CSR & (1 << 30);
+				if(flag) {
+					flag = 1;
+					GPIOB->BSRR |= 1 << 3;
+				} else {
+					flag = 0;
+					GPIOB->BSRR |= 1 << 19;
+				}
+			}
+		}
+	}
+
+	TIM1->CCER |= TIM_CCER_CC1NP;
+	TIM1->CCER |= TIM_CCER_CC2NP;
+	TIM1->CCER |= TIM_CCER_CC3NP;
+
+	while (1) {
+		flag = COMP1->CSR & (1 << 30);
+		if(flag) {
+			flag = 1;
+			GPIOB->BSRR |= 1 << 3;
+		} else {
+			flag = 0;
+			GPIOB->BSRR |= 1 << 19;
+		}
+//		HAL_Delay(100);
+	}
+
 }
 
 /**
@@ -303,9 +418,9 @@ static void MX_COMP1_Init(void)
   hcomp1.Init.InputPlus = COMP_INPUT_PLUS_IO1;
   hcomp1.Init.InputMinus = COMP_INPUT_MINUS_IO2;
   hcomp1.Init.OutputPol = COMP_OUTPUTPOL_NONINVERTED;
-  hcomp1.Init.Hysteresis = COMP_HYSTERESIS_NONE;
-  hcomp1.Init.BlankingSrce = COMP_BLANKINGSRC_NONE;
-  hcomp1.Init.TriggerMode = COMP_TRIGGERMODE_NONE;
+  hcomp1.Init.Hysteresis = COMP_HYSTERESIS_10MV;
+  hcomp1.Init.BlankingSrce = COMP_BLANKINGSRC_TIM1_OC5_COMP1;
+  hcomp1.Init.TriggerMode = COMP_TRIGGERMODE_IT_RISING;
   if (HAL_COMP_Init(&hcomp1) != HAL_OK)
   {
     Error_Handler();
@@ -335,9 +450,9 @@ static void MX_COMP2_Init(void)
   hcomp2.Init.InputPlus = COMP_INPUT_PLUS_IO2;
   hcomp2.Init.InputMinus = COMP_INPUT_MINUS_IO1;
   hcomp2.Init.OutputPol = COMP_OUTPUTPOL_NONINVERTED;
-  hcomp2.Init.Hysteresis = COMP_HYSTERESIS_NONE;
-  hcomp2.Init.BlankingSrce = COMP_BLANKINGSRC_NONE;
-  hcomp2.Init.TriggerMode = COMP_TRIGGERMODE_NONE;
+  hcomp2.Init.Hysteresis = COMP_HYSTERESIS_10MV;
+  hcomp2.Init.BlankingSrce = COMP_BLANKINGSRC_TIM1_OC5_COMP2;
+  hcomp2.Init.TriggerMode = COMP_TRIGGERMODE_IT_FALLING;
   if (HAL_COMP_Init(&hcomp2) != HAL_OK)
   {
     Error_Handler();
@@ -424,6 +539,11 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   __HAL_TIM_ENABLE_OCxPRELOAD(&htim1, TIM_CHANNEL_4);
+  sConfigOC.OCMode = TIM_OCMODE_ACTIVE;
+  if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_5) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
@@ -448,6 +568,11 @@ static void MX_TIM1_Init(void)
 
 }
 
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM2_Init(void)
 {
 
@@ -563,77 +688,6 @@ static void MX_TIM8_Init(void)
 
 }
 
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOF_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-}
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */

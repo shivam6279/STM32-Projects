@@ -237,6 +237,9 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+    /* COMP1 interrupt Init */
+    HAL_NVIC_SetPriority(COMP1_2_3_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(COMP1_2_3_IRQn);
   /* USER CODE BEGIN COMP1_MspInit 1 */
 
   /* USER CODE END COMP1_MspInit 1 */
@@ -257,6 +260,9 @@ void HAL_COMP_MspInit(COMP_HandleTypeDef* hcomp)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+    /* COMP2 interrupt Init */
+    HAL_NVIC_SetPriority(COMP1_2_3_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(COMP1_2_3_IRQn);
   /* USER CODE BEGIN COMP2_MspInit 1 */
 
   /* USER CODE END COMP2_MspInit 1 */
@@ -284,6 +290,15 @@ void HAL_COMP_MspDeInit(COMP_HandleTypeDef* hcomp)
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_1);
 
+    /* COMP1 interrupt DeInit */
+  /* USER CODE BEGIN COMP1:COMP1_2_3_IRQn disable */
+    /**
+    * Uncomment the line below to disable the "COMP1_2_3_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+    /* HAL_NVIC_DisableIRQ(COMP1_2_3_IRQn); */
+  /* USER CODE END COMP1:COMP1_2_3_IRQn disable */
+
   /* USER CODE BEGIN COMP1_MspDeInit 1 */
 
   /* USER CODE END COMP1_MspDeInit 1 */
@@ -299,6 +314,15 @@ void HAL_COMP_MspDeInit(COMP_HandleTypeDef* hcomp)
     PA5     ------> COMP2_INM
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_3|GPIO_PIN_5);
+
+    /* COMP2 interrupt DeInit */
+  /* USER CODE BEGIN COMP2:COMP1_2_3_IRQn disable */
+    /**
+    * Uncomment the line below to disable the "COMP1_2_3_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+    /* HAL_NVIC_DisableIRQ(COMP1_2_3_IRQn); */
+  /* USER CODE END COMP2:COMP1_2_3_IRQn disable */
 
   /* USER CODE BEGIN COMP2_MspDeInit 1 */
 
@@ -500,82 +524,6 @@ void HAL_TIM_Encoder_MspDeInit(TIM_HandleTypeDef* htim_encoder)
   /* USER CODE BEGIN TIM8_MspDeInit 1 */
 
   /* USER CODE END TIM8_MspDeInit 1 */
-  }
-
-}
-
-/**
-* @brief UART MSP Initialization
-* This function configures the hardware resources used in this example
-* @param huart: UART handle pointer
-* @retval None
-*/
-void HAL_UART_MspInit(UART_HandleTypeDef* huart)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-  if(huart->Instance==USART2)
-  {
-  /* USER CODE BEGIN USART2_MspInit 0 */
-
-  /* USER CODE END USART2_MspInit 0 */
-
-  /** Initializes the peripherals clocks
-  */
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2;
-    PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    /* Peripheral clock enable */
-    __HAL_RCC_USART2_CLK_ENABLE();
-
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**USART2 GPIO Configuration
-    PB3     ------> USART2_TX
-    PB4     ------> USART2_RX
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN USART2_MspInit 1 */
-
-  /* USER CODE END USART2_MspInit 1 */
-  }
-
-}
-
-/**
-* @brief UART MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param huart: UART handle pointer
-* @retval None
-*/
-void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
-{
-  if(huart->Instance==USART2)
-  {
-  /* USER CODE BEGIN USART2_MspDeInit 0 */
-
-  /* USER CODE END USART2_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_USART2_CLK_DISABLE();
-
-    /**USART2 GPIO Configuration
-    PB3     ------> USART2_TX
-    PB4     ------> USART2_RX
-    */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_3|GPIO_PIN_4);
-
-  /* USER CODE BEGIN USART2_MspDeInit 1 */
-
-  /* USER CODE END USART2_MspDeInit 1 */
   }
 
 }
