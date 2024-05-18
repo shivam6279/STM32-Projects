@@ -1,0 +1,6 @@
+../Core/Src/BLDC.c:13:6:TIM3_IRQHandler	16	static
+../Core/Src/BLDC.c:47:13:setPhaseVoltage	32	static
+../Core/Src/BLDC.c:90:6:BLDC_phase	16	static
+../Core/Src/BLDC.c:142:6:set_motor_pwm	16	static
+../Core/Src/BLDC.c:157:6:motor_on	4	static
+../Core/Src/BLDC.c:163:6:motor_off	4	static
