@@ -8,21 +8,6 @@ ADC_HandleTypeDef hadc2;
 
 void GPIO_init() {
 	RCC->AHB2ENR |= 0b1111111;
-
-	GPIOB->OTYPER &= ~(1<<3);
-	GPIOB->OTYPER &= ~(1<<4);
-	GPIOB->OSPEEDR |= (1<<7);
-	GPIOB->OSPEEDR |= (1<9);
-
-	GPIOB->MODER |= 1<<6;
-	GPIOB->MODER &= ~(1<<7);
-	GPIOB->MODER |= 1<<8;
-	GPIOB->MODER &= ~(1<<9);
-
-	GPIOB->MODER |= 1<<6;
-	GPIOB->MODER &= ~(1<<7);
-	GPIOB->MODER |= 1<<8;
-	GPIOB->MODER &= ~(1<<9);
 }
 
 //---------------------
