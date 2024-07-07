@@ -1,0 +1,7 @@
+../Core/Src/SPI.c:5:6:PMW3901_init	8	static
+../Core/Src/SPI.c:41:6:PMW3901_read_deltas	24	static
+../Core/Src/SPI.c:62:6:write_reg	16	static
+../Core/Src/SPI.c:82:9:read_reg	24	static
+../Core/Src/SPI.c:112:6:SPI_init	4	static
+../Core/Src/SPI.c:166:6:SPI_write	16	static
+../Core/Src/SPI.c:172:9:SPI_read	4	static

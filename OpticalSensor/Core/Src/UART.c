@@ -4,13 +4,13 @@
 void UART_init(float freq) {
     RCC->APB1ENR1 |= 1 << 17;
 
-    GPIOB->AFR[0] |= 0b0111 << 12;
-    GPIOB->MODER &= ~(1<<6);
-    GPIOB->MODER |= 1<<7;
+    GPIOA->AFR[0] |= 0b0111 << 8;
+    GPIOA->MODER |= 1<<5;
+    GPIOA->MODER &= ~(1<<4);
 
-    GPIOB->AFR[0] |= 0b0111 << 16;
-    GPIOB->MODER &= ~(1<<8);
-    GPIOB->MODER |= 1<<9;
+    GPIOA->AFR[0] |= 0b0111 << 12;
+    GPIOA->MODER |= 1<<7;
+    GPIOA->MODER &= ~(1<<6);
 
     USART2->CR1 &= ~(1);
     USART2->CR1 = 0x00000000;
