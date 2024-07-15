@@ -31,7 +31,7 @@ int main(void) {
 	MX_ADC2_Init();
 
 	TIM8_init();	//Encoder
-//	UART_init(115200);
+	UART_init(115200);
 
 //	TIM3_on();
 
@@ -39,6 +39,33 @@ int main(void) {
 	delay_ms(500);
 
 	TIM2_on();
+	motor_mode = 0;
+
+	TIM3_on();
+	motor_on();
+	power = 0.2;
+	motor_mode = 1;
+//	setPhaseVoltage(0.075, 0);
+	while(1) {
+		UART_write_float(rpm, 2);
+		UART_send('\n');
+		delay_ms(50);
+		if(power < 0.97) {
+			power += 0.003;
+		} else {
+			break;
+		}
+	}
+	delay_ms(500);
+	while(1) {
+		UART_write_float(rpm, 2);
+		UART_send('\n');
+		delay_ms(50);
+		if(power > 0.2) {
+			power -= 0.003;
+		}
+	}
+
 
 	motor_on();
 
@@ -147,25 +174,4 @@ int main(void) {
 			p += 0.00001;
 		}
 	}
-
-//	uint32_t flag;
-//	int i;
-//	float p = 100;
-//	while(1) {
-//		for(i = 1; i <= 6; i++) {
-//			BLDC_phase(i, p);
-//			__HAL_TIM_SET_COUNTER(&htim2,0);
-//			while (__HAL_TIM_GET_COUNTER(&htim2) < 6000) {
-////				flag = (COMP1->CSR >> 30) & 1;
-//				flag = COMP1->CSR & (1 << 30);
-//				if(flag) {
-//					flag = 1;
-//					GPIOB->BSRR |= 1 << 3;
-//				} else {
-//					flag = 0;
-//					GPIOB->BSRR |= 1 << 19;
-//				}
-//			}
-//		}
-//	}
 }

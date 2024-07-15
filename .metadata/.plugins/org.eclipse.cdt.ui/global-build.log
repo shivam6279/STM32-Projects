@@ -4089,3 +4089,1654 @@ arm-none-eabi-size   OpticalSensor.elf
    7908	     20	   1572	   9500	   251c	OpticalSensor.elf
 Finished building: default.size.stdout
  
+18:45:58 **** Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19640	   2972	   1844	  24456	   5f88	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+18:47:33 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19648	   2972	   1844	  24464	   5f90	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+18:48:25 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19720	   2972	   1844	  24536	   5fd8	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+18:48:57 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19716	   2972	   1844	  24532	   5fd4	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+18:49:17 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19720	   2972	   1844	  24536	   5fd8	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+19:40:03 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19740	   2972	   1844	  24556	   5fec	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+19:42:15 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19740	   2972	   1844	  24556	   5fec	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+19:42:20 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19720	   2972	   1844	  24536	   5fd8	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:19:08 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4A.elf 
+   text	   data	    bss	    dec	    hex	filename
+  19720	   2972	   1844	  24536	   5fd8	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+20:20:02 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19740	   2972	   1844	  24556	   5fec	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:20:52 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19740	   2972	   1844	  24556	   5fec	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:21:33 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19744	   2972	   1844	  24560	   5ff0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:23:30 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/tones.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tones.d" -MT"Core/Src/tones.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tones.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:47:2: error: 'p' undeclared (first use in this function)
+   47 |  p = 0.075;
+      |  ^
+../Core/Src/main.c:47:2: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [Core/Src/subdir.mk:40: Core/Src/main.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+20:23:45 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19744	   2972	   1844	  24560	   5ff0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:24:29 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19744	   2972	   1844	  24560	   5ff0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:25:24 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19760	   2972	   1844	  24576	   6000	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:26:03 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19744	   2972	   1844	  24560	   5ff0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:27:19 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:27:49 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:27:58 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4A.elf 
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+20:29:46 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:31:28 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:47:21 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19800	   2972	   1844	  24616	   6028	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:49:31 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/tones.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tones.d" -MT"Core/Src/tones.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tones.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19800	   2972	   1844	  24616	   6028	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:49:49 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:51:07 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:51:49 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:52:29 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:53:07 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:53:21 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:53:47 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19800	   2972	   1844	  24616	   6028	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:54:18 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19800	   2972	   1844	  24616	   6028	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:54:29 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:55:53 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19156	   2972	   1844	  23972	   5da4	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:56:28 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19156	   2972	   1844	  23972	   5da4	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:56:49 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19800	   2972	   1844	  24616	   6028	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:57:16 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19800	   2972	   1844	  24616	   6028	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:58:24 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:58:49 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:59:10 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+20:59:52 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+21:03:09 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:54:6: error: 'p' undeclared (first use in this function)
+   54 |   if(p < 0.5) {
+      |      ^
+../Core/Src/main.c:54:6: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [Core/Src/subdir.mk:40: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+21:03:15 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19856	   2972	   1844	  24672	   6060	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+21:03:45 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19872	   2972	   1844	  24688	   6070	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+21:04:40 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19856	   2972	   1844	  24672	   6060	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:03:03 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19856	   2972	   1844	  24672	   6060	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:03:27 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19804	   2972	   1844	  24620	   602c	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:04:43 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/tones.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tones.d" -MT"Core/Src/tones.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tones.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:05:45 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:06:01 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19804	   2972	   1844	  24620	   602c	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:08:17 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:08:50 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:10:11 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19056	   2972	   1844	  23872	   5d40	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:55:37 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:56:12 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:58:23 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+22:59:19 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  18920	   2972	   1844	  23736	   5cb8	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:00:25 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:01:24 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/tones.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tones.d" -MT"Core/Src/tones.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tones.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:02:12 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  18920	   2972	   1844	  23736	   5cb8	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:03:50 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:05:17 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:05:49 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19052	   2972	   1844	  23868	   5d3c	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:06:20 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19052	   2972	   1844	  23868	   5d3c	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:06:50 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19056	   2972	   1844	  23872	   5d40	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:07:31 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:08:13 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19712	   2972	   1844	  24528	   5fd0	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:09:11 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19760	   2972	   1844	  24576	   6000	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:09:40 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19760	   2972	   1844	  24576	   6000	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:09:58 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19828	   2972	   1844	  24644	   6044	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:12:05 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19104	   2972	   1844	  23920	   5d70	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:12:35 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19760	   2972	   1844	  24576	   6000	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:14:02 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-size   ESC_G4A.elf 
+   text	   data	    bss	    dec	    hex	filename
+  19760	   2972	   1844	  24576	   6000	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+23:14:42 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19760	   2972	   1844	  24576	   6000	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:15:34 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19760	   2972	   1844	  24576	   6000	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:17:31 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:18:15 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:22:22 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:22:50 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19780	   2972	   1844	  24596	   6014	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:23:07 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19852	   2972	   1844	  24668	   605c	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:23:13 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19852	   2972	   1844	  24668	   605c	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+23:28:10 **** Incremental Build of configuration Debug for project ESC_G4A ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "ESC_G4A.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\ESC_G4A\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ESC_G4A.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ESC_G4A.elf
+ 
+arm-none-eabi-size   ESC_G4A.elf 
+arm-none-eabi-objdump -h -S  ESC_G4A.elf  > "ESC_G4A.list"
+   text	   data	    bss	    dec	    hex	filename
+  19988	   2972	   1844	  24804	   60e4	ESC_G4A.elf
+Finished building: default.size.stdout
+ 
+Finished building: ESC_G4A.list
+ 
+14:16:27 **** Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32.d" -MT"Core/Src/stm32.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19964	   2972	   1844	  24780	   60cc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+14:57:01 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19964	   2972	   1844	  24780	   60cc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+14:57:08 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19964	   2972	   1844	  24780	   60cc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+16:17:18 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc "../Core/Src/stm32.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32.d" -MT"Core/Src/stm32.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19964	   2972	   1844	  24780	   60cc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+18:48:36 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/UART.c:87:9: error: redefinition of 'UART_receive'
+   87 | uint8_t UART_receive() {
+      |         ^~~~~~~~~~~~
+../Core/Src/UART.c:30:9: note: previous definition of 'UART_receive' was here
+   30 | uint8_t UART_receive() {
+      |         ^~~~~~~~~~~~
+make: *** [Core/Src/subdir.mk:40: Core/Src/UART.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+18:49:06 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19964	   2972	   1844	  24780	   60cc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+18:54:21 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19108	   2972	   1844	  23924	   5d74	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:09:04 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19180	   2972	   1844	  23996	   5dbc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:10:14 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19180	   2972	   1844	  23996	   5dbc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:13:15 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+../Core/Src/UART.c: In function 'UART_receive':
+../Core/Src/UART.c:88:2: error: unknown type name 'uint8'; did you mean 'uint8_t'?
+   88 |  uint8 r;
+      |  ^~~~~
+      |  uint8_t
+../Core/Src/UART.c:89:17: error: expected ';' before 'return'
+   89 |  r = USART2->RDR
+      |                 ^
+      |                 ;
+   90 |  return r;
+      |  ~~~~~~          
+../Core/Src/UART.c:88:8: warning: variable 'r' set but not used [-Wunused-but-set-variable]
+   88 |  uint8 r;
+      |        ^
+../Core/Src/UART.c:91:1: warning: control reaches end of non-void function [-Wreturn-type]
+   91 | }
+      | ^
+make: *** [Core/Src/subdir.mk:40: Core/Src/UART.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+19:13:18 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+../Core/Src/UART.c: In function 'UART_receive':
+../Core/Src/UART.c:88:2: error: unknown type name 'uint8'; did you mean 'uint8_t'?
+   88 |  uint8 r;
+      |  ^~~~~
+      |  uint8_t
+make: *** [Core/Src/subdir.mk:40: Core/Src/UART.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+19:13:23 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19188	   2972	   1844	  24004	   5dc4	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:15:01 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19200	   2972	   1844	  24016	   5dd0	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:15:17 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19200	   2972	   1844	  24016	   5dd0	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:16:14 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19204	   2972	   1844	  24020	   5dd4	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:24:59 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19208	   2972	   1844	  24024	   5dd8	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:25:57 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19204	   2972	   1844	  24020	   5dd4	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:33:16 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19216	   2972	   1844	  24032	   5de0	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:35:15 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19228	   2972	   1844	  24044	   5dec	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:38:30 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:58:13: error: 'UART2' undeclared (first use in this function); did you mean 'UART4'?
+   58 |   UART_send(UART2->ISR);
+      |             ^~~~~
+      |             UART4
+../Core/Src/main.c:58:13: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [Core/Src/subdir.mk:40: Core/Src/main.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+19:38:34 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19116	   2972	   1844	  23932	   5d7c	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:38:50 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-size   Cubli_ESC.elf 
+   text	   data	    bss	    dec	    hex	filename
+  19116	   2972	   1844	  23932	   5d7c	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+19:39:07 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20208	   2972	   1844	  25024	   61c0	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:39:24 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20220	   2972	   1844	  25036	   61cc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:45:15 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20304	   2972	   1844	  25120	   6220	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:49:19 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/UART.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/UART.d" -MT"Core/Src/UART.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/UART.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20316	   2972	   1844	  25132	   622c	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:52:32 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19204	   2972	   1844	  24020	   5dd4	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+19:53:37 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-size   Cubli_ESC.elf 
+   text	   data	    bss	    dec	    hex	filename
+  19204	   2972	   1844	  24020	   5dd4	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+19:55:34 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20324	   2972	   1844	  25140	   6234	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:07:35 **** Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19980	   2972	   1844	  24796	   60dc	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:10:16 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20344	   2972	   1844	  25160	   6248	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:10:52 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20324	   2972	   1844	  25140	   6234	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:11:08 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19868	   2972	   1844	  24684	   606c	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:12:51 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:54:4: error: expected expression before '/' token
+   54 |  }*/
+      |    ^
+make: *** [Core/Src/subdir.mk:40: Core/Src/main.o] Error 1
+"make -j20 all" terminated with exit code 2. Build might be incomplete.
+23:12:54 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  20232	   2972	   1844	  25048	   61d8	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:15:19 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19868	   2972	   1844	  24684	   606c	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:16:16 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19876	   2972	   1844	  24692	   6074	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
+23:18:22 **** Incremental Build of configuration Debug for project Cubli_ESC ****
+make -j20 all 
+arm-none-eabi-gcc "../Core/Src/BLDC.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32G431xx -c -I../Core/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc -I../Drivers/STM32G4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32G4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/BLDC.d" -MT"Core/Src/BLDC.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/BLDC.o"
+arm-none-eabi-gcc -o "Cubli_ESC.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\Projects\STM32-Projects\Cubli_ESC\STM32G431KBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_ESC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Cubli_ESC.elf
+ 
+arm-none-eabi-size   Cubli_ESC.elf 
+arm-none-eabi-objdump -h -S  Cubli_ESC.elf  > "Cubli_ESC.list"
+   text	   data	    bss	    dec	    hex	filename
+  19788	   2972	   1844	  24604	   601c	Cubli_ESC.elf
+Finished building: default.size.stdout
+ 
+Finished building: Cubli_ESC.list
+ 
