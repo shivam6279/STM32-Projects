@@ -2,3 +2,4 @@
 *.log
 desktop.ini
 **/desktop.ini
+*.xml
