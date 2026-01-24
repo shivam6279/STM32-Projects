@@ -1,5 +1,0 @@
-tones.c:62:6:TIM4_IRQHandler	2
-tones.c:72:6:play_tone	1
-tones.c:78:6:play_music	3
-tones.c:94:6:tone_off	1
-tones.c:99:6:TIM4_update_freq	1

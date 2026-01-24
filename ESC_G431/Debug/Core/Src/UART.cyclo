@@ -1,6 +1,0 @@
-UART.c:4:6:UART_init	1
-UART.c:32:6:UART_send	2
-UART.c:37:6:UART_send_str	2
-UART.c:44:6:UART_write_int	5
-UART.c:60:6:UART_write_float	6
-UART.c:85:9:UART_receive	1

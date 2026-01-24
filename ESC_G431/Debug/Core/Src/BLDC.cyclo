@@ -1,6 +1,0 @@
-BLDC.c:13:6:TIM3_IRQHandler	6
-BLDC.c:47:13:setPhaseVoltage	6
-BLDC.c:90:6:BLDC_phase	7
-BLDC.c:142:6:set_motor_pwm	4
-BLDC.c:157:6:motor_on	1
-BLDC.c:163:6:motor_off	1

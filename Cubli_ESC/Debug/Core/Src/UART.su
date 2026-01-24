@@ -1,7 +1,0 @@
-../Core/Src/UART.c:4:6:UART_init	24	static
-../Core/Src/UART.c:34:6:UART_send	16	static
-../Core/Src/UART.c:39:6:UART_send_str	24	static
-../Core/Src/UART.c:46:6:UART_write_int	48	static
-../Core/Src/UART.c:62:6:UART_write_float	40	static
-../Core/Src/UART.c:87:9:UART_rx_ready	4	static
-../Core/Src/UART.c:91:9:UART_receive	16	static
