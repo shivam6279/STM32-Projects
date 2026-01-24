@@ -11,6 +11,14 @@
 #include "pic32.h"
 #include "PID.h"
 
+#define CCR_U CCR1
+#define CCR_V CCR2
+#define CCR_W CCR3
+
+#define CCNP_U TIM_CCER_CC1NP
+#define CCNP_V TIM_CCER_CC2NP
+#define CCNP_W TIM_CCER_CC3NP
+
 #define MOTOR_OV_INITIAL 20.0f // volts
 
 #define _SQRT3_2 0.86602540378443864676372317075294
@@ -60,7 +68,7 @@ volatile float position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.0, power_lpf 
 float motor_polarity = 0;
 float motor_zero_angle = 0.0;
 
-void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
+void TIM3_IRQHandler(void) {
 	IFS0bits.T4IF = 0;
 	
 //	LED0 = 1;
@@ -107,7 +115,7 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 #define RPM_LPF 0.95
 #define RPM_DER_LPF 0.9
 
-void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
+void TIM4_IRQHandler(void) {
 	IFS2bits.T6IF = 0;
 	static volatile long int temp = 0, p_temp;
 	static volatile float p_rpm = 0.0;
@@ -353,61 +361,6 @@ void __ISR(_TIMER_8_VECTOR, IPL7SOFT) Sensorless_timer(void) {
 
 volatile bool bemf_flag;
 volatile uint8_t pwm_odd = 0;
-void __ISR(_PWM4_VECTOR, IPL7AUTO) PWM_sync_timer(void) {
-//    PWMCON4bits.TRGIF = 0;
-	PWMCON4bits.PWMHIF = 0;
-	IFS5bits.PWM4IF = 0;
-	
-	if(pwm_odd == 1) {
-		comparator = (PORTG >> 6) & 0b111;
-		comp_u = (comparator >> 2) & 1;
-		comp_v = (comparator >> 1) & 1;
-		comp_w = comparator & 1;
-
-//		LATDINV |= 1 << 6;
-	
-//		TMR8 = 0;
-//		PR8 = 10;
-//		T8CONbits.ON = 1;
-	
-//		if(waveform_mode == MODE_SENSORLESS) {
-//			if(current_phase == 0) {
-//				if(comparator & 1) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 1) {
-//				if(!((comparator >> 1) & 1)) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 2) {
-//				if((comparator >> 2) & 1) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 3) {
-//				if(!(comparator & 1)) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 4) {
-//				if((comparator >> 1) & 1) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 5) {
-//				if(!((comparator >> 2) & 1)) {
-//					bemf_flag = true;
-//				}
-//			}
-//			if(bemf_flag) {
-//				IEC5bits.PWM4IE = 0;
-//				sensorless_flag = true;
-//				phase_delay = (1.0f-LPF_PHASE)*phase_delay + LPF_PHASE*(float)TMR8;
-//				TMR8 = 0;
-//				PR8 = phase_delay;
-//			}
-//		}
-	}
-	
-	pwm_odd = (pwm_odd + 1) % 2;
-}
 
 void MotorPhase(signed char num, float val) {
 	val = val * (float)PWM_MAX;
@@ -421,71 +374,139 @@ void MotorPhase(signed char num, float val) {
 	switch(num) {
 		case 0:
 			// W - NC
-			PDC1 = 0;
-			PDC7 = PWM_MAX;
+			MOTOR_TIM->CCER |= CCNP_U;
+			MOTOR_TIM->Instance->CCR_U = 0;
 			// V - V+
-			PDC2 = val;
-			PDC8 = val;
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->Instance->CCR_V = val;
 			// U - GND
-			PDC3 = 0;
-			PDC9 = 0;
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->Instance->CCR3 = 0;
 			break;
 		case 1:
 			// W - V+
-			PDC1 = val;
-			PDC7 = val;
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->Instance->CCR_U = val;
 			// V - NC
-			PDC2 = 0;
-			PDC8 = PWM_MAX;
+			MOTOR_TIM->CCER |= CCNP_V;
+			MOTOR_TIM->Instance->CCR_V = 0;
 			// U - GND
-			PDC3 = 0;
-			PDC9 = 0;
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->Instance->CCR3 = 0;
 			break;
 		case 2:
 			// W - V+
-			PDC1 = val;
-			PDC7 = val;
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->Instance->CCR_U = val;
 			// V - GND
-			PDC2 = 0;
-			PDC8 = 0;
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->Instance->CCR_V = 0;
 			// U - NC
-			PDC3 = 0;
-			PDC9 = PWM_MAX;
+			MOTOR_TIM->CCER |= CCNP_W;
+			MOTOR_TIM->Instance->CCR3 = 0;
 			break;
 		case 3:
 			// W - NC
-			PDC1 = 0;
-			PDC7 = PWM_MAX;
+			MOTOR_TIM->CCER |= CCNP_U;
+			MOTOR_TIM->Instance->CCR_U = 0;
 			// V - GND
-			PDC2 = 0;
-			PDC8 = 0;
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->Instance->CCR_V = 0;
 			// U - V+
-			PDC3 = val;
-			PDC9 = val;
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->Instance->CCR3 = val;
 			break;
 		case 4:
 			// W - GND
-			PDC1 = 0;
-			PDC7 = 0;
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->Instance->CCR_U = 0;
 			// V - NC
-			PDC2 = 0;
-			PDC8 = PWM_MAX;
+			MOTOR_TIM->CCER |= CCNP_V;
+			MOTOR_TIM->Instance->CCR_V = 0;
 			// U - V+
-			PDC3 = val;
-			PDC9 = val;
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->Instance->CCR3 = val;
 			break;
 		case 5:
 			// W - GND
-			PDC1 = 0;
-			PDC7 = 0;
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->Instance->CCR_U = 0;
 			// V - V+
-			PDC2 = val;
-			PDC8 = val;
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->Instance->CCR_V = val;
 			// U - NC
-			PDC3 = 0;
-			PDC9 = PWM_MAX;
+			MOTOR_TIM->CCER |= CCNP_W;
+			MOTOR_TIM->Instance->CCR_W = 0;
 			break;       
 	}
+
+	TIM1->EGR |= TIM_EGR_COMG;
+}
+
+void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
+	// Inputs shoule be within [0, 1.0]
+	
+	static float temp;
+
+	pwm_u = pwm_u > 1.0 ? 1.0: pwm_u < 0 ? 0: pwm_u;
+	pwm_v = pwm_v > 1.0 ? 1.0: pwm_v < 0 ? 0: pwm_v;
+	pwm_w = pwm_w > 1.0 ? 1.0: pwm_w < 0 ? 0: pwm_w;
+	
+	if(motor_direction) {
+		temp = pwm_u;
+		pwm_u = pwm_v;
+		pwm_v = temp;
+	}
+	
+	pwm_u *= PWM_MAX;
+	pwm_v *= PWM_MAX;
+	pwm_w *= PWM_MAX;
+
+	MOTOR_TIM->CCER &= ~CCNP_U;
+	MOTOR_TIM->Instance->CCR_U = pwm_u;
+
+	MOTOR_TIM->CCER &= ~CCNP_V;
+	MOTOR_TIM->Instance->CCR_V = pwm_v;
+
+	MOTOR_TIM->CCER &= ~CCNP_W;
+	MOTOR_TIM->Instance->CCR_W = pwm_w;
+
+	TIM1->EGR |= TIM_EGR_COMG;
+}
+
+void MotorOff() {
+	SetPower(0);
+
+	// A - NC
+	MOTOR_TIM->CCER |= CCNP_U;
+	MOTOR_TIM->Instance->CCR_U = 0;
+
+	// B - NC
+	MOTOR_TIM->CCER |= CCNP_V;
+	MOTOR_TIM->Instance->CCR_V = 0;
+
+	// C - NC
+	MOTOR_TIM->CCER |= CCNP_W;
+	MOTOR_TIM->Instance->CCR_W = 0;
+
+	TIM1->EGR |= TIM_EGR_COMG;
+}
+
+void MotorShort(float p) {
+	// p = 0:		float all phases
+	// p = 1.0:		short all phases to ground
+	// 0 < p < 1:	pwm (short/float) all phases to ground
+	
+	p = (1.0 - fabs(p)) * PWM_MAX;
+
+	MOTOR_TIM->CCER |= CCNP_U;
+	MOTOR_TIM->Instance->CCR_U = p;
+
+	MOTOR_TIM->CCER |= CCNP_V;
+	MOTOR_TIM->Instance->CCR_V = p;
+
+	MOTOR_TIM->CCER |= CCNP_W;
+	MOTOR_TIM->Instance->CCR_W = p;
 }
 
 bool bemf_phase(unsigned char phase) {
@@ -596,80 +617,6 @@ inline float normalizeAngle(float angle) {
 		angle += 360;
 	}
 	return angle;
-}
-
-void MotorOff() {
-	SetPower(0);
-	// A - NC
-	PDC1 = 0;
-	PDC7 = PWM_MAX;
-	// B - NC
-	PDC2 = 0;
-	PDC8 = PWM_MAX;
-	// C - NC
-	PDC3 = 0;
-	PDC9 = PWM_MAX;
-}
-
-void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
-	// Inputs shoule be within [0, 1.0]
-	
-	static float temp;
-	
-	if(motor_direction) {
-		temp = pwm_u;
-		pwm_u = pwm_v;
-		pwm_v = temp;
-	}
-	
-	pwm_u *= PWM_MAX;
-	pwm_v *= PWM_MAX;
-	pwm_w *= PWM_MAX;
-	
-	pwm_u = pwm_u > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_u < 0 ? 0: pwm_u;
-	pwm_v = pwm_v > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_v < 0 ? 0: pwm_v;
-	pwm_w = pwm_w > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_w < 0 ? 0: pwm_w;
-
-	if(pwm_u) {
-		PDC3 = pwm_u;
-		PDC9 = pwm_u + DEAD_TIME;
-	} else {
-		PDC3 = pwm_u;
-		PDC9 = pwm_u;
-	}
-
-	if(pwm_v) {
-		PDC2 = pwm_v;
-		PDC8 = pwm_v + DEAD_TIME;
-	} else {
-		PDC2 = pwm_v;
-		PDC8 = pwm_v ;
-	}
-
-	if(pwm_w) {
-		PDC1 = pwm_w;
-		PDC7 = pwm_w + DEAD_TIME;
-	} else {
-		PDC1 = pwm_w;
-		PDC7 = pwm_w;
-	}
-}
-
-void MotorShort(float p) {
-	// p = 0:		float all phases
-	// p = 1.0:		short all phases to ground
-	// 0 < p < 1:	pwm (short/float) all phases to ground
-	
-	p = (1.0 - fabs(p)) * PWM_MAX;
-
-	PDC1 = 0;
-	PDC7 = p;
-
-	PDC2 = 0;
-	PDC8 = p;
-
-	PDC3 = 0;
-	PDC9 = p;
 }
 
 void init_encoder_lut() {

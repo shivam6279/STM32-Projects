@@ -1,14 +1,8 @@
-#include "BLDC.h"
-#include "PWM.h"
-#include <xc.h>
-#include <stdbool.h>
+#include "main.h"
+
 #include <inttypes.h>
-#include <sys/attribs.h>
+#include "BLDC.h"
 #include <math.h>
-#include "USART.h"
-#include "SPI.h"
-#include "ADC.h"
-#include "pic32.h"
 #include "PID.h"
 
 #define MOTOR_OV_INITIAL 20.0f // volts
