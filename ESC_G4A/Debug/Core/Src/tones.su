@@ -1,5 +1,0 @@
-../Core/Src/tones.c:62:6:TIM4_IRQHandler	8	static
-../Core/Src/tones.c:72:6:play_tone	16	static
-../Core/Src/tones.c:78:6:play_music	16	static
-../Core/Src/tones.c:94:6:tone_off	8	static
-../Core/Src/tones.c:99:6:TIM4_update_freq	24	static

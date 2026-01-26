@@ -1,7 +1,0 @@
-SPI.c:5:6:PMW3901_init	1
-SPI.c:41:6:PMW3901_read_deltas	1
-SPI.c:62:6:write_reg	2
-SPI.c:82:9:read_reg	4
-SPI.c:112:6:SPI_init	1
-SPI.c:166:6:SPI_write	2
-SPI.c:172:9:SPI_read	1
