@@ -2,6 +2,8 @@
 
 #include <inttypes.h>
 #include "BLDC.h"
+#include "ADC.h"
+#include "PWM.h"
 #include <math.h>
 #include "PID.h"
 
@@ -36,7 +38,6 @@ double encoder_LUT[(int)ENCODER_RES];
 // FOC
 volatile float s, c;
 volatile float foc_id = 0, foc_iq = 0;
-volatile float isns_u, isns_v, isns_w;
 
 // Sensorless
 volatile float phase_delay = 0;
@@ -54,90 +55,89 @@ volatile float position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.0, power_lpf 
 float motor_polarity = 0;
 float motor_zero_angle = 0.0;
 
-void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
-	IFS0bits.T4IF = 0;
-	
-//	LED0 = 1;
-	
-	static long int pos_cnt;
-	pos_cnt = POS1CNT;
-	
-	if(pos_cnt < 0) {
-		pos_cnt += ENCODER_RES;
-	}
-	pos_cnt &= ENCODER_RES_MASK;
-	
-	position = encoder_LUT[pos_cnt] - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
-//	position = ((float)pos_cnt * 360.0 / ENCODER_RES) - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
-//	position = ((float)(4095 - spi_angle) * 360.0 / 4095.0) - motor_zero_angle;
-	
-	if(position < 0.0) {
-		position += 360.0;
-	}else if(position > 360.0) {
-		position -= 360.0;
-	}
-
-	foc_current_calc(position*motor_pole_pairs);
-	
-	static float lpf = 0.99;
-	power = lpf*power + (1-lpf)*power_lpf;
-	
-	pid_focId.setpoint = 0;
-	if(mode != MODE_OFF) {
-		LED0 = 0;
-		if(power) {
-			PID_compute(&pid_focIq, foc_iq, 0.00004);
-			PID_compute(&pid_focId, foc_id, 0.00004);
-		} else {
-			PID_reset(&pid_focIq);
-			PID_reset(&pid_focId);
-		}
+void TIM3_IRQHandler(void) {
+	if(TIM3->SR & 0x1) {
+		TIM3->SR &= ~(0x1);
 		
-		setPhaseVoltage(power, -pid_focId.output * (float)PWM_MAX/2, position*motor_pole_pairs);
+		// LED0_ON();
+		
+		static long int pos_cnt;
+		pos_cnt = ENC_TIM->CNT;
+		
+		if(pos_cnt < 0) {
+			pos_cnt += ENCODER_RES;
+		}
+		pos_cnt &= ENCODER_RES_MASK;
+		
+		position = encoder_LUT[pos_cnt] - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
+		// position = ((float)pos_cnt * 360.0 / ENCODER_RES) - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
+		// position = ((float)(4095 - spi_angle) * 360.0 / 4095.0) - motor_zero_angle;
+		
+		if(position < 0.0) {
+			position += 360.0;
+		}else if(position > 360.0) {
+			position -= 360.0;
+		}
+
+		foc_current_calc(position*motor_pole_pairs);
+		
+		static float lpf = 0.99;
+		power = lpf*power + (1-lpf)*power_lpf;
+		
+		pid_focId.setpoint = 0;
+		if(mode != MODE_OFF) {
+			if(power) {
+				PID_compute(&pid_focIq, foc_iq, 0.00004);
+				PID_compute(&pid_focId, foc_id, 0.00004);
+			} else {
+				PID_reset(&pid_focIq);
+				PID_reset(&pid_focId);
+			}
+			
+			setPhaseVoltage(power, -pid_focId.output * (float)PWM_MAX/2, position*motor_pole_pairs);
+		}
+		// LED0_OFF();
 	}
-//	LED0 = 0;
 }
 
 #define RPM_LPF 0.95
 #define RPM_DER_LPF 0.9
 
-void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
-	IFS2bits.T6IF = 0;
-	static volatile long int temp = 0, p_temp;
-	static volatile float p_rpm = 0.0;
-
+void TIM4_IRQHandler(void) {
+	static int16_t cnt = 0, p_cnt;
+	static float p_rpm = 0.0;
 	static long int ind_cnt;
 	static float net_position;
-	
-	p_temp = temp;
-	temp = VEL1CNT;
-	
-	p_rpm = rpm;
-	rpm = (1.0-RPM_LPF) * ((float)temp / ENCODER_RES * 30000.0) + RPM_LPF*rpm;
-	
-	//rpm_der = (1.0-RPM_LPF) * ((float)(temp-p_temp) / ENCODER_RES * 60000.0) + RPM_LPF*rpm_der;    
-	rpm_der = (1.0-RPM_DER_LPF)*(rpm-p_rpm) + RPM_DER_LPF*rpm_der;
-	
-	// RPM PID control
-	if(mode == MODE_RPM) {
-		pid_rpm.derivative = -rpm_der;
-		PID_compute(&pid_rpm, rpm, 0.002);
 
-		if(pid_rpm.setpoint == 0 && fabs(rpm) < 25) {
-			SetPower(0);
-		} else {
-			SetPower(pid_rpm.output);
+	if(TIM4->SR & 0x1) {
+		TIM4->SR &= ~(0x1);
+		
+		p_cnt = cnt;
+		cnt = ENC_TIM->CNT;
+		
+		p_rpm = rpm;
+		rpm = (1.0-RPM_LPF) * (((float)cnt - (float)p_cnt) / ENCODER_RES * 30000.0) + RPM_LPF*rpm;
+		rpm_der = (1.0-RPM_DER_LPF) * (rpm - p_rpm) + RPM_DER_LPF*rpm_der;
+		
+		// RPM PID control
+		if(mode == MODE_RPM) {
+			pid_rpm.derivative = -rpm_der;
+			PID_compute(&pid_rpm, rpm, 0.002);
+
+			if(pid_rpm.setpoint == 0 && fabs(rpm) < 25) {
+				SetPower(0);
+			} else {
+				SetPower(pid_rpm.output);
+			}
+			
+		// Angle PID control
+		} else if (mode == MODE_POS) {
+			ind_cnt = 0; // TODO: multi turn
+			net_position = position + ind_cnt * 360.0;
+			
+			SetPower(PID_compute(&pid_angle, net_position, 0.002) / 2000.0);
 		}
-		
-	// Angle PID control
-	} else if (mode == MODE_POS) {
-		ind_cnt = INDX1CNT;
-		net_position = position + ind_cnt * 360.0;
-		
-		SetPower(PID_compute(&pid_angle, net_position, 0.002) / 2000.0);
 	}
-	
-	adc_readAll();
 }
 
 void setPhaseVoltage(float p, float u_d, float angle_el) {
@@ -239,13 +239,14 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 	}
 
 	if(waveform_mode != MOTOR_TRAPEZOID) {
-		vsns_vbat = (float)adc_data[7] * ADC_CONV_FACTOR / VSNS_VBAT_DIVIDER;
+		// TODO: VBAT ADC
+		vsns_vbat = 0;
 		if(vsns_vbat > motor_ov) {
 			pwm_u = 0;
 			pwm_v = 0;
 			pwm_w = 0;
 			
-			LED1 = 1;
+			LED1_ON();
 			ov_flag = 1;
 			
 			motor_ov = 15;
@@ -253,7 +254,7 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 			MotorShort(0.5);
 		} else {
 			if(ov_flag) {
-				LED1 = 0;
+				LED1_OFF();
 				ov_flag = 0;
 				motor_ov = MOTOR_OV_INITIAL;
 			}
@@ -266,38 +267,39 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 #define FOC_IQ_LPF 0.9995f
 void foc_current_calc(float angle_el) {
 	static float i_alpha, i_beta;
-	static float temp_isns_u, temp_isns_v, temp_isns_w;
+	static float temp_isns_u, temp_isns_v;
 
 	s = wave_lut(sin_lut, angle_el);
 	c = wave_lut(sin_lut, angle_el + 90);
 
 	// Get phase current readings from ADC
-	temp_isns_u = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR);
-	temp_isns_v = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR);
-	
-	isns_u_offset = ISNS_OFFSET_LPF * isns_u_offset + (1.0 - ISNS_OFFSET_LPF) * temp_isns_u;
-	isns_v_offset = ISNS_OFFSET_LPF * isns_v_offset + (1.0 - ISNS_OFFSET_LPF) * temp_isns_v;
-	
-	isns_u_offset = isns_u_offset < 1.55 ? 1.55 : isns_u_offset > 1.75 ? 1.75 : isns_u_offset;
-	isns_v_offset = isns_v_offset < 1.55 ? 1.55 : isns_v_offset > 1.75 ? 1.75 : isns_v_offset;
-	
-	isns_u = (temp_isns_u - isns_u_offset) / 20.0f / ISNS_UVW_R;
-	isns_v = (temp_isns_v - isns_v_offset) / 20.0f / ISNS_UVW_R;
-	
-	if(motor_direction) {
-		isns_v = (temp_isns_u - isns_u_offset) / 20.0f / ISNS_UVW_R;
-		isns_u = (temp_isns_v - isns_v_offset) / 20.0f / ISNS_UVW_R;
-	} else {
-		isns_u = (temp_isns_u - isns_u_offset) / 20.0f / ISNS_UVW_R;
-		isns_v = (temp_isns_v - isns_v_offset) / 20.0f / ISNS_UVW_R;
-	}
-	
-	isns_w = -(isns_u + isns_v);
-	
+	// TODO: Check adc index
+//	temp_isns_u = ((float)adc_buffer[4] * ADC_CONV_FACTOR);
+//	temp_isns_v = ((float)adc_buffer[1] * ADC_CONV_FACTOR);
+//
+//	isns_u_offset = ISNS_OFFSET_LPF * isns_u_offset + (1.0 - ISNS_OFFSET_LPF) * temp_isns_u;
+//	isns_v_offset = ISNS_OFFSET_LPF * isns_v_offset + (1.0 - ISNS_OFFSET_LPF) * temp_isns_v;
+//
+//	isns_u_offset = isns_u_offset < 1.55 ? 1.55 : isns_u_offset > 1.75 ? 1.75 : isns_u_offset;
+//	isns_v_offset = isns_v_offset < 1.55 ? 1.55 : isns_v_offset > 1.75 ? 1.75 : isns_v_offset;
+
+//	isns_u = (temp_isns_u - isns_u_offset) / 20.0f / ISNS_UVW_R;
+//	isns_v = (temp_isns_v - isns_v_offset) / 20.0f / ISNS_UVW_R;
+
+//	if(motor_direction) {
+//		isns_v = (temp_isns_u - isns_u_offset) / 20.0f / ISNS_UVW_R;
+//		isns_u = (temp_isns_v - isns_v_offset) / 20.0f / ISNS_UVW_R;
+//	} else {
+//		isns_u = (temp_isns_u - isns_u_offset) / 20.0f / ISNS_UVW_R;
+//		isns_v = (temp_isns_v - isns_v_offset) / 20.0f / ISNS_UVW_R;
+//	}
+
+//	isns_w = -(isns_u + isns_v);
+
 	// Clarke Transform
 	i_alpha = isns_u;
 	i_beta = _1_SQRT3 * isns_u + _2_SQRT3 * isns_v;
-	
+
 	// Park Transform
 	foc_iq = FOC_IQ_LPF*foc_iq + (1.0-FOC_IQ_LPF) * (-i_alpha* s + i_beta* c);
 	foc_id = FOC_IQ_LPF*foc_id + (1.0-FOC_IQ_LPF) * (i_alpha* c + i_beta* s);
@@ -317,168 +319,91 @@ void SensorlessStart(float p) {
 	comp_rshift = 0;
 	bemf_dir = 1;
 	
-	IEC5bits.PWM4IE = 0;
-	
-	TMR8 = 0;
-	PR8 = 3600;
-	T8CONbits.ON = 1;
+	//TODO: Sensorless implementation
 }
 
-void __ISR(_TIMER_8_VECTOR, IPL7SOFT) Sensorless_timer(void) {
-	IFS2bits.T8IF = 0;
-	
-	LATDINV |= 1 << 6;
-	PR8 = 0xFFFFFFFF;
-	T8CONbits.ON = 0;
-	
-//	if(sensorless_flag) {
-//		sensorless_flag = false;
-//		current_phase = (current_phase + 1) % 6;
-//		MotorPhase(current_phase, power);
-//		TMR8 = 0;
-//		PR8 = 3600;
-//	
-//	} else {
-//		IEC5bits.PWM4IE = 1;
-//		PR8 = 0xFFFFFFFF;
-//		TMR8 = 3600;
-//	}
+void TIM5_IRQHandler(void) {
+	if(TIM5->SR & 0x1) {
+		TIM5->SR &= ~(0x1);
+		
+		// TODO: Sensorless implementation
+
+		// LATDINV |= 1 << 6;
+		// PR8 = 0xFFFFFFFF;
+		// T8CONbits.ON = 0;
+		
+		// if(sensorless_flag) {
+		// 	sensorless_flag = false;
+		// 	current_phase = (current_phase + 1) % 6;
+		// 	MotorPhase(current_phase, power);
+		// 	TMR8 = 0;
+		// 	PR8 = 3600;
+		
+		// } else {
+		// 	IEC5bits.PWM4IE = 1;
+		// 	PR8 = 0xFFFFFFFF;
+		// 	TMR8 = 3600;
+		// }
+	}
 }
 
 volatile bool bemf_flag;
 volatile uint8_t pwm_odd = 0;
-void __ISR(_PWM4_VECTOR, IPL7AUTO) PWM_sync_timer(void) {
-//    PWMCON4bits.TRGIF = 0;
-	PWMCON4bits.PWMHIF = 0;
-	IFS5bits.PWM4IF = 0;
-	
-	if(pwm_odd == 1) {
-		comparator = (PORTG >> 6) & 0b111;
-		comp_u = (comparator >> 2) & 1;
-		comp_v = (comparator >> 1) & 1;
-		comp_w = comparator & 1;
 
-//		LATDINV |= 1 << 6;
-	
-//		TMR8 = 0;
-//		PR8 = 10;
-//		T8CONbits.ON = 1;
-	
-//		if(waveform_mode == MODE_SENSORLESS) {
-//			if(current_phase == 0) {
-//				if(comparator & 1) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 1) {
-//				if(!((comparator >> 1) & 1)) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 2) {
-//				if((comparator >> 2) & 1) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 3) {
-//				if(!(comparator & 1)) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 4) {
-//				if((comparator >> 1) & 1) {
-//					bemf_flag = true;
-//				}
-//			} else if(current_phase == 5) {
-//				if(!((comparator >> 2) & 1)) {
-//					bemf_flag = true;
-//				}
-//			}
-//			if(bemf_flag) {
-//				IEC5bits.PWM4IE = 0;
-//				sensorless_flag = true;
-//				phase_delay = (1.0f-LPF_PHASE)*phase_delay + LPF_PHASE*(float)TMR8;
-//				TMR8 = 0;
-//				PR8 = phase_delay;
-//			}
-//		}
-	}
-	
-	pwm_odd = (pwm_odd + 1) % 2;
-}
+void TIM6_IRQHandler(void) {
+	if(TIM6->SR & 0x1) {
+		TIM6->SR &= ~(0x1);
 
-void MotorPhase(signed char num, float val) {
-	val = val * (float)PWM_MAX;
-	num = num % 6;
-	if(num < 0) {
-		num += 6;
-	}
-	if(motor_direction) {
-		num = 5 - num;
-	}
-	switch(num) {
-		case 0:
-			// W - NC
-			PDC1 = 0;
-			PDC7 = PWM_MAX;
-			// V - V+
-			PDC2 = val;
-			PDC8 = val;
-			// U - GND
-			PDC3 = 0;
-			PDC9 = 0;
-			break;
-		case 1:
-			// W - V+
-			PDC1 = val;
-			PDC7 = val;
-			// V - NC
-			PDC2 = 0;
-			PDC8 = PWM_MAX;
-			// U - GND
-			PDC3 = 0;
-			PDC9 = 0;
-			break;
-		case 2:
-			// W - V+
-			PDC1 = val;
-			PDC7 = val;
-			// V - GND
-			PDC2 = 0;
-			PDC8 = 0;
-			// U - NC
-			PDC3 = 0;
-			PDC9 = PWM_MAX;
-			break;
-		case 3:
-			// W - NC
-			PDC1 = 0;
-			PDC7 = PWM_MAX;
-			// V - GND
-			PDC2 = 0;
-			PDC8 = 0;
-			// U - V+
-			PDC3 = val;
-			PDC9 = val;
-			break;
-		case 4:
-			// W - GND
-			PDC1 = 0;
-			PDC7 = 0;
-			// V - NC
-			PDC2 = 0;
-			PDC8 = PWM_MAX;
-			// U - V+
-			PDC3 = val;
-			PDC9 = val;
-			break;
-		case 5:
-			// W - GND
-			PDC1 = 0;
-			PDC7 = 0;
-			// V - V+
-			PDC2 = val;
-			PDC8 = val;
-			// U - NC
-			PDC3 = 0;
-			PDC9 = PWM_MAX;
-			break;       
+		// TODO: PWM synced comparator read
+	
+		if(pwm_odd == 1) {
+//			comparator = (PORTG >> 6) & 0b111;
+//			comp_u = (comparator >> 2) & 1;
+//			comp_v = (comparator >> 1) & 1;
+//			comp_w = comparator & 1;
+
+			// LATDINV |= 1 << 6;
+		
+			// TMR8 = 0;
+			// PR8 = 10;
+			// T8CONbits.ON = 1;
+		
+			// if(waveform_mode == MODE_SENSORLESS) {
+			// 	if(current_phase == 0) {
+			// 		if(comparator & 1) {
+			// 			bemf_flag = true;
+			// 		}
+			// 	} else if(current_phase == 1) {
+			// 		if(!((comparator >> 1) & 1)) {
+			// 			bemf_flag = true;
+			// 		}
+			// 	} else if(current_phase == 2) {
+			// 		if((comparator >> 2) & 1) {
+			// 			bemf_flag = true;
+			// 		}
+			// 	} else if(current_phase == 3) {
+			// 		if(!(comparator & 1)) {
+			// 			bemf_flag = true;
+			// 		}
+			// 	} else if(current_phase == 4) {
+			// 		if((comparator >> 1) & 1) {
+			// 			bemf_flag = true;
+			// 		}
+			// 	} else if(current_phase == 5) {
+			// 		if(!((comparator >> 2) & 1)) {
+			// 			bemf_flag = true;
+			// 		}
+			// 	}
+			// 	if(bemf_flag) {
+			// 		IEC5bits.PWM4IE = 0;
+			// 		sensorless_flag = true;
+			// 		phase_delay = (1.0f-LPF_PHASE)*phase_delay + LPF_PHASE*(float)TMR8;
+			// 		TMR8 = 0;
+			// 		PR8 = phase_delay;
+			// 	}
+			// }
+		}
+		pwm_odd = (pwm_odd + 1) % 2;
 	}
 }
 
@@ -498,6 +423,187 @@ bool bemf_phase(unsigned char phase) {
 		return !comp_u;
 	}
 	return false;
+}
+
+/*---------------------------------------------------------------------
+ |                            Motor PWM                               |
+ ----------------------------------------------------------------------*/
+
+void MotorPhase(int8_t num, float val) {
+	val = val * (float)PWM_MAX;
+	num = num % 6;
+	if(num < 0) {
+		num += 6;
+	}
+	if(motor_direction) {
+		num = 5 - num;
+	}
+	switch(num) {
+		case 0:
+			// U - V+
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->CCR_U = val;
+
+			// V - GND
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->CCR_V = 0;
+
+			// W - NC
+			MOTOR_TIM->CCER |= CCNP_W;
+			MOTOR_TIM->CCR_W = 0;
+
+			break;
+
+		case 1:
+			// U - V+
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->CCR_U = val;
+
+			// V - NC
+			MOTOR_TIM->CCER |= CCNP_V;
+			MOTOR_TIM->CCR_V = 0;
+
+			// W - GND
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->CCR_W = 0;
+
+			break;
+
+		case 2:
+			// U - NC
+			MOTOR_TIM->CCER |= CCNP_U;
+			MOTOR_TIM->CCR_U = 0;
+
+			// V - V+
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->CCR_V = val;
+
+			// W - GND
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->CCR_W = 0;
+
+			break;
+
+		case 3:
+			// U - GND
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->CCR_U = 0;
+
+			// V - V+
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->CCR_V = val;
+
+			// W - NC
+			MOTOR_TIM->CCER |= CCNP_W;
+			MOTOR_TIM->CCR_W = 0;
+
+			break;
+
+		case 4:
+			// U - GND
+			MOTOR_TIM->CCER &= ~CCNP_U;
+			MOTOR_TIM->CCR_U = 0;
+
+			// V - NC
+			MOTOR_TIM->CCER |= CCNP_V;
+			MOTOR_TIM->CCR_V = 0;
+
+			// W - V+
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->CCR_W = val;
+
+			break;
+
+		case 5:
+			// U - NC
+			MOTOR_TIM->CCER |= CCNP_U;
+			MOTOR_TIM->CCR_U = 0;
+
+			// V - GND
+			MOTOR_TIM->CCER &= ~CCNP_V;
+			MOTOR_TIM->CCR_V = 0;
+
+			// W - V+
+			MOTOR_TIM->CCER &= ~CCNP_W;
+			MOTOR_TIM->CCR_W = val;
+
+			break;
+
+		MOTOR_TIM->CCER |= (CCE_U | CCE_V | CCE_W); // Enable all high channels
+
+		// TODO: Check if this is needed
+		MOTOR_TIM->EGR |= TIM_EGR_COMG;
+	}
+}
+
+void MotorOff() {
+	SetPower(0);
+
+	// U - NC
+	MOTOR_TIM->CCER |= CCNP_U;
+	MOTOR_TIM->CCR_U = 0;
+
+	// V - NC
+	MOTOR_TIM->CCER |= CCNP_V;
+	MOTOR_TIM->CCR_V = 0;
+
+	// W - NC
+	MOTOR_TIM->CCER |= CCNP_W;
+	MOTOR_TIM->CCR_W = 0;
+
+	// TODO: Check if this is needed
+	MOTOR_TIM->EGR |= TIM_EGR_COMG;
+}
+
+void MotorShort(float p) {
+	// p = 0:		float all phases
+	// p = 1.0:		short all phases to ground
+	// 0 < p < 1:	pwm (short/float) all phases to ground
+	
+	p = fabs(p) * PWM_MAX;
+
+	MOTOR_TIM->CCER &= ~(CCE_U | CCE_V | CCE_W);
+
+	MOTOR_TIM->CCER |= CCNP_U;
+	MOTOR_TIM->CCER |= CCNP_V;
+	MOTOR_TIM->CCER |= CCNP_W;
+
+	MOTOR_TIM->CCR_U = p;
+	MOTOR_TIM->CCR_V = p;
+	MOTOR_TIM->CCR_W = p;
+
+	// TODO: Check if this is needed
+	MOTOR_TIM->EGR |= TIM_EGR_COMG;
+}
+
+void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
+	// Inputs shoule be within [0, 1.0]
+	
+	static float temp;
+
+	pwm_u = pwm_u > 1.0 ? 1.0: pwm_u < 0 ? 0: pwm_u;
+	pwm_v = pwm_v > 1.0 ? 1.0: pwm_v < 0 ? 0: pwm_v;
+	pwm_w = pwm_w > 1.0 ? 1.0: pwm_w < 0 ? 0: pwm_w;
+	
+	if(motor_direction) {
+		temp = pwm_u;
+		pwm_u = pwm_v;
+		pwm_v = temp;
+	}
+	
+	pwm_u *= PWM_MAX;
+	pwm_v *= PWM_MAX;
+	pwm_w *= PWM_MAX;
+
+	MOTOR_TIM->CCER |= (CCE_U | CCE_V | CCE_W); // Enable all high channels
+	MOTOR_TIM->CCER &= ~(CCNP_U | CCNP_V | CCNP_W); // Normal polarity for low channels
+
+	MOTOR_TIM->CCR_U = pwm_u;
+	MOTOR_TIM->CCR_V = pwm_v;
+	MOTOR_TIM->CCR_W = pwm_w;
+
+	// TODO: Check if this is needed
+	MOTOR_TIM->EGR |= TIM_EGR_COMG;
 }
 
 /*---------------------------------------------------------------------
@@ -571,8 +677,7 @@ inline float GetPower() {
 }
 
 inline void ResetPosition() {
-	unsigned long int t = VEL1CNT;
-	INDX1CNT = 0;
+	// TODO: ResetPosition()
 	position = 0.0;
 }
 
@@ -590,80 +695,6 @@ inline float normalizeAngle(float angle) {
 		angle += 360;
 	}
 	return angle;
-}
-
-void MotorOff() {
-	SetPower(0);
-	// A - NC
-	PDC1 = 0;
-	PDC7 = PWM_MAX;
-	// B - NC
-	PDC2 = 0;
-	PDC8 = PWM_MAX;
-	// C - NC
-	PDC3 = 0;
-	PDC9 = PWM_MAX;
-}
-
-void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
-	// Inputs shoule be within [0, 1.0]
-	
-	static float temp;
-	
-	if(motor_direction) {
-		temp = pwm_u;
-		pwm_u = pwm_v;
-		pwm_v = temp;
-	}
-	
-	pwm_u *= PWM_MAX;
-	pwm_v *= PWM_MAX;
-	pwm_w *= PWM_MAX;
-	
-	pwm_u = pwm_u > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_u < 0 ? 0: pwm_u;
-	pwm_v = pwm_v > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_v < 0 ? 0: pwm_v;
-	pwm_w = pwm_w > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_w < 0 ? 0: pwm_w;
-
-	if(pwm_u) {
-		PDC3 = pwm_u;
-		PDC9 = pwm_u + DEAD_TIME;
-	} else {
-		PDC3 = pwm_u;
-		PDC9 = pwm_u;
-	}
-
-	if(pwm_v) {
-		PDC2 = pwm_v;
-		PDC8 = pwm_v + DEAD_TIME;
-	} else {
-		PDC2 = pwm_v;
-		PDC8 = pwm_v ;
-	}
-
-	if(pwm_w) {
-		PDC1 = pwm_w;
-		PDC7 = pwm_w + DEAD_TIME;
-	} else {
-		PDC1 = pwm_w;
-		PDC7 = pwm_w;
-	}
-}
-
-void MotorShort(float p) {
-	// p = 0:		float all phases
-	// p = 1.0:		short all phases to ground
-	// 0 < p < 1:	pwm (short/float) all phases to ground
-	
-	p = (1.0 - fabs(p)) * PWM_MAX;
-
-	PDC1 = 0;
-	PDC7 = p;
-
-	PDC2 = 0;
-	PDC8 = p;
-
-	PDC3 = 0;
-	PDC9 = p;
 }
 
 void init_encoder_lut() {

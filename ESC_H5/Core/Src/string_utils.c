@@ -230,7 +230,7 @@ void str_toLower(char *str) {
 unsigned int str_removeChar(char *str, char ch) {
 	unsigned int i, j;
 	unsigned int cnt = 0;
-	for(i = 0; i < str[i] != '\0'; i++) {
+	for(i = 0; str[i] != '\0'; i++) {
 		if(str[i] == ch) {
 			cnt++;
 			for(j = i; str[j] != '\0'; j++) {
@@ -241,12 +241,12 @@ unsigned int str_removeChar(char *str, char ch) {
 	return cnt;
 }
 
-void str_concat(char *dest, char *str_a, char*str_b) {
+void str_concat(char *dest, char *str_a, char *str_b) {
 	unsigned int i, j;
 	for(i = 0; str_a[i] != '\0'; i++) {
 		dest[i] = str_a[i];
 	}
-	for(j = 0; i < str_b[j] != '\0'; j++) {
+	for(j = 0; str_b[j] != '\0'; j++) {
 		dest[i+j] = str_b[j];
 	}
 	dest[i+j] = '\0';
@@ -361,7 +361,7 @@ void intToStr(char *str, signed int num) {
 }
 
 void hexToStr(char *str, signed int num) {
-	signed int i, no_digits = 2;
+	signed int i;
 
 	*str++ = '0';
 	*str++ = 'x';

@@ -146,6 +146,14 @@ SECTIONS
 
   } >RAM AT> FLASH
 
+  /* ADC DMA */
+  .dma_buffer (NOLOAD) :
+  {
+    . = ALIGN(32);
+    *(.noncacheable_buffer)
+    . = ALIGN(32);
+  } > RAM
+
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
   .bss :

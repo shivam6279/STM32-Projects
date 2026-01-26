@@ -3,3 +3,13 @@
 desktop.ini
 **/desktop.ini
 *.xml
+*.cyclo
+*.o
+*.d
+*.su
+*.list
+*.mk
+*.map
+*.bak
+*.map
+*.list

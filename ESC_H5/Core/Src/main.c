@@ -1,55 +1,156 @@
 #include "main.h"
 #include "BLDC.h"
+#include "PWM.h"
+#include "ADC.h"
 #include "diags.h"
+#include "USART.h"
+#include "tones.h"
+#include "EEPROM.h"
 
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
+#include <stdio.h>
+
+DMA_NodeTypeDef Node_GPDMA1_Channel0;
+DMA_QListTypeDef List_GPDMA1_Channel0;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
+DMA_NodeTypeDef Node_GPDMA1_Channel1;
+DMA_QListTypeDef List_GPDMA1_Channel1;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
 
 DCACHE_HandleTypeDef hdcache1;
 
 FDCAN_HandleTypeDef hfdcan1;
 
 I2C_HandleTypeDef hi2c1;
-
-TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim15;
 
-stUART_HandleTypeDef huart1;
+uint8_t board_id = 0;
 
 void SystemClock_Config(void);
+static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_GPDMA1_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_ADC2_Init(void);
 static void MX_DCACHE1_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_ICACHE_Init(void);
-static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_USART1_UART_Init(void);
-static void MX_TIM15_Init(void);
+static void TIM3_init(float);
+static void TIM4_init(float);
+static void TIM5_init(float);
 
-int main(void) 
-{	HAL_Init();
+/*
+Timers
+TIM1 - Motor PWM
+TIM2 - Encoder
+TIM3 - FOC
+TIM4 - motor angle/RPM PID
+TIM5 - Sensorless
+TIM6 - PWM Sync
+TIM7 -
+TIM8 -
+TIM12 - Tones
+TIM13 -
+TIM14 -
+TIM15 - Servo PWM
+TIM16 -
+TIM17 -
+*/
+
+int main(void) {
+	HAL_Init();
+	MPU_Config();
 	SystemClock_Config();
 	MX_GPIO_Init();
 	MX_GPDMA1_Init();
-	MX_ADC1_Init();
-	MX_ADC2_Init();
+	ADCInit();
 	MX_DCACHE1_Init();
 	MX_FDCAN1_Init();
 	MX_I2C1_Init();
 	MX_ICACHE_Init();
-	MX_TIM1_Init();
+	MX_TIM1_Init(98000); // 98 Khz pwm freq
 	MX_TIM2_Init();
 	MX_USART1_UART_Init();
 	MX_TIM15_Init();
 
+	TIM3_init(25000);
+	TIM4_init(1000);
+	TIM5_init(5000);
+
+	ee_init(&eeprom_data, sizeof(eeprom_data));
+	ee_read();
+
+	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
+
+
+
 	while (1) {
+		LED0_ON();
+		LED1_OFF();
+		HAL_Delay(500);
+		LED0_OFF();
+		LED1_ON();
+		HAL_Delay(500);
 	}
+}
+
+void TIM3_init(float f) {
+	RCC->APB1LENR |= 1 << 1;
+
+	TIM3->CR1 = 0;
+	TIM3->CR2 = 0;
+
+	TIM3->PSC = f/25; // 10 MHz after prescaler
+	TIM3->ARR = (float)(10000000.0/f);
+
+	TIM3->CNT = 0;
+
+	TIM3->EGR |= 1;
+
+	TIM3->DIER |= 1;
+
+	NVIC_SetPriority(TIM3_IRQn, 0);
+	TIM3->SR &= ~(0x1);
+	NVIC_EnableIRQ(TIM3_IRQn);
+}
+
+void TIM4_init(float f) {
+	RCC->APB1LENR |= 1 << 2;
+
+	TIM4->CR1 = 0;
+	TIM4->CR2 = 0;
+
+	TIM4->PSC = f/25; // 10 MHz after prescaler
+	TIM4->ARR = (float)(10000000.0/f);
+
+	TIM4->CNT = 0;
+
+	TIM4->EGR |= 1;
+
+	TIM4->DIER |= 1;
+
+	NVIC_SetPriority(TIM4_IRQn, 1);
+	TIM4->SR &= ~(0x1);
+	NVIC_EnableIRQ(TIM4_IRQn);
+}
+
+void TIM5_init(float f) {
+	RCC->APB1LENR |= 1 << 3;
+
+	TIM5->CR1 = 0;
+	TIM5->CR2 = 0;
+
+	TIM5->PSC = f/25; // 10 MHz after prescaler
+	TIM5->ARR = (float)(10000000.0/f);
+
+	TIM5->CNT = 0;
+
+	TIM5->EGR |= 1;
+
+	TIM5->DIER |= 1;
+
+	NVIC_SetPriority(TIM5_IRQn, 2);
+	TIM5->SR &= ~(0x1);
+	NVIC_EnableIRQ(TIM5_IRQn);
 }
 
 void SystemClock_Config(void) {
@@ -90,83 +191,37 @@ void SystemClock_Config(void) {
 	}
 }
 
-static void MX_ADC1_Init(void) {
-	ADC_ChannelConfTypeDef sConfig = {0};
-
-	hadc1.Instance = ADC1;
-	hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
-	hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-	hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-	hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-	hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
-	hadc1.Init.LowPowerAutoWait = DISABLE;
-	hadc1.Init.ContinuousConvMode = ENABLE;
-	hadc1.Init.NbrOfConversion = 1;
-	hadc1.Init.DiscontinuousConvMode = DISABLE;
-	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-	hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-	hadc1.Init.DMAContinuousRequests = ENABLE;
-	hadc1.Init.SamplingMode = ADC_SAMPLING_MODE_NORMAL;
-	hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-	hadc1.Init.OversamplingMode = DISABLE;
-	if (HAL_ADC_Init(&hadc1) != HAL_OK) {
-		Error_Handler();
-	}
-
-	sConfig.Channel = ADC_CHANNEL_1;
-	sConfig.Rank = ADC_REGULAR_RANK_1;
-	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
-	sConfig.SingleDiff = ADC_SINGLE_ENDED;
-	sConfig.OffsetNumber = ADC_OFFSET_NONE;
-	sConfig.Offset = 0;
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-		Error_Handler();
-	}
-}
-
-static void MX_ADC2_Init(void) {
-
-	ADC_ChannelConfTypeDef sConfig = {0};
-
-	hadc2.Instance = ADC2;
-	hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
-	hadc2.Init.Resolution = ADC_RESOLUTION_12B;
-	hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-	hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
-	hadc2.Init.EOCSelection = ADC_EOC_SEQ_CONV;
-	hadc2.Init.LowPowerAutoWait = DISABLE;
-	hadc2.Init.ContinuousConvMode = ENABLE;
-	hadc2.Init.NbrOfConversion = 1;
-	hadc2.Init.DiscontinuousConvMode = DISABLE;
-	hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-	hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-	hadc2.Init.DMAContinuousRequests = ENABLE;
-	hadc2.Init.SamplingMode = ADC_SAMPLING_MODE_NORMAL;
-	hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-	hadc2.Init.OversamplingMode = DISABLE;
-	if (HAL_ADC_Init(&hadc2) != HAL_OK) {
-		Error_Handler();
-	}
-
-	/** Configure Regular Channel
-	*/
-	sConfig.Channel = ADC_CHANNEL_8;
-	sConfig.Rank = ADC_REGULAR_RANK_1;
-	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
-	sConfig.SingleDiff = ADC_SINGLE_ENDED;
-	sConfig.OffsetNumber = ADC_OFFSET_NONE;
-	sConfig.Offset = 0;
-	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
-		Error_Handler();
-	}
-}
-
 static void MX_DCACHE1_Init(void) {
 	hdcache1.Instance = DCACHE1;
 	hdcache1.Init.ReadBurstType = DCACHE_READ_BURST_WRAP;
 	if (HAL_DCACHE_Init(&hdcache1) != HAL_OK) {
 		Error_Handler();
 	}
+}
+
+void MPU_Config(void) {
+	MPU_Region_InitTypeDef MPU_InitStruct = {0};
+	MPU_Attributes_InitTypeDef MPU_AttributesInit = {0};
+
+	HAL_MPU_Disable();
+
+	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+	MPU_InitStruct.Number = MPU_REGION_NUMBER0;
+	MPU_InitStruct.BaseAddress = 0x24000000;
+	MPU_InitStruct.LimitAddress = 0x24000040;
+	MPU_InitStruct.AttributesIndex = MPU_ATTRIBUTES_NUMBER0;
+	MPU_InitStruct.AccessPermission = MPU_REGION_ALL_RW;
+	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+	MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+
+	HAL_MPU_ConfigRegion(&MPU_InitStruct);
+	MPU_AttributesInit.Number = MPU_REGION_NUMBER0;
+	MPU_AttributesInit.Attributes = MPU_NOT_CACHEABLE;
+
+	HAL_MPU_ConfigMemoryAttributes(&MPU_AttributesInit);
+	/* Enables the MPU */
+	HAL_MPU_Enable(MPU_HFNMI_PRIVDEF);
+
 }
 
 static void MX_FDCAN1_Init(void) {
@@ -198,6 +253,8 @@ static void MX_GPDMA1_Init(void) {
 
 	HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+	HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
 }
 
 static void MX_I2C1_Init(void) {
@@ -243,67 +300,6 @@ static void MX_ICACHE_Init(void) {
 	}
 }
 
-static void MX_TIM1_Init(void) {
-	TIM_MasterConfigTypeDef sMasterConfig = {0};
-	TIM_OC_InitTypeDef sConfigOC = {0};
-	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
-
-	htim1.Instance = TIM1;
-	htim1.Init.Prescaler = 2551;
-	htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim1.Init.Period = 65535;
-	htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	htim1.Init.RepetitionCounter = 0;
-	htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-	if (HAL_TIM_PWM_Init(&htim1) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_TIM_OC_Init(&htim1) != HAL_OK) {
-		Error_Handler();
-	}
-	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-	sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
-	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-	if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK) {
-		Error_Handler();
-	}
-	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = 0;
-	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-	sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-	if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) {
-		Error_Handler();
-	}
-	sConfigOC.OCMode = TIM_OCMODE_TIMING;
-	if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK) {
-		Error_Handler();
-	}
-	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-	sBreakDeadTimeConfig.DeadTime = 0;
-	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-	sBreakDeadTimeConfig.BreakFilter = 0;
-	sBreakDeadTimeConfig.BreakAFMode = TIM_BREAK_AFMODE_INPUT;
-	sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
-	sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-	sBreakDeadTimeConfig.Break2Filter = 0;
-	sBreakDeadTimeConfig.Break2AFMode = TIM_BREAK_AFMODE_INPUT;
-	sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-	if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK) {
-		Error_Handler();
-	}
-	HAL_TIM_MspPostInit(&htim1);
-
-}
-
 static void MX_TIM2_Init(void) {
 	TIM_Encoder_InitTypeDef sConfig = {0};
 	TIM_MasterConfigTypeDef sMasterConfig = {0};
@@ -339,77 +335,6 @@ static void MX_TIM2_Init(void) {
 	sEncoderIndexConfig.Position = TIM_ENCODERINDEX_POSITION_00;
 	sEncoderIndexConfig.Direction = TIM_ENCODERINDEX_DIRECTION_UP_DOWN;
 	if (HAL_TIMEx_ConfigEncoderIndex(&htim2, &sEncoderIndexConfig) != HAL_OK) {
-		Error_Handler();
-	}
-}
-
-static void MX_TIM15_Init(void) {
-	TIM_MasterConfigTypeDef sMasterConfig = {0};
-	TIM_OC_InitTypeDef sConfigOC = {0};
-	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
-
-	htim15.Instance = TIM15;
-	htim15.Init.Prescaler = 0;
-	htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim15.Init.Period = 65535;
-	htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	htim15.Init.RepetitionCounter = 0;
-	htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-	if (HAL_TIM_PWM_Init(&htim15) != HAL_OK) {
-		Error_Handler();
-	}
-	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-	if (HAL_TIMEx_MasterConfigSynchronization(&htim15, &sMasterConfig) != HAL_OK) {
-		Error_Handler();
-	}
-	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = 0;
-	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-	sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-	if (HAL_TIM_PWM_ConfigChannel(&htim15, &sConfigOC, TIM_CHANNEL_1) != HAL_OK) {
-		Error_Handler();
-	}
-	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-	sBreakDeadTimeConfig.DeadTime = 0;
-	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-	sBreakDeadTimeConfig.BreakFilter = 0;
-	sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-	if (HAL_TIMEx_ConfigBreakDeadTime(&htim15, &sBreakDeadTimeConfig) != HAL_OK) {
-		Error_Handler();
-	}
-	HAL_TIM_MspPostInit(&htim15);
-
-}
-
-static void MX_USART1_UART_Init(void) {
-	huart1.Instance = USART1;
-	huart1.Init.BaudRate = 115200;
-	huart1.Init.WordLength = UART_WORDLENGTH_8B;
-	huart1.Init.StopBits = UART_STOPBITS_1;
-	huart1.Init.Parity = UART_PARITY_NONE;
-	huart1.Init.Mode = UART_MODE_TX_RX;
-	huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-	huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-	huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-	huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-	if (HAL_UART_Init(&huart1) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK) {
 		Error_Handler();
 	}
 }

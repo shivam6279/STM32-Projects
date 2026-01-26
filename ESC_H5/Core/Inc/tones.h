@@ -1,7 +1,7 @@
 #ifndef _TONES_H
 #define _TONES_H
 
-#include <stdbool.h>
+#include "main.h"
 
 #define NOTE_C0		16.351597831287414667365624595207
 #define NOTE_CS0	17.323914436054506015549145850076
@@ -130,6 +130,8 @@ typedef enum {
 	FOC
 } tone_square_phase_type;
 
+extern TIM_HandleTypeDef htim12;
+
 extern tone_waveform_type tone_waveform;
 extern tone_square_phase_type tone_square_phase;
 
@@ -140,6 +142,6 @@ extern void PlayTone(float);
 extern void StopTone();
 extern void PlayNote(const char*);
 extern void PlayWav();
-extern bool PlayRTTLL(const char*);
+extern uint8_t PlayRTTLL(const char*);
 
 #endif
