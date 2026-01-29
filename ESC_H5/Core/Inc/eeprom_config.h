@@ -11,12 +11,12 @@
 #define EE_PAGE_SECTOR_SIZE_128K          (1024 * 128)
 #define EE_PAGE_SECTOR_SIZE_256K          (1024 * 256)
 
-#define EE_MANUAL_CONFIG                  0
+#define EE_MANUAL_CONFIG                  1
 #if (EE_MANUAL_CONFIG == 1)
 #define EE_SELECTED_PAGE_SECTOR_NUMBER    16
-#define EE_SELECTED_PAGE_SECTOR_SIZE      EE_PAGE_SECTOR_SIZE_1K
+#define EE_SELECTED_PAGE_SECTOR_SIZE      EE_PAGE_SECTOR_SIZE_8K
 #define EE_SELECTED_BANK                  FLASH_BANK_1
-#define EE_SELECTED_ADDRESS               0x08000000
+#define EE_SELECTED_ADDRESS               0x09000000
 #endif
 
 #endif

@@ -55,9 +55,9 @@ volatile float position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.0, power_lpf 
 float motor_polarity = 0;
 float motor_zero_angle = 0.0;
 
-void TIM3_IRQHandler(void) {
-	if(TIM3->SR & 0x1) {
-		TIM3->SR &= ~(0x1);
+void TIM4_IRQHandler(void) {
+	if(TIM4->SR & 0x1) {
+		TIM4->SR &= ~(0x1);
 		
 		// LED0_ON();
 		
@@ -103,14 +103,14 @@ void TIM3_IRQHandler(void) {
 #define RPM_LPF 0.95
 #define RPM_DER_LPF 0.9
 
-void TIM4_IRQHandler(void) {
+void TIM5_IRQHandler(void) {
 	static int16_t cnt = 0, p_cnt;
 	static float p_rpm = 0.0;
 	static long int ind_cnt;
 	static float net_position;
 
-	if(TIM4->SR & 0x1) {
-		TIM4->SR &= ~(0x1);
+	if(TIM5->SR & 0x1) {
+		TIM5->SR &= ~(0x1);
 		
 		p_cnt = cnt;
 		cnt = ENC_TIM->CNT;
@@ -322,9 +322,9 @@ void SensorlessStart(float p) {
 	//TODO: Sensorless implementation
 }
 
-void TIM5_IRQHandler(void) {
-	if(TIM5->SR & 0x1) {
-		TIM5->SR &= ~(0x1);
+void TIM6_IRQHandler(void) {
+	if(TIM6->SR & 0x1) {
+		TIM6->SR &= ~(0x1);
 		
 		// TODO: Sensorless implementation
 
@@ -350,9 +350,9 @@ void TIM5_IRQHandler(void) {
 volatile bool bemf_flag;
 volatile uint8_t pwm_odd = 0;
 
-void TIM6_IRQHandler(void) {
-	if(TIM6->SR & 0x1) {
-		TIM6->SR &= ~(0x1);
+void TIM7_IRQHandler(void) {
+	if(TIM7->SR & 0x1) {
+		TIM7->SR &= ~(0x1);
 
 		// TODO: PWM synced comparator read
 	

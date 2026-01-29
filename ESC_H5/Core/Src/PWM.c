@@ -3,6 +3,7 @@
 #include <inttypes.h>
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim15;
 
 uint16_t PWM_MAX;
@@ -95,6 +96,45 @@ void MX_TIM1_Init(float freq) {
 	HAL_TIM_Base_Start(&htim1);
 }
 
+// Brake Motor Power
+void MX_TIM3_Init(void) {
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
+	TIM_OC_InitTypeDef sConfigOC = {0};
+
+	htim3.Instance = TIM3;
+	htim3.Init.Prescaler = 9;
+	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim3.Init.Period = 999;
+	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_PWM_Init(&htim3) != HAL_OK) {
+			Error_Handler();
+	}
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK) {
+			Error_Handler();
+	}
+	sConfigOC.OCMode = TIM_OCMODE_PWM1;
+	sConfigOC.Pulse = 0;
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+	if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK) {
+			Error_Handler();
+	}
+	if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) {
+			Error_Handler();
+	}
+
+	HAL_TIM_MspPostInit(&htim3);
+
+	TIM3->CCR1 = 0;
+	TIM3->CCR2 = 0;
+
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+}
+
 // Servo - 50Hz
 void MX_TIM15_Init(void) {
 
@@ -105,7 +145,7 @@ void MX_TIM15_Init(void) {
 	htim15.Instance = TIM15;
 	htim15.Init.Prescaler = 250 - 1;
 	htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim15.Init.Period = 20000;
+	htim15.Init.Period = 19999;
 	htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim15.Init.RepetitionCounter = 0;
 	htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -139,6 +179,9 @@ void MX_TIM15_Init(void) {
 		Error_Handler();
 	}
 	HAL_TIM_MspPostInit(&htim15);
+
+	TIM15->CCR1 = 1500; // 1.5ms 0 degree servo position
+	HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
 
 }
 

@@ -1,5 +1,6 @@
 #include "ADC.h"
 #include "main.h"
+#include <stdio.h>
 
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
@@ -57,16 +58,16 @@ void ADCInit() {
 	hadc1.Init.SamplingMode = ADC_SAMPLING_MODE_NORMAL;
 	hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
 	hadc1.Init.OversamplingMode = DISABLE;
-	if (HAL_ADC_Init(&hadc1) != HAL_OK)
-	{
+	if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+		printf("a\n");
 		Error_Handler();
 	}
 
 	multimode.Mode = ADC_DUALMODE_REGSIMULT_INJECSIMULT;
 	multimode.DMAAccessMode = ADC_DMAACCESSMODE_12_10_BITS;
 	multimode.TwoSamplingDelay = ADC_TWOSAMPLINGDELAY_1CYCLE;
-	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
-	{
+	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK) {
+		printf("b\n");
 		Error_Handler();
 	}
 
@@ -78,8 +79,8 @@ void ADCInit() {
 	sConfig.SingleDiff = ADC_SINGLE_ENDED;
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-	{
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+		printf("c\n");
 		Error_Handler();
 	}
 
@@ -87,13 +88,14 @@ void ADCInit() {
 	sConfig.Rank = ADC_REGULAR_RANK_2;
 	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
 	{
+		printf("d\n");
 		Error_Handler();
 	}
 
 	sConfig.Channel = ADC_CHANNEL_15;
 	sConfig.Rank = ADC_REGULAR_RANK_3;
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-	{
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+		printf("e\n");
 		Error_Handler();
 	}
 
@@ -110,8 +112,8 @@ void ADCInit() {
 	sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJEC_T1_TRGO;
 	sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONV_EDGE_RISING;
 	sConfigInjected.InjecOversamplingMode = DISABLE;
-	if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
-	{
+	if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK) {
+		printf("f\n");
 		Error_Handler();
 	}
 
@@ -134,16 +136,16 @@ void ADCInit() {
 	hadc2.Init.SamplingMode = ADC_SAMPLING_MODE_NORMAL;
 	hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
 	hadc2.Init.OversamplingMode = DISABLE;
-	if (HAL_ADC_Init(&hadc2) != HAL_OK)
-	{
+	if (HAL_ADC_Init(&hadc2) != HAL_OK) {
+		printf("g\n");
 		Error_Handler();
 	}
 
 	multimode.Mode = ADC_DUALMODE_REGSIMULT_INJECSIMULT;
 	multimode.DMAAccessMode = ADC_DMAACCESSMODE_12_10_BITS;
 	multimode.TwoSamplingDelay = ADC_TWOSAMPLINGDELAY_1CYCLE;
-	if (HAL_ADCEx_MultiModeConfigChannel(&hadc2, &multimode) != HAL_OK)
-	{
+	if (HAL_ADCEx_MultiModeConfigChannel(&hadc2, &multimode) != HAL_OK) {
+		printf("h\n");
 		Error_Handler();
 	}
 
@@ -155,22 +157,22 @@ void ADCInit() {
 	sConfig.SingleDiff = ADC_SINGLE_ENDED;
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;
-	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-	{
+	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
+		printf("i\n");
 		Error_Handler();
 	}
 
 	sConfig.Channel = ADC_CHANNEL_11;
 	sConfig.Rank = ADC_REGULAR_RANK_2;
-	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-	{
+	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
+		printf("j\n");
 		Error_Handler();
 	}
 
 	sConfig.Channel = ADC_CHANNEL_13;
 	sConfig.Rank = ADC_REGULAR_RANK_3;
-	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-	{
+	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
+		printf("k\n");
 		Error_Handler();
 	}
 
@@ -185,16 +187,16 @@ void ADCInit() {
 	sConfigInjected.AutoInjectedConv = DISABLE;
 	sConfigInjected.QueueInjectedContext = DISABLE;
 	sConfigInjected.InjecOversamplingMode = DISABLE;
-	if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
-	{
+	if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK) {
+		printf("l\n");
 		Error_Handler();
 	}
 
 	// Start DMA reads
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc1_buffer, 3);
-	HAL_ADC_Start_DMA(&hadc2, (uint32_t*)adc2_buffer, 3);
+//	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc1_buffer, 3);
+//	HAL_ADC_Start_DMA(&hadc2, (uint32_t*)adc2_buffer, 3);
 
 	// Start injected reads
-	HAL_ADCEx_InjectedStart_IT(&hadc2);
-	HAL_ADCEx_InjectedStart_IT(&hadc1);
+//	HAL_ADCEx_InjectedStart_IT(&hadc2);
+//	HAL_ADCEx_InjectedStart_IT(&hadc1);
 }

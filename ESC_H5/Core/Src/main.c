@@ -34,19 +34,19 @@ static void MX_FDCAN1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_TIM2_Init(void);
-static void TIM3_init(float);
 static void TIM4_init(float);
 static void TIM5_init(float);
+static void TIM6_init(float);
 
 /*
 Timers
 TIM1 - Motor PWM
 TIM2 - Encoder
-TIM3 - FOC
-TIM4 - motor angle/RPM PID
-TIM5 - Sensorless
-TIM6 - PWM Sync
-TIM7 -
+TIM3 - Brake Motor
+TIM4 - FOC
+TIM5 - motor angle/RPM PID
+TIM6 - Sensorless
+TIM7 - PWM Sync
 TIM8 -
 TIM12 - Tones
 TIM13 -
@@ -61,56 +61,51 @@ int main(void) {
 	MPU_Config();
 	SystemClock_Config();
 	MX_GPIO_Init();
+
+	MX_USART1_UART_Init();
+
 	MX_GPDMA1_Init();
-	ADCInit();
+//	ADCInit();
 	MX_DCACHE1_Init();
 	MX_FDCAN1_Init();
 	MX_I2C1_Init();
 	MX_ICACHE_Init();
 	MX_TIM1_Init(98000); // 98 Khz pwm freq
 	MX_TIM2_Init();
-	MX_USART1_UART_Init();
+	MX_TIM3_Init();
 	MX_TIM15_Init();
 
-	TIM3_init(25000);
-	TIM4_init(1000);
-	TIM5_init(5000);
+	TIM4_init(25000);
+	TIM5_init(1000);
+	TIM6_init(5000);
 
-	ee_init(&eeprom_data, sizeof(eeprom_data));
-	ee_read();
+	ee_init(&eeprom_data, sizeof(eeprom_data_t));
+
+//	ee_format();
+
+	eeprom_data.zero_offset = 33.5;
+//	ee_write();
+//	eeprom_data.zero_offset = 0;
+//	ee_read();
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 
-
+	TIM3->CCR1 = 1000;
+	TIM3->CCR2 = 0;
 
 	while (1) {
 		LED0_ON();
 		LED1_OFF();
-		HAL_Delay(500);
+		HAL_Delay(250);
 		LED0_OFF();
 		LED1_ON();
-		HAL_Delay(500);
+		HAL_Delay(250);
+		// printf("%f, %d\n", eeprom_data.zero_offset, ee_capacity());
+		if(rx_rdy) {
+			printf("%s", rx_buffer);
+			rx_rdy = 0;
+		}
 	}
-}
-
-void TIM3_init(float f) {
-	RCC->APB1LENR |= 1 << 1;
-
-	TIM3->CR1 = 0;
-	TIM3->CR2 = 0;
-
-	TIM3->PSC = f/25; // 10 MHz after prescaler
-	TIM3->ARR = (float)(10000000.0/f);
-
-	TIM3->CNT = 0;
-
-	TIM3->EGR |= 1;
-
-	TIM3->DIER |= 1;
-
-	NVIC_SetPriority(TIM3_IRQn, 0);
-	TIM3->SR &= ~(0x1);
-	NVIC_EnableIRQ(TIM3_IRQn);
 }
 
 void TIM4_init(float f) {
@@ -153,42 +148,72 @@ void TIM5_init(float f) {
 	NVIC_EnableIRQ(TIM5_IRQn);
 }
 
-void SystemClock_Config(void) {
-	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+void TIM6_init(float f) {
+	RCC->APB1LENR |= 1 << 4;
 
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+	TIM6->CR1 = 0;
+	TIM6->CR2 = 0;
 
-	while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+	TIM6->PSC = f/25; // 10 MHz after prescaler
+	TIM6->ARR = (float)(10000000.0/f);
 
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-	RCC_OscInitStruct.PLL.PLLSource = RCC_PLL1_SOURCE_HSE
-;	RCC_OscInitStruct.PLL.PLLM = 6;
-	RCC_OscInitStruct.PLL.PLLN = 125;
-	RCC_OscInitStruct.PLL.PLLP = 2;
-	RCC_OscInitStruct.PLL.PLLQ = 2;
-	RCC_OscInitStruct.PLL.PLLR = 2;
-	RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1_VCIRANGE_2;
-	RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1_VCORANGE_WIDE;
-	RCC_OscInitStruct.PLL.PLLFRACN = 0;
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-		Error_Handler();
-	}
+	TIM6->CNT = 0;
 
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-															|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-															|RCC_CLOCKTYPE_PCLK3;
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-	RCC_ClkInitStruct.APB3CLKDivider = RCC_HCLK_DIV1;
+	TIM6->EGR |= 1;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
-		Error_Handler();
-	}
+	TIM6->DIER |= 1;
+
+	NVIC_SetPriority(TIM6_IRQn, 0);
+	TIM6->SR &= ~(0x1);
+	NVIC_EnableIRQ(TIM6_IRQn);
+}
+
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  /** Configure the main internal regulator output voltage
+  */
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+
+  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLL1_SOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 6;
+  RCC_OscInitStruct.PLL.PLLN = 125;
+  RCC_OscInitStruct.PLL.PLLP = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLR = 2;
+  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1_VCIRANGE_2;
+  RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1_VCORANGE_WIDE;
+  RCC_OscInitStruct.PLL.PLLFRACN = 0;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
+                              |RCC_CLOCKTYPE_PCLK3;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB3CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 static void MX_DCACHE1_Init(void) {
@@ -388,9 +413,15 @@ static void MX_GPIO_Init(void) {
 }
 
 void Error_Handler(void) {
-	__disable_irq();
+//	__disable_irq();
 	while (1)
 	{
+		LED0_ON();
+		LED1_OFF();
+		HAL_Delay(100);
+		LED0_OFF();
+		LED1_ON();
+		HAL_Delay(100);
 	}
 }
 
