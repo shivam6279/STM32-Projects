@@ -10,19 +10,18 @@ uint16_t PWM_MAX;
 
 // BLDC Half bridges
 void MX_TIM1_Init(float freq) {
-	float pclk = 25000000.0;
+	float pclk = 250000000.0;
 	float prescaler = 1.0;
 	float period;
 
-	period = pclk / freq / prescaler;
+	period = pclk / freq / prescaler / 2;
 
 	TIM_MasterConfigTypeDef sMasterConfig = {0};
 	TIM_OC_InitTypeDef sConfigOC = {0};
 	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
-
 	htim1.Instance = TIM1;
 	htim1.Init.Prescaler = (uint16_t)prescaler - 1;
-	htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
 	htim1.Init.Period = (uint16_t)period;
 	htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim1.Init.RepetitionCounter = 0;
@@ -33,7 +32,7 @@ void MX_TIM1_Init(float freq) {
 	if (HAL_TIM_OC_Init(&htim1) != HAL_OK) {
 		Error_Handler();
 	}
-	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC4REF;
 	sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
 	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
 	if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK) {
@@ -52,14 +51,18 @@ void MX_TIM1_Init(float freq) {
 	if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) {
 		Error_Handler();
 	}
-	sConfigOC.OCMode = TIM_OCMODE_TIMING;
-	if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK) {
+	if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK) {
+		Error_Handler();
+	}
+	sConfigOC.OCMode = TIM_OCMODE_PWM1;
+	sConfigOC.Pulse = 1;
+	if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK) {
 		Error_Handler();
 	}
 	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
 	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
 	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-	sBreakDeadTimeConfig.DeadTime = 0;
+	sBreakDeadTimeConfig.DeadTime = 100;
 	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
 	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
 	sBreakDeadTimeConfig.BreakFilter = 0;
@@ -89,9 +92,15 @@ void MX_TIM1_Init(float freq) {
 	TIM1->CCR2 = 0;
 	TIM1->CCR3 = 0;
 
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+
+	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
 
 	HAL_TIM_Base_Start(&htim1);
 }

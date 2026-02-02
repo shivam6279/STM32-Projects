@@ -50,7 +50,15 @@ MEMORY
 
 /* Sections */
 SECTIONS
-{
+{	
+  /* ADC DMA */
+  .dma_buffer 0x20000000 (NOLOAD) :
+  {
+    . = ALIGN(32);
+    *(.noncacheable_buffer)
+    . = ALIGN(32);
+  } > RAM
+  
   /* The startup code into "FLASH" Rom type memory */
   .isr_vector :
   {
@@ -145,14 +153,6 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
 
   } >RAM AT> FLASH
-
-  /* ADC DMA */
-  .dma_buffer (NOLOAD) :
-  {
-    . = ALIGN(32);
-    *(.noncacheable_buffer)
-    . = ALIGN(32);
-  } > RAM
 
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);

@@ -90,7 +90,8 @@ void diagsMenu() {
 			if(str_isEqual(input, "help")) {
 				printDiagsMenu();
 
-			} else if(ch == 'x') {
+			} else if(str_beginsWith(input, "exit")) {
+				printf("Exiting [diags]");
 				mode = MODE_OFF;
 				MotorOff();
 				return;
@@ -624,8 +625,6 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		printf(help_str);
 		return true;
 	}
-
-	adc_readAll();
 	
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
@@ -738,12 +737,12 @@ scan : Scan bus and report addresses found\n";
 		return true;
 	}
 	
-	// I2C scan
+	// TODO: I2C scan
 	if(str_getArgValue(cmd, "scan", arg_val)) {
 		for(i = 1; i < 0x7F; i++) {
-			if(I2C_CheckAddress(i)) {
-				printf("0x%X\n", i);
-			}
+//			if(I2C_CheckAddress(i)) {
+//				printf("0x%X\n", i);
+//			}
 		}
 	} else {
 		printf(help_str);

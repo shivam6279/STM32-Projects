@@ -17,6 +17,8 @@
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 
+extern volatile uint32_t adc_buffer[3];
+
 extern volatile float isns_u, isns_v, isns_w;
 extern volatile float isns_v_offset, isns_w_offset;
 

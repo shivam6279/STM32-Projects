@@ -4,6 +4,7 @@
 #include "ADC.h"
 #include "diags.h"
 #include "USART.h"
+#include "string_utils.h"
 #include "tones.h"
 #include "EEPROM.h"
 
@@ -12,9 +13,6 @@
 DMA_NodeTypeDef Node_GPDMA1_Channel0;
 DMA_QListTypeDef List_GPDMA1_Channel0;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
-DMA_NodeTypeDef Node_GPDMA1_Channel1;
-DMA_QListTypeDef List_GPDMA1_Channel1;
-DMA_HandleTypeDef handle_GPDMA1_Channel1;
 
 DCACHE_HandleTypeDef hdcache1;
 
@@ -37,6 +35,7 @@ static void MX_TIM2_Init(void);
 static void TIM4_init(float);
 static void TIM5_init(float);
 static void TIM6_init(float);
+static void TIM12_init();
 
 /*
 Timers
@@ -65,12 +64,12 @@ int main(void) {
 	MX_USART1_UART_Init();
 
 	MX_GPDMA1_Init();
-//	ADCInit();
+	ADCInit();
 	MX_DCACHE1_Init();
 	MX_FDCAN1_Init();
 	MX_I2C1_Init();
 	MX_ICACHE_Init();
-	MX_TIM1_Init(98000); // 98 Khz pwm freq
+	MX_TIM1_Init(48000); // Motor pwm freq
 	MX_TIM2_Init();
 	MX_TIM3_Init();
 	MX_TIM15_Init();
@@ -78,6 +77,7 @@ int main(void) {
 	TIM4_init(25000);
 	TIM5_init(1000);
 	TIM6_init(5000);
+	TIM12_init();
 
 	ee_init(&eeprom_data, sizeof(eeprom_data_t));
 
@@ -90,21 +90,41 @@ int main(void) {
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 
-	TIM3->CCR1 = 1000;
+	HAL_Delay(250);
+
+	GPIOC->ODR |= 1 << 14; // Enable encoder vcc
+
+	TIM3->CCR1 = 1000;// Enable servo vcc
 	TIM3->CCR2 = 0;
 
+	memset(adc_buffer, 0, sizeof(adc_buffer));
+
+	uint16_t a, b, c, d, e, f;
+
 	while (1) {
-		LED0_ON();
-		LED1_OFF();
-		HAL_Delay(250);
-		LED0_OFF();
-		LED1_ON();
-		HAL_Delay(250);
 		// printf("%f, %d\n", eeprom_data.zero_offset, ee_capacity());
+
+		a = adc_buffer[0] >> 16;
+		b = adc_buffer[0] & 0xFFFF;
+		c = adc_buffer[1] >> 16;
+		d = adc_buffer[1] & 0xFFFF;
+		e = adc_buffer[2] >> 16;
+		f = adc_buffer[2] & 0xFFFF;
+
+
+		printf("%d, %d, %d, %d, %d, %d\n", a, b, c, d, e, f);
+//		printf("%f, %f, %f\n", isns_u, isns_v, isns_w);
+
+//		printf("%d, %d\n", (uint32_t)&adc1_buffer[0], (uint32_t)&adc2_buffer[0]);
+
 		if(rx_rdy) {
-			printf("%s", rx_buffer);
 			rx_rdy = 0;
+			if(str_beginsWith(rx_buffer, "diags")) {
+				diagsMenu();
+			}
 		}
+
+		HAL_Delay(250);
 	}
 }
 
@@ -114,7 +134,7 @@ void TIM4_init(float f) {
 	TIM4->CR1 = 0;
 	TIM4->CR2 = 0;
 
-	TIM4->PSC = f/25; // 10 MHz after prescaler
+	TIM4->PSC = 25; // 10 MHz after prescaler
 	TIM4->ARR = (float)(10000000.0/f);
 
 	TIM4->CNT = 0;
@@ -134,7 +154,7 @@ void TIM5_init(float f) {
 	TIM5->CR1 = 0;
 	TIM5->CR2 = 0;
 
-	TIM5->PSC = f/25; // 10 MHz after prescaler
+	TIM5->PSC = 25; // 10 MHz after prescaler
 	TIM5->ARR = (float)(10000000.0/f);
 
 	TIM5->CNT = 0;
@@ -154,7 +174,7 @@ void TIM6_init(float f) {
 	TIM6->CR1 = 0;
 	TIM6->CR2 = 0;
 
-	TIM6->PSC = f/25; // 10 MHz after prescaler
+	TIM6->PSC = 25; // 10 MHz after prescaler
 	TIM6->ARR = (float)(10000000.0/f);
 
 	TIM6->CNT = 0;
@@ -166,6 +186,26 @@ void TIM6_init(float f) {
 	NVIC_SetPriority(TIM6_IRQn, 0);
 	TIM6->SR &= ~(0x1);
 	NVIC_EnableIRQ(TIM6_IRQn);
+}
+
+void TIM12_init() {
+	RCC->APB1LENR |= 1 << 6;
+
+	TIM12->CR1 = 0;
+	TIM12->CR2 = 0;
+
+	TIM12->PSC = 5-1; // 50 MHz after prescaler
+	TIM12->ARR = 833;
+
+	TIM12->CNT = 0;
+
+	TIM12->EGR |= 1;
+
+	TIM12->DIER |= 1;
+
+	NVIC_SetPriority(TIM12_IRQn, 5);
+	TIM12->SR &= ~(0x1);
+	NVIC_EnableIRQ(TIM12_IRQn);
 }
 
 void SystemClock_Config(void)
@@ -228,16 +268,19 @@ void MPU_Config(void) {
 	MPU_Region_InitTypeDef MPU_InitStruct = {0};
 	MPU_Attributes_InitTypeDef MPU_AttributesInit = {0};
 
+	/* Disables the MPU */
 	HAL_MPU_Disable();
 
+	/** Initializes and configures the Region and the memory to be protected
+	*/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-	MPU_InitStruct.BaseAddress = 0x24000000;
-	MPU_InitStruct.LimitAddress = 0x24000040;
+	MPU_InitStruct.BaseAddress = 0x20000000;
+	MPU_InitStruct.LimitAddress = 0x20000040;
 	MPU_InitStruct.AttributesIndex = MPU_ATTRIBUTES_NUMBER0;
 	MPU_InitStruct.AccessPermission = MPU_REGION_ALL_RW;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-	MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+	MPU_InitStruct.IsShareable = MPU_ACCESS_OUTER_SHAREABLE;
 
 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
 	MPU_AttributesInit.Number = MPU_REGION_NUMBER0;
@@ -246,7 +289,6 @@ void MPU_Config(void) {
 	HAL_MPU_ConfigMemoryAttributes(&MPU_AttributesInit);
 	/* Enables the MPU */
 	HAL_MPU_Enable(MPU_HFNMI_PRIVDEF);
-
 }
 
 static void MX_FDCAN1_Init(void) {
@@ -275,11 +317,6 @@ static void MX_FDCAN1_Init(void) {
 
 static void MX_GPDMA1_Init(void) {
 	__HAL_RCC_GPDMA1_CLK_ENABLE();
-
-	HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
-	HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
 }
 
 static void MX_I2C1_Init(void) {
@@ -336,7 +373,7 @@ static void MX_TIM2_Init(void) {
 	htim2.Init.Period = 4.294967295E9;
 	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-	sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+	sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
 	sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
 	sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
 	sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
@@ -362,6 +399,8 @@ static void MX_TIM2_Init(void) {
 	if (HAL_TIMEx_ConfigEncoderIndex(&htim2, &sEncoderIndexConfig) != HAL_OK) {
 		Error_Handler();
 	}
+
+	HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
 }
 
 static void MX_GPIO_Init(void) {
@@ -393,7 +432,8 @@ static void MX_GPIO_Init(void) {
 
 	/*Configure GPIO pins : PC6 PC7 */
 	GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP; // For SPI
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
