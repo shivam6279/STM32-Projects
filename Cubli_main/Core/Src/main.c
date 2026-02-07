@@ -54,6 +54,8 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
+FDCAN_TxHeaderTypeDef CAN_TxHeader;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -158,16 +160,30 @@ int main(void)
 
   HAL_TIM_Base_Stop_IT(&htim13);
 
-  HAL_Delay(500);
+  HAL_Delay(250);
   GPIOA->ODR |= 1 << 2;
 
   HAL_Delay(500);
   initial_delay = 1;
 
+  CAN_TxHeader.Identifier = 0x100;
+  CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
+  CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+  CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_8;
+  CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
+  CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
+  CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
+  CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+  CAN_TxHeader.MessageMarker = 0;
+
+  HAL_FDCAN_Start(&hfdcan1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  uint8_t CAN_TxData[8] = {0, 0, 0xAA, 0xAA, 0xAA, 0xAA, 0, 0};
 
   while (1)
   {
@@ -175,6 +191,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  printf("test\n");
+
+    HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
+
 	  HAL_Delay(250);
   }
   /* USER CODE END 3 */
@@ -198,14 +217,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV2;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLL1_SOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLL1_SOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 6;
-  RCC_OscInitStruct.PLL.PLLN = 90;
+  RCC_OscInitStruct.PLL.PLLN = 125;
   RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
@@ -337,27 +354,35 @@ static void MX_FDCAN1_Init(void)
   /* USER CODE END FDCAN1_Init 1 */
   hfdcan1.Instance = FDCAN1;
   hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
-  hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+  hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
   hfdcan1.Init.AutoRetransmission = DISABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
-  hfdcan1.Init.NominalPrescaler = 10;
-  hfdcan1.Init.NominalSyncJumpWidth = 1;
-  hfdcan1.Init.NominalTimeSeg1 = 2;
-  hfdcan1.Init.NominalTimeSeg2 = 2;
-  hfdcan1.Init.DataPrescaler = 1;
-  hfdcan1.Init.DataSyncJumpWidth = 1;
-  hfdcan1.Init.DataTimeSeg1 = 1;
-  hfdcan1.Init.DataTimeSeg2 = 1;
+  hfdcan1.Init.NominalPrescaler = 5;
+  hfdcan1.Init.NominalSyncJumpWidth = 10;
+  hfdcan1.Init.NominalTimeSeg1 = 39;
+  hfdcan1.Init.NominalTimeSeg2 = 10;
+  hfdcan1.Init.DataPrescaler = 2;
+  hfdcan1.Init.DataSyncJumpWidth = 5;
+  hfdcan1.Init.DataTimeSeg1 = 19;
+  hfdcan1.Init.DataTimeSeg2 = 5;
   hfdcan1.Init.StdFiltersNbr = 0;
   hfdcan1.Init.ExtFiltersNbr = 0;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN FDCAN1_Init 2 */
+
+  if (HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 8, 0) != HAL_OK) {
+	  Error_Handler();
+  }
+  if (HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1) != HAL_OK) {
+	  Error_Handler();
+  }
 
   /* USER CODE END FDCAN1_Init 2 */
 
@@ -379,7 +404,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x608087CA;
+  hi2c1.Init.Timing = 0x60808CD3;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;

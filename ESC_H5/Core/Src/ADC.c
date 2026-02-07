@@ -173,5 +173,4 @@ void ADCInit() {
 	// Start injected reads
 	HAL_ADCEx_InjectedStart_IT(&hadc2);
 	HAL_ADCEx_InjectedStart_IT(&hadc1);
-	printf("ADC Init\n");
 }

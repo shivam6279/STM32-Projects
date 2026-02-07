@@ -13,3 +13,5 @@ desktop.ini
 *.bak
 *.map
 *.list
+*.prefs
+*.elf

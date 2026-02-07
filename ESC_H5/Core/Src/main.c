@@ -17,6 +17,8 @@ DMA_HandleTypeDef handle_GPDMA1_Channel0;
 DCACHE_HandleTypeDef hdcache1;
 
 FDCAN_HandleTypeDef hfdcan1;
+FDCAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[64];
 
 I2C_HandleTypeDef hi2c1;
 TIM_HandleTypeDef htim2;
@@ -55,6 +57,17 @@ TIM16 -
 TIM17 -
 */
 
+volatile uint8_t can_rx_rdy = 0;
+
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
+	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
+		HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData);
+		HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+		can_rx_rdy = 1;
+	}
+	can_rx_rdy = 1;
+}
+
 int main(void) {
 	HAL_Init();
 	MPU_Config();
@@ -79,6 +92,9 @@ int main(void) {
 	TIM6_init(5000);
 	TIM12_init();
 
+	// CAN PHY in normal mode (not SILENT)
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);	// CAN_S
+
 	ee_init(&eeprom_data, sizeof(eeprom_data_t));
 
 //	ee_format();
@@ -97,8 +113,6 @@ int main(void) {
 	TIM3->CCR1 = 1000;// Enable servo vcc
 	TIM3->CCR2 = 0;
 
-	memset(adc_buffer, 0, sizeof(adc_buffer));
-
 	uint16_t a, b, c, d, e, f;
 
 	while (1) {
@@ -111,11 +125,13 @@ int main(void) {
 		e = adc_buffer[2] >> 16;
 		f = adc_buffer[2] & 0xFFFF;
 
-
-		printf("%d, %d, %d, %d, %d, %d\n", a, b, c, d, e, f);
-//		printf("%f, %f, %f\n", isns_u, isns_v, isns_w);
-
-//		printf("%d, %d\n", (uint32_t)&adc1_buffer[0], (uint32_t)&adc2_buffer[0]);
+		if(can_rx_rdy) {
+			can_rx_rdy = 0;
+			printf("%d, %d, %d, %d, %d, %d, %d, %d\n", RxData[0], RxData[1], RxData[2], RxData[3], RxData[4], RxData[5], RxData[6], RxData[7]);
+			for(int i = 0; i < 8; i++) {
+				RxData[i] = 0;
+			}
+		}
 
 		if(rx_rdy) {
 			rx_rdy = 0;
@@ -124,7 +140,7 @@ int main(void) {
 			}
 		}
 
-		HAL_Delay(250);
+		HAL_Delay(1);
 	}
 }
 
@@ -294,23 +310,53 @@ void MPU_Config(void) {
 static void MX_FDCAN1_Init(void) {
 	hfdcan1.Instance = FDCAN1;
 	hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
-	hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
 	hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
 	hfdcan1.Init.AutoRetransmission = DISABLE;
 	hfdcan1.Init.TransmitPause = DISABLE;
 	hfdcan1.Init.ProtocolException = DISABLE;
-	hfdcan1.Init.NominalPrescaler = 10;
-	hfdcan1.Init.NominalSyncJumpWidth = 1;
-	hfdcan1.Init.NominalTimeSeg1 = 2;
-	hfdcan1.Init.NominalTimeSeg2 = 2;
-	hfdcan1.Init.DataPrescaler = 1;
-	hfdcan1.Init.DataSyncJumpWidth = 1;
-	hfdcan1.Init.DataTimeSeg1 = 1;
-	hfdcan1.Init.DataTimeSeg2 = 1;
+	hfdcan1.Init.NominalPrescaler = 5;
+	hfdcan1.Init.NominalSyncJumpWidth = 10;
+	hfdcan1.Init.NominalTimeSeg1 = 39;
+	hfdcan1.Init.NominalTimeSeg2 = 10;
+	hfdcan1.Init.DataPrescaler = 2;
+	hfdcan1.Init.DataSyncJumpWidth = 5;
+	hfdcan1.Init.DataTimeSeg1 = 19;
+	hfdcan1.Init.DataTimeSeg2 = 5;
 	hfdcan1.Init.StdFiltersNbr = 0;
 	hfdcan1.Init.ExtFiltersNbr = 0;
 	hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
 	if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK) {
+		Error_Handler();
+	}
+
+	FDCAN_FilterTypeDef sFilterConfig;
+
+	/* Configure Rx filter */
+	sFilterConfig.IdType = FDCAN_STANDARD_ID;
+	sFilterConfig.FilterIndex = 0;
+	sFilterConfig.FilterType = FDCAN_FILTER_MASK;
+	sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+	sFilterConfig.FilterID1 = 0;
+	sFilterConfig.FilterID2 = 0;
+
+	if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig) != HAL_OK) {
+		Error_Handler();
+	}
+
+	/* Start the FDCAN module */
+	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
+		Error_Handler();
+	}
+
+//	if (HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 7, 0) != HAL_OK) {
+//		Error_Handler();
+//	}
+//	if (HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1) != HAL_OK) {
+//		Error_Handler();
+//	}
+
+	if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
 		Error_Handler();
 	}
 }
