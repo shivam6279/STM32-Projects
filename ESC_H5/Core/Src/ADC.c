@@ -6,8 +6,11 @@
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
+volatile float isns_vbat, vsns_vbat;
+volatile float vsns_u, vsns_v, vsns_w, vsns_x;
+
 volatile float isns_u, isns_v, isns_w;
-volatile float isns_v_offset = 1.65, isns_w_offset = 1.65;
+volatile float isns_v_offset = 1.635f, isns_w_offset = 1.635f;
 
 volatile __attribute__((section(".dma_buffer"), aligned(32))) uint32_t adc_buffer[3];
 
@@ -23,19 +26,6 @@ void ADCCalib() {
 	}
 	isns_v_offset = isns_u;
 	isns_w_offset = isns_v;
-}
-
-#define ISNS_LPF 0.5f
-void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
-    if (hadc->Instance == ADC1) {
-    	LED1_TOG();
-        uint16_t iA_raw = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1);
-        uint16_t iB_raw = HAL_ADCEx_InjectedGetValue(&hadc2, ADC_INJECTED_RANK_1);
-
-        isns_w = ISNS_LPF * isns_w + (1.0-ISNS_LPF) * (iA_raw * ADC_CONV_FACTOR - isns_w_offset) / ISNS_AMP_GAIN / ISNS_UVW_R;
-        isns_v = ISNS_LPF * isns_v + (1.0-ISNS_LPF) * (iB_raw * ADC_CONV_FACTOR - isns_v_offset) / ISNS_AMP_GAIN / ISNS_UVW_R;
-        isns_u = -isns_v - isns_w;
-    }
 }
 
 void ADCInit() {

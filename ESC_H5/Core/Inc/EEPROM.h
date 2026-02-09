@@ -1,15 +1,10 @@
-#ifndef _EE_H_
-#define _EE_H_
+#ifndef _EEPROM_H_
+#define _EEPROM_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <stdbool.h>
 #include "main.h"
+#include <assert.h>
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((aligned(16))) {
 	uint8_t board_id;
 	float zero_offset;
 	uint8_t pole_pairs;
@@ -22,39 +17,19 @@ typedef struct __attribute__((packed)) {
 
 	float enc_calib[32];
 
+	uint8_t _auto_pad[ (16 - (183 % 16)) % 16 ];
 } eeprom_data_t;
+
+_Static_assert((sizeof(eeprom_data_t) % 16) == 0, "eeprom_data_t size must be a multiple of 16 bytes for STM32H5 Flash");
+
+#define EEPROM_START_ADDR    0x081FE000
+#define EEPROM_FLASH_BANK    FLASH_BANK_2
+#define EEPROM_FLASH_SECTOR  127
 
 extern eeprom_data_t eeprom_data;
 
-/* Handle struct of EEPROM */
-typedef struct {
-	uint8_t                *data;
-	uint32_t               size;
-	uint32_t               page_sector_size;
-	uint32_t               address;
-	uint8_t                page_sector_number;
-#if (defined FLASH_BANK_1) || (defined FLASH_BANK_2)
-	uint8_t                bank_number;
-#endif
+extern void ee_read();
+extern void ee_write();
 
-} ee_t;
 
-/* Initializes the EEPROM emulation module */
-bool      ee_init(void *data, uint32_t size);
-
-/* Retrieves the capacity of the EEPROM emulation area */
-uint32_t  ee_capacity(void);
-
-/* Formats the EEPROM emulation area */
-bool      ee_format(void);
-
-/* Reads data from the EEPROM emulation area */
-void      ee_read(void);
-
-/* Writes data to the EEPROM emulation area */
-bool      ee_write(void);
-
-#ifdef __cplusplus
-}
-#endif
 #endif

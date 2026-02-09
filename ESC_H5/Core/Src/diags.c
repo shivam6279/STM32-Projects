@@ -140,8 +140,7 @@ void printDiagsMenu() {
 uint8_t diags_spinMotor(char *cmd) {
 	unsigned int i;
 	unsigned char ch;
-	
-	FOC_TIMER_ON(); 
+
 	mode = MODE_OFF;
 	while(1) {
 		for(i = 0; i < 360; i += 60) {
@@ -234,13 +233,13 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 			do {
 				HAL_Delay(1);
 				power += diags_acceleration;
-				SetPower(power / 2000.0);
+				SetPower(power / 2000.0f);
 			} while(power < set_power);
 		} else {
 			do {
 				HAL_Delay(1);
 				power -= diags_acceleration;
-				SetPower(power / 2000.0);
+				SetPower(power / 2000.0f);
 			} while(power > set_power);
 		}
 		printf("Done\n");
@@ -431,9 +430,9 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 
 	// Display calibrated encoder data
 	} else {
-		FOC_TIMER_ON(); 
+//		FOC_TIMER_ON();
 		while(1) {
-			printf("%.2f, %.4f\n, ", GetPosition(), GetRPM());
+			printf("%.2f, %.4f\n", GetPosition(), GetRPM());
 			HAL_Delay(50);
 
 			if(rx_rdy) {
@@ -457,7 +456,6 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 	
 	pos_cnt = ENC_TIM->CNT;
 
-	FOC_TIMER_OFF();
 	mode = MODE_OFF;
 	while(1) {
 		for(i = 0; i <= 360; i += 60) {
@@ -477,14 +475,14 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 		
 		pos_cnt = ENC_TIM->CNT;
 		pos = pos_cnt * 360.0f / ENCODER_RES;
-		while(pos < 0.0) {
-			pos += 360.0;
+		while(pos < 0.0f) {
+			pos += 360.0f;
 		}
-		while(pos > 360.0) {
-			pos -= 360.0;
+		while(pos > 360.0f) {
+			pos -= 360.0f;
 		}
 		
-		if(pre_pos - pos > 180) {
+		if((pre_pos - pos) > 180.0f) {
 			break;
 		}
 	}
@@ -499,14 +497,14 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 
 			pos_cnt = ENC_TIM->CNT;
 			pos = pos_cnt * 360.0f / ENCODER_RES;
-			while(pos < 0.0) {
-				pos += 360.0;
+			while(pos < 0.0f) {
+				pos += 360.0f;
 			}
-			while(pos > 360.0) {
-				pos -= 360.0;
+			while(pos > 360.0f) {
+				pos -= 360.0f;
 			}
 
-			output[arr_indx][0] = (360.0 * j + i) / (float)motor_pole_pairs;
+			output[arr_indx][0] = (360.0f * j + i) / (float)motor_pole_pairs;
 			output[arr_indx][1] = pos;
 			arr_indx++;
 
@@ -525,11 +523,11 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 	
 	for(arr_indx = 0; arr_indx < (motor_pole_pairs*6); arr_indx++) {
 		output[arr_indx][1] -= zero_offset;
-		while(output[arr_indx][1] < 0.0) {
-			output[arr_indx][1] += 360.0;
+		while(output[arr_indx][1] < 0.0f) {
+			output[arr_indx][1] += 360.0f;
 		}
-		while(output[arr_indx][1] > 360.0) {
-			output[arr_indx][1] -= 360.0;
+		while(output[arr_indx][1] > 360.0f) {
+			output[arr_indx][1] -= 360.0f;
 		}
 	}
 	
@@ -567,7 +565,7 @@ Read temp sensor TMP1075:\n\
 	
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
-		if(f < 1.0 || f > 10000.0) {
+		if(f < 1.0f || f > 10000.0f) {
 			printf("Invalid frequency\n");
 		} else {
 			printf("Set streaming fequency to %.4f Hz\n", f);
@@ -613,8 +611,6 @@ uint8_t diags_readADC(char *cmd) {
 	char ch;
 	float f;
 	static uint16_t delay = 10;
-	float isns_vbat, vsns_vbat;
-	float vsns_u, vsns_v, vsns_w, vsns_x;
 	char arg_val[5];
 	
 	const char help_str[] = "\
@@ -628,7 +624,7 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 	
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
-		if(f < 1.0 || f > 1000.0) {
+		if(f < 1.0f || f > 1000.0f) {
 			printf("Invalid frequency\n");
 		} else {
 			printf("Set streaming fequency to %.4f Hz\n", f);
@@ -658,12 +654,6 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 			while(1) {
 				//TODO: us counter
 //				StartDelayusCounter();
-				
-				// TODO: VSNS ADC
-				vsns_u = 0;
-				vsns_v = 0;
-				vsns_w = 0;
-				vsns_x = 0;
 
 				printf("%.2f, %.2f, %.2f, %.2f\n", vsns_u, vsns_v, vsns_w, vsns_x);
 
@@ -682,12 +672,6 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 				//TODO: us counter
 //				StartDelayusCounter();
 
-				// TODO: VSNS ADC
-				vsns_u = 0;
-				vsns_v = 0;
-				vsns_w = 0;
-				vsns_x = 0;
-
 				printf("%.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f\n", vsns_u, vsns_v, vsns_w, vsns_x, isns_u, isns_v, isns_w);
 
 				//TODO: us counter
@@ -702,13 +686,6 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 			}
 		}
 	} else {
-		// TODO: VSNS ADC
-		vsns_u = 0;
-		vsns_v = 0;
-		vsns_w = 0;
-		vsns_x = 0;
-		isns_vbat = 0;
-		vsns_vbat = 0;
 		
 		printf("VSNS U: %.2f V\n", vsns_u);		
 		printf("VSNS V: %.2f V\n", vsns_w);		
@@ -1091,7 +1068,7 @@ Comparator output\n\
 
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
-		if(f < 1.0 || f > 10000.0) {
+		if(f < 1.0f || f > 10000.0f) {
 			printf("Invalid frequency\n");
 		} else {
 			printf("Set streaming fequency to %.4f Hz\n", f);

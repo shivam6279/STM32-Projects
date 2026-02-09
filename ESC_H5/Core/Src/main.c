@@ -14,6 +14,8 @@ DMA_NodeTypeDef Node_GPDMA1_Channel0;
 DMA_QListTypeDef List_GPDMA1_Channel0;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
+CORDIC_HandleTypeDef hcordic;
+
 DCACHE_HandleTypeDef hdcache1;
 
 FDCAN_HandleTypeDef hfdcan1;
@@ -26,6 +28,7 @@ TIM_HandleTypeDef htim2;
 uint8_t board_id = 0;
 
 void SystemClock_Config(void);
+static void MX_CORDIC_Init(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_GPDMA1_Init(void);
@@ -44,7 +47,7 @@ Timers
 TIM1 - Motor PWM
 TIM2 - Encoder
 TIM3 - Brake Motor
-TIM4 - FOC
+TIM4 -
 TIM5 - motor angle/RPM PID
 TIM6 - Sensorless
 TIM7 - PWM Sync
@@ -82,27 +85,22 @@ int main(void) {
 	MX_FDCAN1_Init();
 	MX_I2C1_Init();
 	MX_ICACHE_Init();
-	MX_TIM1_Init(48000); // Motor pwm freq
+	MX_TIM1_Init(96000); // Motor pwm freq
 	MX_TIM2_Init();
 	MX_TIM3_Init();
 	MX_TIM15_Init();
 
-	TIM4_init(25000);
+//	TIM4_init(25000);
 	TIM5_init(1000);
 	TIM6_init(5000);
 	TIM12_init();
 
+	MX_CORDIC_Init();
+
 	// CAN PHY in normal mode (not SILENT)
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);	// CAN_S
 
-	ee_init(&eeprom_data, sizeof(eeprom_data_t));
-
-//	ee_format();
-
-	eeprom_data.zero_offset = 33.5;
-//	ee_write();
-//	eeprom_data.zero_offset = 0;
-//	ee_read();
+	ee_read();
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 
@@ -113,30 +111,13 @@ int main(void) {
 	TIM3->CCR1 = 1000;// Enable servo vcc
 	TIM3->CCR2 = 0;
 
-	uint16_t a, b, c, d, e, f;
-
 	while (1) {
-		// printf("%f, %d\n", eeprom_data.zero_offset, ee_capacity());
-
-		a = adc_buffer[0] >> 16;
-		b = adc_buffer[0] & 0xFFFF;
-		c = adc_buffer[1] >> 16;
-		d = adc_buffer[1] & 0xFFFF;
-		e = adc_buffer[2] >> 16;
-		f = adc_buffer[2] & 0xFFFF;
 
 		if(can_rx_rdy) {
 			can_rx_rdy = 0;
 			printf("%d, %d, %d, %d, %d, %d, %d, %d\n", RxData[0], RxData[1], RxData[2], RxData[3], RxData[4], RxData[5], RxData[6], RxData[7]);
 			for(int i = 0; i < 8; i++) {
 				RxData[i] = 0;
-			}
-		}
-
-		if(rx_rdy) {
-			rx_rdy = 0;
-			if(str_beginsWith(rx_buffer, "diags")) {
-				diagsMenu();
 			}
 		}
 
@@ -151,7 +132,7 @@ void TIM4_init(float f) {
 	TIM4->CR2 = 0;
 
 	TIM4->PSC = 25; // 10 MHz after prescaler
-	TIM4->ARR = (float)(10000000.0/f);
+	TIM4->ARR = (float)(10000000.0f/f);
 
 	TIM4->CNT = 0;
 
@@ -171,7 +152,7 @@ void TIM5_init(float f) {
 	TIM5->CR2 = 0;
 
 	TIM5->PSC = 25; // 10 MHz after prescaler
-	TIM5->ARR = (float)(10000000.0/f);
+	TIM5->ARR = (float)(10000000.0f/f);
 
 	TIM5->CNT = 0;
 
@@ -182,6 +163,8 @@ void TIM5_init(float f) {
 	NVIC_SetPriority(TIM5_IRQn, 2);
 	TIM5->SR &= ~(0x1);
 	NVIC_EnableIRQ(TIM5_IRQn);
+
+	TIM5->CR1 |= 1;
 }
 
 void TIM6_init(float f) {
@@ -191,7 +174,7 @@ void TIM6_init(float f) {
 	TIM6->CR2 = 0;
 
 	TIM6->PSC = 25; // 10 MHz after prescaler
-	TIM6->ARR = (float)(10000000.0/f);
+	TIM6->ARR = (float)(10000000.0f/f);
 
 	TIM6->CNT = 0;
 
@@ -270,6 +253,28 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+static void MX_CORDIC_Init(void) {
+	hcordic.Instance = CORDIC;
+	if (HAL_CORDIC_Init(&hcordic) != HAL_OK)	{
+		Error_Handler();
+	}
+
+	CORDIC_ConfigTypeDef sConfig = {0};
+
+	// Initial setup
+	sConfig.Function   = CORDIC_FUNCTION_SINE;     /* Sine + Cosine */
+	sConfig.Precision  = CORDIC_PRECISION_6CYCLES; /* 6 cycles for FOC is plenty */
+	sConfig.Scale      = CORDIC_SCALE_0;           /* Range [-1, 1] */
+	sConfig.NbWrite    = CORDIC_NBWRITE_1;         /* 1 input: Angle */
+	sConfig.NbRead     = CORDIC_NBREAD_2;          /* 2 outputs: Sin then Cos */
+	sConfig.InSize     = CORDIC_INSIZE_32BITS;     /* q31 input */
+	sConfig.OutSize    = CORDIC_OUTSIZE_32BITS;    /* q31 output */
+
+	if (HAL_CORDIC_Configure(&hcordic, &sConfig) != HAL_OK) {
+	  Error_Handler();
+	}
 }
 
 static void MX_DCACHE1_Init(void) {

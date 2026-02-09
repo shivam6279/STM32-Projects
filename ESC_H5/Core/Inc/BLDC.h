@@ -14,8 +14,8 @@
 #define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)
 
-#define FOC_TIMER_ON() (TIM3->CR1 |= 1)
-#define FOC_TIMER_OFF() (TIM3->CR1 &= ~1)
+// #define FOC_TIMER_ON() (TIM3->CR1 |= 1)
+// #define FOC_TIMER_OFF() (TIM3->CR1 &= ~1)
 
 typedef enum motor_waveform_type {
 	MOTOR_FOC,
@@ -42,8 +42,8 @@ extern volatile float phase_delay;
 #define LPF_PHASE 0.5f
 
 extern float motor_zero_angle;
-extern double encoder_LUT[];
-extern double encoder_calib_data[32];
+extern float encoder_LUT[];
+extern float encoder_calib_data[32];
 
 extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
@@ -59,14 +59,13 @@ extern void MotorOff();
 extern void MotorShort(float);
 
 extern void init_encoder_lut();
-extern void interpolate_encoder_lut(double[], unsigned int);
+extern void interpolate_encoder_lut(float[], unsigned int);
 extern void MotorPIDInit();
 
 extern bool bemf_phase(unsigned char);
 extern void SensorlessStart(float);
 
 extern void setPhaseVoltage(float, float, float);
-extern void foc_current_calc(float);
 extern float normalizeAngle(float);
 extern void ResetMotorPID();
 

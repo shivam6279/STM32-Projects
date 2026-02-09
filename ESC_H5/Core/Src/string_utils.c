@@ -295,6 +295,8 @@ unsigned int str_toIntHex(char *str) {
 			digit = str[i] - '0';
 		} else if(str[i] >= 'A' && str[i] <= 'F') {
 			digit = str[i] - 'A' + 10;
+		} else {
+			return 0;
 		}
 		ret = (ret << 4) | digit;
 	}

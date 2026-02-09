@@ -23,7 +23,7 @@ void PID_init(PID *pid) {
 	pid->constrain_integral = false;
 	pid->constrain_output = false;
 
-	pid->lpf = 0;
+	pid->lpf = 1.0f;
 }
 
 void PID_reset(PID *pid) {
@@ -78,7 +78,7 @@ float PID_compute(PID *pid, float input, float deltat) {
 		temp_output += pid->kd * pid->derivative;
 	}
 
-	pid->output = pid->lpf * pid->output + (1.0f-pid->lpf) * temp_output;
+	pid->output += pid->lpf * (temp_output - pid->output);
 
 	if(pid->constrain_output) {
 		pid->output = pid->output > pid->output_max ? pid->output_max: pid->output < pid->output_min ? pid->output_min: pid->output;
