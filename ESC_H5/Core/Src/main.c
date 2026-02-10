@@ -101,6 +101,10 @@ int main(void) {
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);	// CAN_S
 
 	ee_read();
+	board_id = eeprom_data.board_id;
+	motor_zero_angle = eeprom_data.zero_offset;
+	motor_pole_pairs = eeprom_data.pole_pairs;
+	motor_direction = eeprom_data.motor_direction;
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 
@@ -111,6 +115,9 @@ int main(void) {
 	TIM3->CCR1 = 1000;// Enable servo vcc
 	TIM3->CCR2 = 0;
 
+	PlayWav();
+	HAL_Delay(500);
+
 	while (1) {
 
 		if(can_rx_rdy) {
@@ -118,6 +125,13 @@ int main(void) {
 			printf("%d, %d, %d, %d, %d, %d, %d, %d\n", RxData[0], RxData[1], RxData[2], RxData[3], RxData[4], RxData[5], RxData[6], RxData[7]);
 			for(int i = 0; i < 8; i++) {
 				RxData[i] = 0;
+			}
+		}
+
+		if(rx_rdy) {
+			rx_rdy = 0;
+			if(str_beginsWith(rx_buffer, "diags")) {
+				diagsMenu();
 			}
 		}
 

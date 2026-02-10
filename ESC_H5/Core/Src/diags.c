@@ -190,7 +190,7 @@ id [x] : Display board id. Optionally set to x.\n";
 uint8_t diags_motor(char *cmd) {
 	unsigned char ch;
 	uint8_t i;
-	static float diags_power = 0.05;
+	static float diags_power = 0.1;
 	static float diags_acceleration = 0.5, set_power, power, acceleration;
 	char arg_val[20];
 	
@@ -217,6 +217,7 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	// Set electrical angle
 	if(str_getArgValue(cmd, "-p", arg_val)) {
 		printf("Motor power set to: %.4f\n", str_toFloat(arg_val));
+		mode = MODE_POWER;
 		SetPower(str_toFloat(arg_val) / 2000.0);
 
 	} else if(str_getArgValue(cmd, "ramp", arg_val)) {
