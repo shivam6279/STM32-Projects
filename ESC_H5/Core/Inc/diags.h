@@ -5,4 +5,6 @@
 
 extern void diagsMenu();
 
+extern float diags_power;
+
 #endif

@@ -59,6 +59,7 @@ const diags_menu_item diags_list[] = {
 };
 
 unsigned char diags_list_len = sizeof(diags_list) / sizeof(diags_list[0]);
+float diags_power = 0.1;
 
 void diagsMenu() {
 	char input[RX_BUFFER_SIZE];
@@ -190,7 +191,6 @@ id [x] : Display board id. Optionally set to x.\n";
 uint8_t diags_motor(char *cmd) {
 	unsigned char ch;
 	uint8_t i;
-	static float diags_power = 0.1;
 	static float diags_acceleration = 0.5, set_power, power, acceleration;
 	char arg_val[20];
 	
@@ -944,6 +944,10 @@ diff : Display current vs eeprom diffn";
 		eeprom_data.pid_foc_id[1] = pid_focId.ki;
 		eeprom_data.pid_foc_id[2] = pid_focId.kd;
 
+		eeprom_data.diags_power = diags_power;
+		eeprom_data.tone_power = tone_power;
+		eeprom_data.tone_amplitude = tone_amplitude;
+
 		ee_write();
 
 	} else if(str_getArgValue(cmd, "restore", arg_val)) {
@@ -972,18 +976,24 @@ diff : Display current vs eeprom diffn";
 		pid_focId.ki = eeprom_data.pid_foc_id[1];
 		pid_focId.kd = eeprom_data.pid_foc_id[2];
 
+		diags_power = eeprom_data.diags_power;
+		tone_power = eeprom_data.tone_power;
+		tone_amplitude = eeprom_data.tone_amplitude;
+
 	} else if(str_getArgValue(cmd, "disp", arg_val)) {
 		ee_read();
 
 		printf("Board ID: %d\n", eeprom_data.board_id);
-
 		printf("Zero offset: %.2f\n", eeprom_data.zero_offset);
-		printf("Pole Pairs: %d\n", eeprom_data.pole_pairs);
+		printf("Pole pairs: %d\n", eeprom_data.pole_pairs);
 		printf("Motor direction: %d\n", eeprom_data.motor_direction);
 		printf("Angle pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_angle[0], eeprom_data.pid_angle[1], eeprom_data.pid_angle[2]);
 		printf("RPM pid gains: %.5f, %.5f, %.5f\n", eeprom_data.pid_rpm[0], eeprom_data.pid_rpm[1], eeprom_data.pid_rpm[2]);
 		printf("FOC Iq pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_iq[0], eeprom_data.pid_foc_iq[1], eeprom_data.pid_foc_iq[2]);
 		printf("FOC Id pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_id[0], eeprom_data.pid_foc_id[1], eeprom_data.pid_foc_id[2]);
+		printf("Diags power: %.2f\n", eeprom_data.diags_power);
+		printf("Tone power: %d\n", eeprom_data.tone_power);
+		printf("Tone amplitude: %d\n", eeprom_data.tone_amplitude);
 
 	} else if(str_getArgValue(cmd, "diff", arg_val)) {
 		disp_eeprom_diff();
@@ -1047,6 +1057,15 @@ void disp_eeprom_diff() {
 	}
 	if(pid_focId.kd != eeprom_data.pid_foc_id[2]) {
 		printf("FOC Id PID kd: %.4f, %.4f\n", pid_focId.kd, eeprom_data.pid_foc_id[2]);
+	}
+	if(diags_power != eeprom_data.diags_power) {
+		printf("Diags power: %.4f, %.4f\n", diags_power, eeprom_data.diags_power);
+	}
+	if(tone_power != eeprom_data.tone_power) {
+		printf("Tone power: %.4f, %.4f\n", tone_power, eeprom_data.tone_pwoer);
+	}
+	if(tone_amplitude != eeprom_data.tone_amplitude) {
+		printf("Tone amplitude: %.4f, %.4f\n", tone_amplitude, eeprom_data.tone_amplitude);
 	}
 }
 

@@ -105,6 +105,9 @@ int main(void) {
 	motor_zero_angle = eeprom_data.zero_offset;
 	motor_pole_pairs = eeprom_data.pole_pairs;
 	motor_direction = eeprom_data.motor_direction;
+	diags_power = eeprom_data.diags_power;
+	tone_power = eeprom_data.tone_power;
+	tone_amplitude = eeprom_data.tone_amplitude;
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 
