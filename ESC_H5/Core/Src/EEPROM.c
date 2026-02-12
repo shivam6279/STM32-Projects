@@ -11,7 +11,7 @@ void ee_read() {
 void ee_write() {
     // 1. Check if the data is already identical to save Flash endurance
     if (memcmp(&eeprom_data, (void*)EEPROM_START_ADDR, sizeof(eeprom_data_t)) == 0) {
-        return HAL_OK; // No changes needed
+        return;
     }
 
     HAL_StatusTypeDef status;
@@ -30,7 +30,7 @@ void ee_write() {
     status = HAL_FLASHEx_Erase(&eraseInit, &sectorError);
     if (status != HAL_OK) {
         HAL_FLASH_Lock();
-        return status;
+        return;
     }
 
     // 3. Program in 128-bit chunks
@@ -45,5 +45,5 @@ void ee_write() {
     }
 
     HAL_FLASH_Lock();
-    return status;
+    return;
 }

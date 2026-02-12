@@ -1062,7 +1062,7 @@ void disp_eeprom_diff() {
 		printf("Diags power: %.4f, %.4f\n", diags_power, eeprom_data.diags_power);
 	}
 	if(tone_power != eeprom_data.tone_power) {
-		printf("Tone power: %.4f, %.4f\n", tone_power, eeprom_data.tone_pwoer);
+		printf("Tone power: %.4f, %.4f\n", tone_power, eeprom_data.tone_power);
 	}
 	if(tone_amplitude != eeprom_data.tone_amplitude) {
 		printf("Tone amplitude: %.4f, %.4f\n", tone_amplitude, eeprom_data.tone_amplitude);
