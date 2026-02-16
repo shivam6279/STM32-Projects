@@ -9,7 +9,7 @@
 #define ENCODER_RES_MASK 0xFFF
 
 #define FOC_DEGREE_ADVANCE 90.0f
-#define RPM_ADVANCE_FACTOR 0.0002f
+#define RPM_ADVANCE_FACTOR 0.0f // 0.0002f
 
 #define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)
@@ -48,10 +48,12 @@ extern float encoder_calib_data[32];
 extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
 extern float motor_pole_pairs, foc_degree_advance;
-extern uint8_t motor_direction;
+extern uint8_t motor_direction, enc_direction;
 
 extern volatile float foc_id, foc_iq;
 extern volatile float isns_u, isns_v, isns_w;
+extern volatile float angle_el;
+extern volatile float sin_el, cos_el;
 
 extern void MotorPhase(int8_t, float);
 extern void MotorPhasePWM(float, float, float);

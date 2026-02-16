@@ -24,7 +24,7 @@ void MX_TIM1_Init(float freq) {
 	htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
 	htim1.Init.Period = (uint16_t)period;
 	htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	htim1.Init.RepetitionCounter = 3;
+	htim1.Init.RepetitionCounter = 1;
 	htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 	if (HAL_TIM_PWM_Init(&htim1) != HAL_OK) {
 		Error_Handler();
@@ -32,7 +32,7 @@ void MX_TIM1_Init(float freq) {
 	if (HAL_TIM_OC_Init(&htim1) != HAL_OK) {
 		Error_Handler();
 	}
-	sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC4REF;
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE; // TIM_TRGO_OC4REF;
 	sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
 	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
 	if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK) {
@@ -62,7 +62,7 @@ void MX_TIM1_Init(float freq) {
 	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
 	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
 	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-	sBreakDeadTimeConfig.DeadTime = 100;
+	sBreakDeadTimeConfig.DeadTime = 25;
 	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
 	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
 	sBreakDeadTimeConfig.BreakFilter = 0;

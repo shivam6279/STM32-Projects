@@ -53,7 +53,7 @@ void PID_integrate(PID *pid, float deltat) {
 }
 
 void PID_differentiate(PID *pid, float deltat) {
-	pid->derivative += (pid->p_input - pid->input) / deltat;
+	pid->derivative += (pid->input - pid->p_input) / deltat;
 	pid->p_input = pid->input;
 }
 

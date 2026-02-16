@@ -258,7 +258,8 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		setPhaseVoltage(diags_power, 0, str_toFloat(arg_val));
 		
 		// Set phase voltages to (1, 0, 0)
-		MotorPhasePWM(diags_power, 0, 0);
+		MotorPhasePWM(0.5f+diags_power/2.0f, 0.5f-diags_power/2.0f, 0.5f-diags_power/2.0f);
+		// MotorPhasePWM(diags_power, 0, 0);
 	
 	// Set 6 step phase
 	} else if(str_getArgValue(cmd, "-s", arg_val)) {
@@ -387,6 +388,7 @@ uint8_t diags_encoder(char *cmd) {
 Read rotary encoder data:\n\
 -r : Output raw data scaled to degrees. No calibration or offset applied.\n\
 zero [x]: Display stored zero offset. Set to x\n\
+dir [0/1] : Encoder count direction. 0 for normal, 1 for reverse.\n\
 calib [on/off] : Enable/disable encoder calibration correction\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
@@ -417,6 +419,17 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 			printf("Encoder zero offset set to: %.4f degrees\n", motor_zero_angle);
 		} else {
 			printf("Encoder zero offset: %.4f degrees\n", motor_zero_angle);
+		}
+
+	} else if(str_getArgValue(cmd, "dir", arg_val)) {
+		if(arg_val[0] == '0' || arg_val[0] == '1') {
+			enc_direction = arg_val[0] != '0';
+			printf("Encoder direction set to: %d\n", enc_direction);
+		} else {
+			if(arg_val[0] != '\0') {
+				printf("Incorrect option. Use \"0\" or \"1\" \n");
+			}
+			printf("Current encoder direction: %d\n", enc_direction);
 		}
 	
 	// Encoder calibration correction
@@ -616,7 +629,7 @@ uint8_t diags_readADC(char *cmd) {
 	
 	const char help_str[] = "\
 Read ADC data\n\
-stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase voltages -f [x]: Set streaming frequency to f [1, 10000] (Hz)\n";
+stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadrature currents, -v: motor phase voltages -f [x]: Set streaming frequency to f [1, 10000] (Hz)\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		printf(help_str);
@@ -640,6 +653,23 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 //				StartDelayusCounter();
 
 				printf("%.3f, %.3f, %.3f\n", isns_u, isns_v, isns_w);
+
+				//TODO: us counter
+//				while(us_counter() < delay);
+
+				if(rx_rdy) {
+					ch = read_rx_char();
+					if(ch == 'x') {
+						return true;
+					}
+				}
+			}
+		} else if(str_getArgValue(cmd, "-f", arg_val)) {
+			while(1) {
+				//TODO: us counter
+//				StartDelayusCounter();
+
+				printf("%.2f, %.2f\n", foc_iq, foc_id);
 
 				//TODO: us counter
 //				while(us_counter() < delay);
@@ -923,6 +953,7 @@ diff : Display current vs eeprom diffn";
 
 		eeprom_data.board_id = board_id;
 		eeprom_data.zero_offset = motor_zero_angle;
+		eeprom_data.enc_direction = enc_direction;
 		eeprom_data.pole_pairs = motor_pole_pairs;
 		eeprom_data.motor_direction = motor_direction;
 		for(i = 0; i < 32; i++) {
@@ -955,6 +986,7 @@ diff : Display current vs eeprom diffn";
 
 		board_id = eeprom_data.board_id;
 		motor_zero_angle = eeprom_data.zero_offset;
+		enc_direction = eeprom_data.enc_direction;
 		motor_pole_pairs = eeprom_data.pole_pairs;
 		motor_direction = eeprom_data.motor_direction;
 		for(i = 0; i < 32; i++) {
@@ -986,14 +1018,15 @@ diff : Display current vs eeprom diffn";
 		printf("Board ID: %d\n", eeprom_data.board_id);
 		printf("Zero offset: %.2f\n", eeprom_data.zero_offset);
 		printf("Pole pairs: %d\n", eeprom_data.pole_pairs);
+		printf("Encoder direction: %d\n", eeprom_data.enc_direction);
 		printf("Motor direction: %d\n", eeprom_data.motor_direction);
 		printf("Angle pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_angle[0], eeprom_data.pid_angle[1], eeprom_data.pid_angle[2]);
 		printf("RPM pid gains: %.5f, %.5f, %.5f\n", eeprom_data.pid_rpm[0], eeprom_data.pid_rpm[1], eeprom_data.pid_rpm[2]);
 		printf("FOC Iq pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_iq[0], eeprom_data.pid_foc_iq[1], eeprom_data.pid_foc_iq[2]);
 		printf("FOC Id pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_id[0], eeprom_data.pid_foc_id[1], eeprom_data.pid_foc_id[2]);
 		printf("Diags power: %.2f\n", eeprom_data.diags_power);
-		printf("Tone power: %d\n", eeprom_data.tone_power);
-		printf("Tone amplitude: %d\n", eeprom_data.tone_amplitude);
+		printf("Tone power: %.3f\n", eeprom_data.tone_power);
+		printf("Tone amplitude: %.2f\n", eeprom_data.tone_amplitude);
 
 	} else if(str_getArgValue(cmd, "diff", arg_val)) {
 		disp_eeprom_diff();
@@ -1018,6 +1051,9 @@ void disp_eeprom_diff() {
 	}
 	if(motor_pole_pairs != eeprom_data.pole_pairs) {
 		printf("Pole pairs: %.0f, %d\n", motor_pole_pairs, eeprom_data.pole_pairs);
+	}
+	if(enc_direction != eeprom_data.enc_direction) {
+		printf("Encoder direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);
 	}
 	if(motor_direction != eeprom_data.motor_direction) {
 		printf("Motor direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);

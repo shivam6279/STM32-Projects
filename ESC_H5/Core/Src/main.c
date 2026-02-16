@@ -36,11 +36,13 @@ static void MX_DCACHE1_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_ICACHE_Init(void);
-static void MX_TIM2_Init(void);
+static void MX_TIM2_Init(uint8_t);
 static void TIM4_init(float);
 static void TIM5_init(float);
 static void TIM6_init(float);
 static void TIM12_init();
+static void TIM16_init();
+void delay_us(uint16_t);
 
 /*
 Timers
@@ -56,9 +58,11 @@ TIM12 - Tones
 TIM13 -
 TIM14 -
 TIM15 - Servo PWM
-TIM16 -
+TIM16 - us Delay
 TIM17 -
 */
+
+float save_data[1500][10];
 
 volatile uint8_t can_rx_rdy = 0;
 
@@ -72,6 +76,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 }
 
 int main(void) {
+	uint16_t i;
+
 	HAL_Init();
 	MPU_Config();
 	SystemClock_Config();
@@ -85,8 +91,7 @@ int main(void) {
 	MX_FDCAN1_Init();
 	MX_I2C1_Init();
 	MX_ICACHE_Init();
-	MX_TIM1_Init(96000); // Motor pwm freq
-	MX_TIM2_Init();
+	MX_TIM1_Init(50000); // Motor pwm freq
 	MX_TIM3_Init();
 	MX_TIM15_Init();
 
@@ -94,6 +99,7 @@ int main(void) {
 	TIM5_init(1000);
 	TIM6_init(5000);
 	TIM12_init();
+	TIM16_init();
 
 	MX_CORDIC_Init();
 
@@ -102,6 +108,7 @@ int main(void) {
 
 	ee_read();
 	board_id = eeprom_data.board_id;
+	enc_direction = eeprom_data.enc_direction;
 	motor_zero_angle = eeprom_data.zero_offset;
 	motor_pole_pairs = eeprom_data.pole_pairs;
 	motor_direction = eeprom_data.motor_direction;
@@ -109,37 +116,90 @@ int main(void) {
 	tone_power = eeprom_data.tone_power;
 	tone_amplitude = eeprom_data.tone_amplitude;
 
+	MX_TIM2_Init(enc_direction); // Encoder timer
+
+	MotorPIDInit();
+
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 
 	HAL_Delay(250);
 
 	GPIOC->ODR |= 1 << 14; // Enable encoder vcc
 
+	PlayWav();
+	HAL_Delay(500);
+
 	TIM3->CCR1 = 1000;// Enable servo vcc
 	TIM3->CCR2 = 0;
 
-	PlayWav();
-	HAL_Delay(500);
+	SetPower(0);
+	mode = MODE_POWER;
+
+	waveform_mode = MOTOR_FOC;
+
+//	mode = MODE_OFF;
+//	MotorShort(1.0f);
+//	MotorPhasePWM(0.5, 0.5, 0.5);
 
 	while (1) {
 
 		if(can_rx_rdy) {
 			can_rx_rdy = 0;
-			printf("%d, %d, %d, %d, %d, %d, %d, %d\n", RxData[0], RxData[1], RxData[2], RxData[3], RxData[4], RxData[5], RxData[6], RxData[7]);
-			for(int i = 0; i < 8; i++) {
-				RxData[i] = 0;
-			}
 		}
 
 		if(rx_rdy) {
 			rx_rdy = 0;
 			if(str_beginsWith(rx_buffer, "diags")) {
 				diagsMenu();
+			} else if(str_beginsWith(rx_buffer, "capture")) {
+				break;
+			}
+			else {
+				float input;
+				input = str_toFloat(rx_buffer);
+				SetPower(input / 2000.0f);
+				pid_focIq.setpoint = input;
 			}
 		}
 
-		HAL_Delay(1);
+//		printf("%f\n", GetPosition());
+		printf("%.3f\t%.3f\t%.3f\t%.3f\n", foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+//		printf("%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
+
+//		HAL_Delay(1);
 	}
+
+	for(i = 0; i < 1500; i++) {
+		save_data[i][0] = angle_el/180.0f;
+		save_data[i][1] = vsns_u;
+		save_data[i][2] = vsns_v;
+		save_data[i][3] = vsns_w;
+		save_data[i][4] = vsns_x;
+		save_data[i][5] = isns_u;
+		save_data[i][6] = isns_v;
+		save_data[i][7] = isns_w;
+		save_data[i][8] = foc_iq;
+		save_data[i][9] = foc_id;
+		delay_us(20);
+//		delay_us(200);
+	}
+	mode = MODE_OFF;
+	MotorOff();
+	for(i = 0; i < 1500; i++) {
+		printf("%.6f, ", save_data[i][0]);
+		// printf("%.2f, ", save_data[i][1]);
+		// printf("%.2f, ", save_data[i][2]);
+		// printf("%.2f, ", save_data[i][3]);
+		// printf("%.6f, ", save_data[i][4]);
+		printf("%.6f, ", save_data[i][5]);
+		printf("%.6f, ", save_data[i][6]);
+		printf("%.6f, ", save_data[i][7]);
+		printf("%.6f, ", save_data[i][8]);
+		printf("%.6f\n", save_data[i][9]);
+		HAL_Delay(10);
+	}
+	while(1);
+
 }
 
 void TIM4_init(float f) {
@@ -222,6 +282,29 @@ void TIM12_init() {
 	NVIC_SetPriority(TIM12_IRQn, 5);
 	TIM12->SR &= ~(0x1);
 	NVIC_EnableIRQ(TIM12_IRQn);
+}
+
+void TIM16_init() {
+	RCC->APB2ENR |= 1 << 17;
+
+	TIM16->CR1 = 0;
+	TIM16->CR2 = 0;
+
+	TIM16->PSC = 250-1; // 1 MHz after prescaler
+	TIM16->ARR = -1;
+
+	TIM16->CNT = 0;
+
+	TIM16->EGR |= 1;
+
+	TIM16->DIER |= 1;
+}
+
+void delay_us(uint16_t d) {
+	TIM16->CNT = 0;
+	TIM16->CR1 |= 1;
+	while(TIM16->CNT < d);
+	TIM16->CR1 &= ~1;
 }
 
 void SystemClock_Config(void)
@@ -430,13 +513,14 @@ static void MX_ICACHE_Init(void) {
 	}
 }
 
-static void MX_TIM2_Init(void) {
+static void MX_TIM2_Init(uint8_t dir) {
 	TIM_Encoder_InitTypeDef sConfig = {0};
 	TIM_MasterConfigTypeDef sMasterConfig = {0};
 	TIMEx_EncoderIndexConfigTypeDef sEncoderIndexConfig = {0};
 
 	htim2.Instance = TIM2;
 	htim2.Init.Prescaler = 0;
+
 	htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim2.Init.Period = 4.294967295E9;
 	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -446,7 +530,12 @@ static void MX_TIM2_Init(void) {
 	sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
 	sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
 	sConfig.IC1Filter = 0;
-	sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+	// 0 = Up, 1 = Down
+	if(!dir) {
+		sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+	} else {
+		sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
+	}
 	sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
 	sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
 	sConfig.IC2Filter = 0;
