@@ -56,7 +56,7 @@ volatile motor_mode mode = MODE_POWER;
 volatile motor_waveform_type waveform_mode = MOTOR_SVPWM;
 
 volatile float position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.0, power_lpf = 0.0;
-volatile float angle_el = 0;
+volatile float angle_el = 0, angle_el_compensated = 0;
 
 float motor_polarity = 0;
 float motor_zero_angle = 0.0;
@@ -101,6 +101,9 @@ void ADC1_IRQHandler(void) {
 			angle_el = position*motor_pole_pairs;
 			angle_el -= 360.0f * (int)(angle_el * 0.002777778f);
 
+			angle_el_compensated = angle_el + (rpm*motor_pole_pairs * 0.00006f);
+			angle_el_compensated -= 360.0f * (int)(angle_el_compensated * 0.002777778f);
+
 			foc_current_calc(angle_el); // Calculates electrical angle sin & cos
 
 			power += POWER_LPF*(power_lpf - power);
@@ -111,17 +114,19 @@ void ADC1_IRQHandler(void) {
 					pid_focId.integral *= 0.95f;
 					pid_focIq.integral *= 0.95f;
 				}
-				if(power) {
-					PID_compute(&pid_focIq, foc_iq, 0.00004f);
-					PID_compute(&pid_focId, foc_id, 0.00004f);
-				} else {
-					PID_reset(&pid_focIq);
-					PID_reset(&pid_focId);
-				}
+				PID_compute(&pid_focIq, foc_iq, 0.00004f);
+				PID_compute(&pid_focId, foc_id, 0.00004f);
+				// if(power) {
+				// 	PID_compute(&pid_focIq, foc_iq, 0.00004f);
+				// 	PID_compute(&pid_focId, foc_id, 0.00004f);
+				// } else {
+				// 	PID_reset(&pid_focIq);
+				// 	PID_reset(&pid_focId);
+				// }
 				// PID_compute(&pid_focIq, foc_iq, 0.00004f);
 				// PID_compute(&pid_focId, foc_id, 0.00004f);
 
-				setPhaseVoltage(power, pid_focId.output, angle_el);
+				setPhaseVoltage(power, pid_focId.output, angle_el_compensated);
 			}
 			LED1_OFF();
 		}
@@ -359,7 +364,7 @@ static inline void adc_read_other() {
 	isns_vbat += VBAT_LPF * (((float)adc21*ADC_CONV_FACTOR - ISNS_VBAT_OFFSET) * ISNS_VBAT_AMP_GAIN*ISNS_VBAT_R - isns_vbat);
 }
 
-#define FOC_IQ_LPF 0.001f // 0.0001f
+#define FOC_IQ_LPF 0.5f // 0.001f // 0.0001f
 static inline void foc_current_calc(float angle_el) {
 	static int32_t theta_q31;
 
@@ -692,8 +697,8 @@ void MotorPIDInit() {
 
 	PID_setGain(&pid_angle,	8,		1.25,	6		);
 	PID_setGain(&pid_rpm,	0.0002,	0.003,	0.005	);
-	PID_setGain(&pid_focIq,	0.1,	10.0,	0		);
-	PID_setGain(&pid_focId,	0.1,	10.0,	0		);
+	PID_setGain(&pid_focIq,	0.03,	20.0,	0		);
+	PID_setGain(&pid_focId,	0.03,	40.0,	0		);
 
 //	PID_setLPF(&pid_angle,	0.7);
 //	PID_setLPF(&pid_rpm,	0.7);

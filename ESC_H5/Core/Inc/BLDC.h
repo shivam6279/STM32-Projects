@@ -9,7 +9,7 @@
 #define ENCODER_RES_MASK 0xFFF
 
 #define FOC_DEGREE_ADVANCE 90.0f
-#define RPM_ADVANCE_FACTOR 0.0f // 0.0002f
+#define RPM_ADVANCE_FACTOR 0.0002f
 
 #define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)
