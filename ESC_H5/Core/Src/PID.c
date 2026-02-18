@@ -59,14 +59,22 @@ void PID_differentiate(PID *pid, float deltat) {
 
 float PID_compute(PID *pid, float input, float deltat) {
 	float temp_output;
+	uint8_t is_saturated;
+
 	pid->input = input;
 	pid->error = pid->setpoint - pid->input;
+
+	is_saturated = !(!pid->constrain_output || (pid->output > pid->output_min && pid->output < pid->output_max));
+
 	// P
 	temp_output = pid->kp * pid->error;
+
 	// I
 	if(pid->ki) {
 		if(pid->compute_integral) {
-			PID_integrate(pid, deltat);
+			if(!is_saturated || (pid->error * pid->output) < 0) {
+				PID_integrate(pid, deltat);
+			}
 		}
 		temp_output += pid->ki * pid->integral;
 	}

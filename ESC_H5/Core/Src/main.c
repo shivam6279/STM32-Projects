@@ -163,7 +163,7 @@ int main(void) {
 		}
 
 //		printf("%f\n", GetPosition());
-		printf("%.3f\t%.3f\t%.3f\t%.3f\n", foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+		printf("%.0f, %.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
 //		printf("%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
 
 //		HAL_Delay(1);

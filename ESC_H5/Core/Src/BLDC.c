@@ -71,6 +71,7 @@ void TIM4_IRQHandler(void) {
 void ADC1_IRQHandler(void) {
 	static uint8_t sample_cnt = 0;
 	static int16_t pos_cnt;
+	static float velocity_el, last_angle_el, angle_el_diff;
 
 	if (ADC1->ISR & ADC_ISR_JEOC) {
 		ADC1->ISR = ADC_ISR_JEOC;
@@ -98,10 +99,18 @@ void ADC1_IRQHandler(void) {
 				position -= 360.0f;
 			}
 
+			last_angle_el = angle_el;
 			angle_el = position*motor_pole_pairs;
 			angle_el -= 360.0f * (int)(angle_el * 0.002777778f);
+			angle_el_diff = angle_el - last_angle_el;
+			if(angle_el_diff > 180.0f) {
+				angle_el_diff -= 360.0f;
+			} else if(angle_el_diff < -180.0f) {
+				angle_el_diff += 360.0f;
+			}
+			velocity_el = angle_el_diff * 25000.0f;
 
-			angle_el_compensated = angle_el + (rpm*motor_pole_pairs * 0.00006f);
+			angle_el_compensated = angle_el + velocity_el * 0.00006f;
 			angle_el_compensated -= 360.0f * (int)(angle_el_compensated * 0.002777778f);
 
 			foc_current_calc(angle_el); // Calculates electrical angle sin & cos
@@ -129,7 +138,11 @@ void ADC1_IRQHandler(void) {
 				setPhaseVoltage(power, pid_focId.output, angle_el_compensated);
 			}
 			LED1_OFF();
-		}
+		} else {
+			LED1_ON();
+			adc_read_motor_isns();
+			LED1_OFF();
+		}	
     }
 }
 
@@ -153,7 +166,7 @@ void TIM5_IRQHandler(void) {
 		if (cnt_delta < -ENCODER_RES*0.5f) cnt_delta += ENCODER_RES;
 		
 		p_rpm = rpm;
-		rpm += RPM_LPF * ((((float)cnt_delta) / ENCODER_RES * 30000.0f) - rpm);
+		rpm += RPM_LPF * ((((float)cnt_delta) / ENCODER_RES * 60000.0f) - rpm);
 		rpm_der += RPM_DER_LPF * ((rpm - p_rpm) - rpm_der);
 		
 		// RPM PID control
@@ -303,7 +316,7 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 	}
 }
 
-#define ISNS_LPF 0.999f // 0.03f
+#define ISNS_LPF 0.9f // 0.03f
 #define ISNS_OFFSET_LPF 0.0001f
 static inline void adc_read_motor_isns() {
 	static float temp_isns_v, temp_isns_w;
@@ -364,7 +377,7 @@ static inline void adc_read_other() {
 	isns_vbat += VBAT_LPF * (((float)adc21*ADC_CONV_FACTOR - ISNS_VBAT_OFFSET) * ISNS_VBAT_AMP_GAIN*ISNS_VBAT_R - isns_vbat);
 }
 
-#define FOC_IQ_LPF 0.5f // 0.001f // 0.0001f
+#define FOC_IQ_LPF 0.4f
 static inline void foc_current_calc(float angle_el) {
 	static int32_t theta_q31;
 
@@ -697,8 +710,8 @@ void MotorPIDInit() {
 
 	PID_setGain(&pid_angle,	8,		1.25,	6		);
 	PID_setGain(&pid_rpm,	0.0002,	0.003,	0.005	);
-	PID_setGain(&pid_focIq,	0.03,	20.0,	0		);
-	PID_setGain(&pid_focId,	0.03,	40.0,	0		);
+	PID_setGain(&pid_focIq,	0.01,	40.0,	0		);
+	PID_setGain(&pid_focId,	0.01,	40.0,	0		);
 
 //	PID_setLPF(&pid_angle,	0.7);
 //	PID_setLPF(&pid_rpm,	0.7);
@@ -713,19 +726,19 @@ void MotorPIDInit() {
 	
 	// Iq
 	// PID_setLPF(&pid_focIq,	0.1);
-	PID_enableErrorConstrain(&pid_focIq);
-	PID_setErrorLimits(&pid_focIq, -0.5, 0.5);
+	// PID_enableErrorConstrain(&pid_focIq);
+	// PID_setErrorLimits(&pid_focIq, -0.5, 0.5);
 	PID_enableIntegralConstrain(&pid_focIq);
-	PID_setIntegralLimits(&pid_focIq, -0.8, 0.8);
+	PID_setIntegralLimits(&pid_focIq, -0.7, 0.7);
 	PID_enableOutputConstrain(&pid_focIq);
-	PID_setOutputLimits(&pid_focIq, -0.7, 0.7);
+	PID_setOutputLimits(&pid_focIq, -1.0, 1.0);
 	
 	// Id
 	// PID_setLPF(&pid_focId,	0.1);
 	// PID_enableErrorConstrain(&pid_focId);
-	PID_setErrorLimits(&pid_focId, -0.8, 0.8);
+	// PID_setErrorLimits(&pid_focId, -0.8, 0.8);
 	PID_enableIntegralConstrain(&pid_focId);
-	PID_setIntegralLimits(&pid_focId, -1, 1);
+	PID_setIntegralLimits(&pid_focId, -0.7, 0.7);
 	PID_enableOutputConstrain(&pid_focId);
 	PID_setOutputLimits(&pid_focId, -0.7, 0.7);
 }
