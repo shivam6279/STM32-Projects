@@ -147,7 +147,7 @@ uint8_t diags_spinMotor(char *cmd) {
 		for(i = 0; i < 360; i += 60) {
 			setPhaseVoltage(0.03, 0, (float)i);
 			HAL_Delay(500);
-			printf("%.2f\n", GetPosition());
+			printf("%.2f\n", GetPositionRaw());
 			HAL_Delay(250);
 
 			if(rx_rdy) {
@@ -273,7 +273,7 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		for(i = 0; i < 360; i += 60) {
 			setPhaseVoltage(diags_power, 0, (float)i);
 			HAL_Delay(500);
-			printf("%.2f\n, ", GetPosition());
+			printf("%.2f\n, ", GetPositionRaw());
 			HAL_Delay(250);
 
 			if(rx_rdy) {
@@ -446,7 +446,7 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 	} else {
 //		FOC_TIMER_ON();
 		while(1) {
-			printf("%.2f, %.4f\n", GetPosition(), GetRPM());
+			printf("%.2f, %.4f\n", GetPositionRaw(), GetRPM());
 			HAL_Delay(50);
 
 			if(rx_rdy) {
@@ -465,7 +465,7 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 	unsigned char ch;
 	unsigned int i, j, arr_indx;
 	float power = 0.05;
-	float pos = GetPosition(), pre_pos;
+	float pos = GetPositionRaw(), pre_pos;
 	int16_t pos_cnt;
 	
 	pos_cnt = ENC_TIM->CNT;

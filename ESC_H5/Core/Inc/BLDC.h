@@ -71,14 +71,16 @@ extern void setPhaseVoltage(float, float, float);
 extern float normalizeAngle(float);
 extern void ResetMotorPID();
 
+extern void reset_motion_observer();
 extern void SetRPM(float);
 extern void SetPower(float);
 extern void SetPosition(float);
+extern float GetPositionRaw();
 extern float GetPosition();
 extern float GetPower();
 extern void ResetPosition();
 extern float GetRPM();
-extern float GetRPM_der();
+extern float GetAcc();
 //extern float wave_lut(uint16_t*, float);
 
 #endif

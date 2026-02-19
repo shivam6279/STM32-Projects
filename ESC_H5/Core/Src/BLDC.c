@@ -13,6 +13,7 @@
 #define _1_SQRT3 0.57735026918962576450914878050196f
 #define _2_SQRT3 1.1547005383792515290182975610039f
 
+static inline float update_motion_observer(int16_t, float)
 static inline void adc_read_motor_isns();
 static inline void adc_read_other();
 static inline void foc_current_calc(float);
@@ -55,8 +56,8 @@ volatile unsigned char comp_u, comp_v, comp_w, comparator = 0;
 volatile motor_mode mode = MODE_POWER;
 volatile motor_waveform_type waveform_mode = MOTOR_SVPWM;
 
-volatile float position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.0, power_lpf = 0.0;
-volatile float angle_el = 0, angle_el_compensated = 0;
+static volatile float position = 0.0, pos_filt = 0.0, rpm = 0.0, acc = 0.0, power = 0.0, power_lpf = 0.0;
+static volatile float angle_el = 0, angle_el_compensated = 0;
 
 float motor_polarity = 0;
 float motor_zero_angle = 0.0;
@@ -143,36 +144,25 @@ void ADC1_IRQHandler(void) {
 			adc_read_motor_isns();
 			LED1_OFF();
 		}	
-    }
+	}
 }
 
 #define RPM_LPF 0.05f
 #define RPM_DER_LPF 0.1f
 
 void TIM5_IRQHandler(void) {
-	static int16_t cnt = 0, p_cnt, cnt_delta;
-	static float p_rpm = 0.0;
 	static long int ind_cnt;
 	static float net_position;
 
 	if(TIM5->SR & 0x1) {
 		TIM5->SR &= ~(0x1);
-		
-		p_cnt = cnt;
-		cnt = ENC_TIM->CNT;
-		cnt_delta = cnt - p_cnt;
 
-		if (cnt_delta > ENCODER_RES*0.5f)  cnt_delta -= ENCODER_RES;
-		if (cnt_delta < -ENCODER_RES*0.5f) cnt_delta += ENCODER_RES;
-		
-		p_rpm = rpm;
-		rpm += RPM_LPF * ((((float)cnt_delta) / ENCODER_RES * 60000.0f) - rpm);
-		rpm_der += RPM_DER_LPF * ((rpm - p_rpm) - rpm_der);
+		rpm = update_motion_observer(ENC_TIM->CNT, 0.001f);
 		
 		// RPM PID control
 		if(mode == MODE_RPM) {
-			pid_rpm.derivative = -rpm_der;
-			PID_compute(&pid_rpm, rpm, 0.002);
+			pid_rpm.derivative = rpm_der;
+			PID_compute(&pid_rpm, rpm, 0.001f);
 
 			if(pid_rpm.setpoint == 0 && fabs(rpm) < 25) {
 				SetPower(0);
@@ -185,9 +175,52 @@ void TIM5_IRQHandler(void) {
 			ind_cnt = 0; // TODO: multi turn
 			net_position = position + ind_cnt * 360.0f;
 			
-			SetPower(PID_compute(&pid_angle, net_position, 0.002f) / 2000.0f);
+			SetPower(PID_compute(&pid_angle, net_position, 0.001f) / 2000.0f);
 		}
 	}
+}
+
+#define MOTION_FILT_BW 100.0f * 6.283185f
+static float measured_pos = 0., est_pos = 0.0f;
+
+static inline float update_motion_observer(int16_t current_raw_count, float dt) {
+	static float L1 = 3.0f * MOTION_FILT_BW;
+	static float L2 = 3.0f * MOTION_FILT_BW * MOTION_FILT_BW;
+	static float L3 = MOTION_FILT_BW * MOTION_FILT_BW * MOTION_FILT_BW;
+
+	static float est_pos = 0.0f;
+	static float est_vel = 0.0f;
+	static float est_acc = 0.0f;
+	static int16_t last_raw_count = 0;
+
+	static int16_t delta;
+	static float error;
+
+	delta = current_raw_count - last_raw_count;
+	if(delta >  ENCODER_RES/2) delta -= ENCODER_RES;
+	if(delta < -ENCODER_RES/2) delta += ENCODER_RES;
+
+	last_raw_count = current_raw_count;
+	
+	measured_pos += (float)delta;
+
+	float pos_prediction = est_pos + (est_vel * dt) + (0.5f * est_acc * dt * dt);
+    float vel_prediction = est_vel + (est_accel * dt);
+
+    float error = measured_pos - pos_prediction;
+
+	est_pos   = pos_prediction + (L1 * error * dt);
+    est_vel   = vel_prediction + (L2 * error * dt);
+    est_accel = est_accel      + (L3 * error * dt);
+
+    pos_filt = est_pos / ENCODER_RES;
+	rpm = (est_vel   * 60.0f) / ENCODER_RES; // RPM
+	acc = (est_accel * 60.0f) / ENCODER_RES; // RPM/s
+}
+
+void reset_motion_observer() {
+	measured_pos = 0.0f;
+	est_pos = 0.0f;
 }
 
 void setPhaseVoltage(float p, float u_d, float angle_el) {
@@ -760,8 +793,12 @@ inline void SetPosition(float pos) {
 	pid_angle.setpoint = pos;
 }
 
-inline float GetPosition() {
+inline float GetPositionRaw() {
 	return position;
+}
+
+inline float GetPosition() {
+	return pos_filt;
 }
 
 inline float GetPower() {
@@ -777,8 +814,8 @@ inline float GetRPM() {
 	return rpm;
 }
 
-inline float GetRPM_der() {
-	return rpm_der;
+inline float GetAcc() {
+	return acc;
 }
 
 inline float normalizeAngle(float angle) {
