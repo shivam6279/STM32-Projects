@@ -141,6 +141,8 @@ int main(void) {
 //	MotorShort(1.0f);
 //	MotorPhasePWM(0.5, 0.5, 0.5);
 
+	char rx_buffer_local[];
+
 	while (1) {
 
 		if(can_rx_rdy) {
@@ -148,17 +150,52 @@ int main(void) {
 		}
 
 		if(rx_rdy) {
-			rx_rdy = 0;
-			if(str_beginsWith(rx_buffer, "diags")) {
-				diagsMenu();
-			} else if(str_beginsWith(rx_buffer, "capture")) {
-				break;
+			HAL_NVIC_DisableIRQ(USART1_IRQn);
+			for(i = i; rx_buffer[i] != '\0'; i++) {
+				rx_buffer_local[i] = rx_buffer;
 			}
-			else {
+			rx_rdy = 0;
+			HAL_NVIC_EnableIRQ(USART1_IRQn);
+
+			str_removeChar(rx_buffer_local, '\n');
+			str_removeChar(rx_buffer_local, '\r');
+
+			if(str_beginsWith(rx_buffer_local, "diags")) {
+				diagsMenu();
+			} else if(str_beginsWith(rx_buffer_local, "capture")) {
+				break;
+			} else if(rx_buffer_local[1] == '\1' && (rx_buffer_local[0] >= 'A' && rx_buffer_local[0] <= 'Z')) {
+				if(rx_buffer_local[0] == 'P') {
+					mode = MODE_POWER;
+				} else if(rx_buffer_local[0] == 'R') {
+					mode = MODE_RPM;
+				} else if(rx_buffer_local[0] == 'A') {
+					mode = MODE_POS;
+				} else if(rx_buffer_local[0] == 'X') {
+					mode = MODE_OFF;
+					motorOff();
+					SetPower(0);
+					pid_focIq.setpoint = 0;
+					pid_focId.setpoint = 0;
+					pid_rpm.setpoint = 0;
+					pid_angle.setpoint = 0;
+					PID_reset(pid_focIq);
+					PID_reset(pid_focId);
+					PID_reset(pid_rpm);
+					PID_reset(pid_angle);
+				}
+
+			} else if(str_isFloat(rx_buffer_local)) {
 				float input;
-				input = str_toFloat(rx_buffer);
-				SetPower(input / 2000.0f);
-				pid_focIq.setpoint = input;
+				input = str_toFloat(rx_buffer_local);
+				if(mode == MODE_POWER) {
+					SetPower(input / 2000.0f);
+					pid_focIq.setpoint = input;
+				} else if(mode == MODE_RPM) {
+					pid_rpm.setpoint = input;
+				} else if(mode == MODE_POS) {
+					pid_angle.setpoint = input;
+				}
 			}
 		}
 
@@ -335,14 +372,14 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    Error_Handler();
+	Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_PCLK3;
+							  |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
+							  |RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -351,7 +388,7 @@ void SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
-    Error_Handler();
+	Error_Handler();
   }
 }
 
