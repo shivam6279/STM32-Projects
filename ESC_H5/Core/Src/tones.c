@@ -3,6 +3,7 @@
 #include <math.h>
 #include "BLDC.h"
 #include "PWM.h"
+#include "ADC.h"
 #include "string_utils.h"
 #include "USART.h"
 
@@ -48,7 +49,7 @@ void TIM12_IRQHandler(void) {
 		LED0_TOG();
 	
 		if(play_wav) {
-			setPhaseVoltage(tone_power, 0, wav_value * tone_amplitude * wav_amplitude_correction);
+			setPhaseVoltage(tone_power*vsns_vbat, 0, wav_value * tone_amplitude * wav_amplitude_correction);
 #if WAV_FILE_BIT_DEPTH == 16
 			wav_index += 2;
 			wav_value = (int16_t)(wav[wav_index+1] << 8 | wav[wav_index]);
@@ -71,13 +72,13 @@ void TIM12_IRQHandler(void) {
 				if(tone_square_phase == SIX_STEP) {
 					MotorPhase(tone_phase, tone_power);
 				} else if(tone_square_phase == FOC) {
-					setPhaseVoltage(tone_power, 0, tone_phase * tone_amplitude);
+					setPhaseVoltage(tone_power*vsns_vbat, 0, tone_phase * tone_amplitude);
 				}
 
 			} else if(tone_waveform == SIN) {
 				sin_phase_delta = (float)SIN_TABLE_SIZE * sin_frequency / SIN_ISR_FREQ / 4.0f;
 				sin_index = (uint32_t)(sin_index + sin_phase_delta) % SIN_TABLE_SIZE;
-				setPhaseVoltage(tone_power, 0.0f, tone_amplitude * sin_table[sin_index]);
+				setPhaseVoltage(tone_power*vsns_vbat, 0.0f, tone_amplitude * sin_table[sin_index]);
 			}
 		}
 	}
@@ -160,7 +161,7 @@ void PlayWav() {
 	PlayTone(440);
 	while(play_wav);
 	for(i = 0, p = tone_power; i < 5; i++, p /= 2) {
-		setPhaseVoltage(p, 0.0f, tone_amplitude * sin_table[sin_index]);
+		setPhaseVoltage(p*vsns_vbat, 0.0f, tone_amplitude * sin_table[sin_index]);
 		HAL_Delay(10);
 	}
 	StopTone();

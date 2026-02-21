@@ -96,7 +96,7 @@ int main(void) {
 	MX_TIM15_Init();
 
 //	TIM4_init(25000);
-	TIM5_init(1000);
+	TIM5_init(10000);
 	TIM6_init(5000);
 	TIM12_init();
 	TIM16_init();
@@ -133,16 +133,12 @@ int main(void) {
 	TIM3->CCR2 = 0;
 
 	SetPower(0);
-	mode = MODE_POWER;
-
+	mode = MODE_OFF;
 	waveform_mode = MOTOR_FOC;
 
-//	mode = MODE_OFF;
-//	MotorShort(1.0f);
-//	MotorPhasePWM(0.5, 0.5, 0.5);
+	char rx_buffer_local[RX_BUFFER_SIZE];
 
-	char rx_buffer_local[];
-
+	pid_focId.setpoint = 0;
 	while (1) {
 
 		if(can_rx_rdy) {
@@ -151,11 +147,12 @@ int main(void) {
 
 		if(rx_rdy) {
 			HAL_NVIC_DisableIRQ(USART1_IRQn);
-			for(i = i; rx_buffer[i] != '\0'; i++) {
-				rx_buffer_local[i] = rx_buffer;
+			for(i = 0; rx_buffer[i] != '\0'; i++) {
+				rx_buffer_local[i] = rx_buffer[i];
 			}
 			rx_rdy = 0;
 			HAL_NVIC_EnableIRQ(USART1_IRQn);
+			rx_buffer_local[i] = '\0';
 
 			str_removeChar(rx_buffer_local, '\n');
 			str_removeChar(rx_buffer_local, '\r');
@@ -164,25 +161,28 @@ int main(void) {
 				diagsMenu();
 			} else if(str_beginsWith(rx_buffer_local, "capture")) {
 				break;
-			} else if(rx_buffer_local[1] == '\1' && (rx_buffer_local[0] >= 'A' && rx_buffer_local[0] <= 'Z')) {
+			} else if(rx_buffer_local[1] == '\0' && (rx_buffer_local[0] >= 'A' && rx_buffer_local[0] <= 'Z')) {
+				pid_focIq.setpoint = 0;
+				pid_focId.setpoint = 0;
+				pid_rpm.setpoint = 0;
+				pid_angle.setpoint = 0;
+				PID_reset(&pid_focIq);
+				PID_reset(&pid_focId);
+				PID_reset(&pid_rpm);
+				PID_reset(&pid_angle);
 				if(rx_buffer_local[0] == 'P') {
 					mode = MODE_POWER;
 				} else if(rx_buffer_local[0] == 'R') {
+					pid_focIq.setpoint = 0;
+					pid_focId.setpoint = 0;
 					mode = MODE_RPM;
 				} else if(rx_buffer_local[0] == 'A') {
+					reset_motion_observer();
 					mode = MODE_POS;
 				} else if(rx_buffer_local[0] == 'X') {
 					mode = MODE_OFF;
-					motorOff();
+					MotorOff();
 					SetPower(0);
-					pid_focIq.setpoint = 0;
-					pid_focId.setpoint = 0;
-					pid_rpm.setpoint = 0;
-					pid_angle.setpoint = 0;
-					PID_reset(pid_focIq);
-					PID_reset(pid_focId);
-					PID_reset(pid_rpm);
-					PID_reset(pid_angle);
 				}
 
 			} else if(str_isFloat(rx_buffer_local)) {
@@ -200,7 +200,8 @@ int main(void) {
 		}
 
 //		printf("%f\n", GetPosition());
-		printf("%.0f, %.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+		printf("%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
+//		printf("%.2f, %.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
 //		printf("%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
 
 //		HAL_Delay(1);

@@ -13,7 +13,7 @@
 #define _1_SQRT3 0.57735026918962576450914878050196f
 #define _2_SQRT3 1.1547005383792515290182975610039f
 
-static inline float update_motion_observer(int16_t, float)
+static inline void update_motion_observer(int16_t, float);
 static inline void adc_read_motor_isns();
 static inline void adc_read_other();
 static inline void foc_current_calc(float);
@@ -53,11 +53,11 @@ volatile uint8_t comp_rshift, bemf_dir;
 volatile unsigned char comp_u, comp_v, comp_w, comparator = 0;
 
 // Motor modes
-volatile motor_mode mode = MODE_POWER;
+volatile motor_mode mode = MODE_OFF;
 volatile motor_waveform_type waveform_mode = MOTOR_SVPWM;
 
 static volatile float position = 0.0, pos_filt = 0.0, rpm = 0.0, acc = 0.0, power = 0.0, power_lpf = 0.0;
-static volatile float angle_el = 0, angle_el_compensated = 0;
+volatile float angle_el = 0.0;
 
 float motor_polarity = 0;
 float motor_zero_angle = 0.0;
@@ -72,7 +72,7 @@ void TIM4_IRQHandler(void) {
 void ADC1_IRQHandler(void) {
 	static uint8_t sample_cnt = 0;
 	static int16_t pos_cnt;
-	static float velocity_el, last_angle_el, angle_el_diff;
+	static float angle_el_compensated;
 
 	if (ADC1->ISR & ADC_ISR_JEOC) {
 		ADC1->ISR = ADC_ISR_JEOC;
@@ -88,7 +88,7 @@ void ADC1_IRQHandler(void) {
 			// Read encoder value
 			pos_cnt = ENC_TIM->CNT & ENCODER_RES_MASK;
 
-//			position = encoder_LUT[pos_cnt] - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
+//          position = encoder_LUT[pos_cnt] - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
 			position = ((float)pos_cnt * 360.0f / ENCODER_RES) - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
 			// position = ((float)(4095 - spi_angle) * 360.0 / 4095.0) - motor_zero_angle;
 
@@ -100,68 +100,88 @@ void ADC1_IRQHandler(void) {
 				position -= 360.0f;
 			}
 
-			last_angle_el = angle_el;
 			angle_el = position*motor_pole_pairs;
 			angle_el -= 360.0f * (int)(angle_el * 0.002777778f);
-			angle_el_diff = angle_el - last_angle_el;
-			if(angle_el_diff > 180.0f) {
-				angle_el_diff -= 360.0f;
-			} else if(angle_el_diff < -180.0f) {
-				angle_el_diff += 360.0f;
-			}
-			velocity_el = angle_el_diff * 25000.0f;
 
-			angle_el_compensated = angle_el + velocity_el * 0.00006f;
+			angle_el_compensated = angle_el + rpm * 6.0f * motor_pole_pairs * 0.00003f;
 			angle_el_compensated -= 360.0f * (int)(angle_el_compensated * 0.002777778f);
 
-			foc_current_calc(angle_el); // Calculates electrical angle sin & cos
+			foc_current_calc(angle_el);
+
+			static int32_t theta_q31;
+			theta_q31 = (uint32_t)(angle_el_compensated * 11930464.711111f);
+			CORDIC->WDATA = theta_q31;
 
 			power += POWER_LPF*(power_lpf - power);
 
-			pid_focId.setpoint = 0;
+			// Read sin/cos from CORDIC
+			sin_el = ((float)(int32_t)CORDIC->RDATA) * 4.65661287e-10f; // Sin
+			cos_el = ((float)(int32_t)CORDIC->RDATA) * 4.65661287e-10f; // Cos
+
+			// pid_focId.setpoint = 0;
 			if(mode != MODE_OFF) {
 				if(fabsf(pid_focIq.setpoint) < 0.01f && fabsf(rpm) < 10.0f) {
 					pid_focId.integral *= 0.95f;
 					pid_focIq.integral *= 0.95f;
 				}
-				PID_compute(&pid_focIq, foc_iq, 0.00004f);
-				PID_compute(&pid_focId, foc_id, 0.00004f);
+				if(waveform_mode == MOTOR_FOC) {
+					PID_compute(&pid_focIq, foc_iq, 0.00004f);
+					PID_compute(&pid_focId, foc_id, 0.00004f);
+				} else {
+					PID_reset(&pid_focIq);
+					PID_reset(&pid_focId);
+					pid_focIq.output = power * vsns_vbat;
+				}
 				// if(power) {
-				// 	PID_compute(&pid_focIq, foc_iq, 0.00004f);
-				// 	PID_compute(&pid_focId, foc_id, 0.00004f);
+				//  PID_compute(&pid_focIq, foc_iq, 0.00004f);
+				//  PID_compute(&pid_focId, foc_id, 0.00004f);
 				// } else {
-				// 	PID_reset(&pid_focIq);
-				// 	PID_reset(&pid_focId);
+				//  PID_reset(&pid_focIq);
+				//  PID_reset(&pid_focId);
 				// }
 				// PID_compute(&pid_focIq, foc_iq, 0.00004f);
 				// PID_compute(&pid_focId, foc_id, 0.00004f);
 
-				setPhaseVoltage(power, pid_focId.output, angle_el_compensated);
+				setPhaseVoltage(pid_focIq.output, pid_focId.output, angle_el_compensated);
 			}
+
+			// update_motion_observer((int16_t)ENC_TIM->CNT, 0.00004f);
+
 			LED1_OFF();
 		} else {
 			LED1_ON();
 			adc_read_motor_isns();
 			LED1_OFF();
-		}	
+		}   
 	}
 }
 
 // RPM PID
 float Kv = 0.0001;
 void TIM5_IRQHandler(void) {
-	static float rpm_feedforward, angle_feedforward;
+	static float rpm_feedforward;
+	static float angle_max_rpm;
 
 	if(TIM5->SR & 0x1) {
 		TIM5->SR &= ~(0x1);
 
-		rpm = update_motion_observer(ENC_TIM->CNT, 0.001f);
-		
+		LED1_ON();
+
+		update_motion_observer((int16_t)ENC_TIM->CNT, 0.0001f);
+			
+		// Angle PID control
+		if (mode == MODE_POS) { 
+			pid_angle.derivative = -rpm;
+			PID_compute(&pid_angle, pos_filt, 0.0001f);
+			// pid_rpm.setpoint = pid_angle.output;
+			pid_focIq.setpoint = pid_angle.output;
+		}
+
 		// RPM PID control
 		if(mode == MODE_RPM) {
-			pid_rpm.derivative = -acc;
-			PID_compute(&pid_rpm, rpm, 0.001f);
-			rpm_feedforward = pid_rpm.setpoint * Kv;
+			pid_rpm.derivative = -acc/1000.0f;
+			PID_compute(&pid_rpm, rpm, 0.0001f);
+			rpm_feedforward = 0;//pid_rpm.setpoint * Kv;
 
 			if(pid_rpm.setpoint == 0 && fabs(rpm) < 25) {
 				SetPower(0);
@@ -170,51 +190,63 @@ void TIM5_IRQHandler(void) {
 				// SetPower(pid_rpm.output);
 				pid_focIq.setpoint = pid_rpm.output + rpm_feedforward;
 			}
-			
-		// Angle PID control
-		} else if (mode == MODE_POS) {	
-			pid_angle.derivative = -rpm;		
-			PID_compute(&pid_angle, pos_filt, 0.001f);
 		}
+
+		LED1_OFF();
 	}
 }
 
-#define MOTION_FILT_BW 100.0f * 6.283185f
-static float measured_pos = 0., est_pos = 0.0f;
+static float measured_pos = 0.0f, est_pos = 0.0f;
 
-static inline float update_motion_observer(int16_t current_raw_count, float dt) {
-	static float L1 = 3.0f * MOTION_FILT_BW;
-	static float L2 = 3.0f * MOTION_FILT_BW * MOTION_FILT_BW;
-	static float L3 = MOTION_FILT_BW * MOTION_FILT_BW * MOTION_FILT_BW;
+static inline void update_motion_observer(int16_t current_raw_count, float dt) {
+	static float L1;
+	static float L2;
+	static float L3;
 
-	static float est_pos = 0.0f;
 	static float est_vel = 0.0f;
 	static float est_acc = 0.0f;
 	static int16_t last_raw_count = 0;
 
+	static float pos_prediction;
+	static float vel_prediction;
+
 	static int16_t delta;
 	static float error;
+
+	static float enc_res = ENCODER_RES;
+	static float lambda;
+
+	lambda = 30.0f;
+	// if (rpm < 200.0f) {
+	// 	lambda = 10.0f + (rpm * 0.15f);
+	// }
+	L1 = 3.0f * lambda;
+	L2 = 3.0f * lambda * lambda;
+	L3 = lambda * lambda * lambda;
 
 	delta = current_raw_count - last_raw_count;
 	if(delta >  ENCODER_RES/2) delta -= ENCODER_RES;
 	if(delta < -ENCODER_RES/2) delta += ENCODER_RES;
+	if (delta > 100 || delta < -100) {
+		delta = 0;
+	}
 
 	last_raw_count = current_raw_count;
 	
 	measured_pos += (float)delta;
 
-	float pos_prediction = est_pos + (est_vel * dt) + (0.5f * est_acc * dt * dt);
-    float vel_prediction = est_vel + (est_accel * dt);
+	pos_prediction = est_pos + (est_vel * dt) + (0.5f * est_acc * dt * dt);
+	vel_prediction = est_vel + (est_acc * dt);
 
-    float error = measured_pos - pos_prediction;
+	error = measured_pos - pos_prediction;
 
 	est_pos   = pos_prediction + (L1 * error * dt);
-    est_vel   = vel_prediction + (L2 * error * dt);
-    est_accel = est_accel      + (L3 * error * dt);
+	est_vel   = vel_prediction + (L2 * error * dt);
+	est_acc   = est_acc        + (L3 * error * dt);
 
-    pos_filt = est_pos / ENCODER_RES;
-	rpm = (est_vel   * 60.0f) / ENCODER_RES; // RPM
-	acc = (est_accel * 60.0f) / ENCODER_RES; // RPM/s
+	pos_filt += 0.5 * (est_pos * 360.0f / enc_res - pos_filt);
+	rpm += 0.5 * ((est_vel * 60.0f) / enc_res - rpm); // RPM
+	acc += 0.5 * ((est_acc * 60.0f) / enc_res - acc); // RPM/s
 }
 
 void reset_motion_observer() {
@@ -222,21 +254,29 @@ void reset_motion_observer() {
 	est_pos = 0.0f;
 }
 
-void setPhaseVoltage(float p, float u_d, float angle_el) {
+
+float motor_l = 160E-6f;
+float motor_kv = 400;
+float motor_resistance = 1.15;
+
+void setPhaseVoltage(float Uq, float Ud, float angle_el) {
 	static float pwm_u, pwm_v, pwm_w;
 
 	static float center;
-	static float Ud, Uq;
+	static float Umag, Uq_limit;
 	static float Ualpha, Ubeta;
 	static float pwm_min, pwm_max;
 	static float w_e;
+	static float motor_kv_s;
+	static float motor_flux_linkage;
 
 	static float offset = 0.0f;
 	
-	static float vsns_vbat;
-	
 	static uint8_t ov_flag = 0;
 	static uint16_t *PWM_table;
+
+	static float p;
+	p = Uq / vsns_vbat; // Power percentage for non FOC
 	
 	p = p < -1.0f ? -1.0f : p > 1.0f ? 1.0f : p;
 	
@@ -244,27 +284,38 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 	
 	if(waveform_mode == MOTOR_FOC) {
 
-		Uq = pid_focIq.output;
-		// Uq = p * 0.5f;
-		
-		Ud = u_d;
-		// Ud = 0;
+		motor_kv_s = 1.0f/(motor_kv * 0.1047 * motor_pole_pairs);
+		motor_flux_linkage = 5.513288954 / (motor_kv * motor_pole_pairs);
+		w_e = rpm * 0.10472f * motor_pole_pairs;
 
-		// Feedforward terms
-		w_e = rpm * 0.10472f * motor_pole_pairs * 0.001f;
-		// Uq +=  w_e * (0.000022f * foc_id + 0.002189f);
-		// Ud += -w_e * motor_pole_pairs * 0.000022f * foc_iq;
+		// Bemf feedforward
+		Uq += w_e * motor_kv_s;
+
+		// Resistance feedforward
+		Uq += motor_resistance * pid_focIq.setpoint;
+
+		// Inductance feedforward
+		// Uq +=  w_e * (motor_l * foc_id + motor_flux_linkage);
+		// Ud += -w_e * motor_l * foc_iq;
+
+		Umag = sqrt(Uq*Uq + Ud*Ud);
+		Uq_limit - sqrt(vsns_vbat*vsns_vbat - Ud*Ud);
+		Uq = Uq < -Uq_limit ? -Uq_limit : Uq > Uq_limit ? Uq_limit : Uq;
+//		if(Umag > 7) {
+//			Uq *= 0.5;
+//			Ud *= 0.5;
+//		}
 
 		// Inverse Park Transform
-		Ualpha = Ud*cos_el - Uq*sin_el;
-		Ubeta  = Ud*sin_el + Uq*cos_el;
+		Ualpha = (Ud*cos_el - Uq*sin_el) / vsns_vbat;
+		Ubeta  = (Ud*sin_el + Uq*cos_el) / vsns_vbat;
 
 		// Inverse Clarke Transform
 		pwm_u = Ualpha;
 		pwm_v = -0.5f * Ualpha + _SQRT3_2 * Ubeta;
 		pwm_w = -0.5f * Ualpha - _SQRT3_2 * Ubeta;
 		
-//		center = sqrt(Ualpha*Ualpha + Ubeta*Ubeta);
+//      center = sqrt(Ualpha*Ualpha + Ubeta*Ubeta);
 		center = 0.5f;
 		
 		// SVPWM
@@ -276,12 +327,11 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 		pwm_v += center;
 		pwm_w += center;
 
-//		pwm_u -= pwm_min;
-//		pwm_v -= pwm_min;
-//		pwm_w -= pwm_min;
+//      pwm_u -= pwm_min;
+//      pwm_v -= pwm_min;
+//      pwm_w -= pwm_min;
 		
 	} else if(waveform_mode == MOTOR_SIN || waveform_mode == MOTOR_SVPWM || waveform_mode == MOTOR_SADDLE) {
-		
 		if(waveform_mode == MOTOR_SIN) {
 			PWM_table = sin_lut;
 			p *= 0.5f;
@@ -302,7 +352,7 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 		}
 		angle_el = -angle_el;
 		
-		pwm_u = (wave_lut(PWM_table, angle_el)       	+ offset) * p;
+		pwm_u = (wave_lut(PWM_table, angle_el)          + offset) * p;
 		pwm_v = (wave_lut(PWM_table, angle_el + 120.0f) + offset) * p;
 		pwm_w = (wave_lut(PWM_table, angle_el + 240.0f) + offset) * p;
 		
@@ -324,8 +374,6 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 	}
 
 	if(waveform_mode != MOTOR_TRAPEZOID) {
-		// TODO: VBAT ADC
-		vsns_vbat = 0.0f;
 		if(vsns_vbat > motor_ov) {
 			pwm_u = 0.0f;
 			pwm_v = 0.0f;
@@ -348,12 +396,13 @@ void setPhaseVoltage(float p, float u_d, float angle_el) {
 	}
 }
 
-#define ISNS_LPF 0.9f
+#define ISNS_LPF 0.7f
 #define ISNS_OFFSET_LPF 0.0001f
 static inline void adc_read_motor_isns() {
 	static float temp_isns_v, temp_isns_w;
 	static float isns_v_err, isns_w_err;
 	static float amp_gain = ISNS_AMP_GAIN * ISNS_UVW_R;
+	static float deadband = 0.007;
 
 	// Read injected ADC channels
 
@@ -365,7 +414,7 @@ static inline void adc_read_motor_isns() {
 		isns_w_err = ISNS_W_GAIN_ERR;
 		
 	} else {
-		// swap V and W	
+		// swap V and W 
 		temp_isns_v = (float)ADC1->JDR1 * ADC_CONV_FACTOR;
 		temp_isns_w = (float)ADC2->JDR1 * ADC_CONV_FACTOR;
 		isns_v_err = ISNS_W_GAIN_ERR;
@@ -380,6 +429,13 @@ static inline void adc_read_motor_isns() {
 	isns_v_offset = isns_v_offset < 1.55f ? 1.55f : isns_v_offset > 1.75f ? 1.75f : isns_v_offset;
 	isns_w_offset = isns_w_offset < 1.55f ? 1.55f : isns_w_offset > 1.75f ? 1.75f : isns_w_offset;
 
+	// if(temp_isns_v > (isns_v_offset - deadband) && temp_isns_v < (isns_v_offset + deadband)) {
+	// 	temp_isns_v = isns_v_offset;
+	// }
+	// if(temp_isns_w > (isns_w_offset - deadband) && temp_isns_w < (isns_w_offset + deadband)) {
+	// 	temp_isns_w = isns_w_offset;
+	// }
+
 	// Isns LPF
 	isns_v += ISNS_LPF * (((isns_v_offset - temp_isns_v) * amp_gain * isns_v_err) - isns_v) ;
 	isns_w += ISNS_LPF * (((isns_w_offset - temp_isns_w) * amp_gain * isns_w_err) - isns_w) ;
@@ -391,25 +447,32 @@ static inline void adc_read_motor_isns() {
 #define VSNS_LPF 0.01f
 static inline void adc_read_other() {
 	static uint16_t adc11, adc12, adc13, adc21, adc22, adc23;
+	static uint8_t startup = 1;
 
 	// Read other adc
-	adc21 =	(uint16_t)(adc_buffer[0] >> 16);	// isns_vbat
-	adc11 =	(uint16_t)(adc_buffer[0] & 0xFFFF);	// vsns_w
-	adc22 =	(uint16_t)(adc_buffer[1] >> 16);	// vsns_vbat
-	adc12 =	(uint16_t)(adc_buffer[1] & 0xFFFF);	// vsns_u
-	adc23 =	(uint16_t)(adc_buffer[2] >> 16);	// vsns_x
-	adc13 =	(uint16_t)(adc_buffer[2] & 0xFFFF);	// vsns_v
+	adc21 = (uint16_t)(adc_buffer[0] >> 16);    // isns_vbat
+	adc11 = (uint16_t)(adc_buffer[0] & 0xFFFF); // vsns_w
+	adc22 = (uint16_t)(adc_buffer[1] >> 16);    // vsns_vbat
+	adc12 = (uint16_t)(adc_buffer[1] & 0xFFFF); // vsns_u
+	adc23 = (uint16_t)(adc_buffer[2] >> 16);    // vsns_x
+	adc13 = (uint16_t)(adc_buffer[2] & 0xFFFF); // vsns_v
 
 	vsns_u += VSNS_LPF * ((float)adc12*ADC_CONV_FACTOR*MOTOR_VSNS_DIVIDER - vsns_u);
 	vsns_v += VSNS_LPF * ((float)adc13*ADC_CONV_FACTOR*MOTOR_VSNS_DIVIDER - vsns_v);
 	vsns_w += VSNS_LPF * ((float)adc11*ADC_CONV_FACTOR*MOTOR_VSNS_DIVIDER - vsns_w);
 	vsns_x += VSNS_LPF * ((float)adc23*ADC_CONV_FACTOR*MOTOR_VSNS_DIVIDER - vsns_x);
 
+	if(startup) {
+		vsns_vbat = (float)adc22*ADC_CONV_FACTOR * VSNS_VBAT_DIVIDER;
+		isns_vbat = (float)adc21*ADC_CONV_FACTOR - ISNS_VBAT_OFFSET;
+		startup = 0;
+	}
+
 	vsns_vbat += VBAT_LPF * ((float)adc22*ADC_CONV_FACTOR * VSNS_VBAT_DIVIDER - vsns_vbat);
 	isns_vbat += VBAT_LPF * (((float)adc21*ADC_CONV_FACTOR - ISNS_VBAT_OFFSET) * ISNS_VBAT_AMP_GAIN*ISNS_VBAT_R - isns_vbat);
 }
 
-#define FOC_IQ_LPF 0.4f
+#define FOC_IQ_LPF 0.8f
 static inline void foc_current_calc(float angle_el) {
 	static int32_t theta_q31;
 
@@ -456,16 +519,16 @@ void TIM6_IRQHandler(void) {
 		// T8CONbits.ON = 0;
 		
 		// if(sensorless_flag) {
-		// 	sensorless_flag = false;
-		// 	current_phase = (current_phase + 1) % 6;
-		// 	MotorPhase(current_phase, power);
-		// 	TMR8 = 0;
-		// 	PR8 = 3600;
+		//  sensorless_flag = false;
+		//  current_phase = (current_phase + 1) % 6;
+		//  MotorPhase(current_phase, power);
+		//  TMR8 = 0;
+		//  PR8 = 3600;
 		
 		// } else {
-		// 	IEC5bits.PWM4IE = 1;
-		// 	PR8 = 0xFFFFFFFF;
-		// 	TMR8 = 3600;
+		//  IEC5bits.PWM4IE = 1;
+		//  PR8 = 0xFFFFFFFF;
+		//  TMR8 = 3600;
 		// }
 	}
 }
@@ -480,10 +543,10 @@ void TIM7_IRQHandler(void) {
 		// TODO: PWM synced comparator read
 	
 		if(pwm_odd == 1) {
-//			comparator = (PORTG >> 6) & 0b111;
-//			comp_u = (comparator >> 2) & 1;
-//			comp_v = (comparator >> 1) & 1;
-//			comp_w = comparator & 1;
+//          comparator = (PORTG >> 6) & 0b111;
+//          comp_u = (comparator >> 2) & 1;
+//          comp_v = (comparator >> 1) & 1;
+//          comp_w = comparator & 1;
 
 			// LATDINV |= 1 << 6;
 		
@@ -492,38 +555,38 @@ void TIM7_IRQHandler(void) {
 			// T8CONbits.ON = 1;
 		
 			// if(waveform_mode == MODE_SENSORLESS) {
-			// 	if(current_phase == 0) {
-			// 		if(comparator & 1) {
-			// 			bemf_flag = true;
-			// 		}
-			// 	} else if(current_phase == 1) {
-			// 		if(!((comparator >> 1) & 1)) {
-			// 			bemf_flag = true;
-			// 		}
-			// 	} else if(current_phase == 2) {
-			// 		if((comparator >> 2) & 1) {
-			// 			bemf_flag = true;
-			// 		}
-			// 	} else if(current_phase == 3) {
-			// 		if(!(comparator & 1)) {
-			// 			bemf_flag = true;
-			// 		}
-			// 	} else if(current_phase == 4) {
-			// 		if((comparator >> 1) & 1) {
-			// 			bemf_flag = true;
-			// 		}
-			// 	} else if(current_phase == 5) {
-			// 		if(!((comparator >> 2) & 1)) {
-			// 			bemf_flag = true;
-			// 		}
-			// 	}
-			// 	if(bemf_flag) {
-			// 		IEC5bits.PWM4IE = 0;
-			// 		sensorless_flag = true;
-			// 		phase_delay = (1.0f-LPF_PHASE)*phase_delay + LPF_PHASE*(float)TMR8;
-			// 		TMR8 = 0;
-			// 		PR8 = phase_delay;
-			// 	}
+			//  if(current_phase == 0) {
+			//      if(comparator & 1) {
+			//          bemf_flag = true;
+			//      }
+			//  } else if(current_phase == 1) {
+			//      if(!((comparator >> 1) & 1)) {
+			//          bemf_flag = true;
+			//      }
+			//  } else if(current_phase == 2) {
+			//      if((comparator >> 2) & 1) {
+			//          bemf_flag = true;
+			//      }
+			//  } else if(current_phase == 3) {
+			//      if(!(comparator & 1)) {
+			//          bemf_flag = true;
+			//      }
+			//  } else if(current_phase == 4) {
+			//      if((comparator >> 1) & 1) {
+			//          bemf_flag = true;
+			//      }
+			//  } else if(current_phase == 5) {
+			//      if(!((comparator >> 2) & 1)) {
+			//          bemf_flag = true;
+			//      }
+			//  }
+			//  if(bemf_flag) {
+			//      IEC5bits.PWM4IE = 0;
+			//      sensorless_flag = true;
+			//      phase_delay = (1.0f-LPF_PHASE)*phase_delay + LPF_PHASE*(float)TMR8;
+			//      TMR8 = 0;
+			//      PR8 = phase_delay;
+			//  }
 			// }
 		}
 		pwm_odd = (pwm_odd + 1) % 2;
@@ -679,9 +742,9 @@ void MotorOff() {
 }
 
 void MotorShort(float p) {
-	// p = 0:		float all phases
-	// p = 1.0:		short all phases to ground
-	// 0 < p < 1:	pwm (short/float) all phases to ground
+	// p = 0:       float all phases
+	// p = 1.0:     short all phases to ground
+	// 0 < p < 1:   pwm (short/float) all phases to ground
 	
 	p = fabs(p) * PWM_MAX;
 
@@ -739,39 +802,45 @@ void MotorPIDInit() {
 	PID_init(&pid_rpm);
 	PID_init(&pid_focIq);
 	PID_init(&pid_focId);
-														// Input Units - Output Units
-	PID_setGain(&pid_rpm,	0.001,	0.001,	0.0		);	// RPM         - Iq (Amps)
-	PID_setGain(&pid_angle,	2.0,	2.0,	1.0		);	// Degrees	   - RPM
-	PID_setGain(&pid_focIq,	0.01,	40.0,	0		);	// Iq (Amps)   - [-1, 1]
-	PID_setGain(&pid_focId,	0.01,	40.0,	0		);	// Id (Amps)   - [-1, 1]
-
-	// RPM
-	PID_enableErrorConstrain(&pid_rpm);
-	PID_setErrorLimits(&pid_rpm, -500, 500);
-	PID_disableComputeDerivative(&pid_rpm);
-	PID_setOutputLimits(&pid_rpm, -10, 10);
-	
-	// Angle
-	PID_enableErrorConstrain(&pid_angle);
-	PID_setErrorLimits(&pid_angle, -360, 360);
-	PID_disableComputeDerivative(&pid_angle);
-	PID_setOutputLimits(&pid_angle, -2000, 2000);
+														// Input Units	- Output Units
+	PID_setGain(&pid_focIq,	0.12,	500.0,	0.0		);	// Iq (Amps)	- Volt
+	PID_setGain(&pid_focId,	0.12,	500.0,	0.0		);	// Id (Amps)	- Volt
+	PID_setGain(&pid_rpm,	0.01,	0.05,	0.005	);	// RPM			- Iq (Amps)
+	PID_setGain(&pid_angle,	0.01,	0.005,	0.005	);	// Degrees		- Iq (Amps)	
 
 	// Iq
 	// PID_enableErrorConstrain(&pid_focIq);
 	// PID_setErrorLimits(&pid_focIq, -0.5, 0.5);
 	PID_enableIntegralConstrain(&pid_focIq);
-	PID_setIntegralLimits(&pid_focIq, -0.7, 0.7);
+	PID_setIntegralLimits(&pid_focIq, -7, 7);
 	PID_enableOutputConstrain(&pid_focIq);
-	PID_setOutputLimits(&pid_focIq, -1.0, 1.0);
+	PID_setOutputLimits(&pid_focIq, -12, 12);
 	
 	// Id
 	// PID_enableErrorConstrain(&pid_focId);
 	// PID_setErrorLimits(&pid_focId, -0.8, 0.8);
 	PID_enableIntegralConstrain(&pid_focId);
-	PID_setIntegralLimits(&pid_focId, -0.7, 0.7);
+	PID_setIntegralLimits(&pid_focId, -7, 7);
 	PID_enableOutputConstrain(&pid_focId);
-	PID_setOutputLimits(&pid_focId, -0.7, 0.7);
+	PID_setOutputLimits(&pid_focId, -7, 7);
+
+	// RPM
+	PID_enableErrorConstrain(&pid_rpm);
+	PID_setErrorLimits(&pid_rpm, -1000, 1000);
+	PID_enableIntegralConstrain(&pid_rpm);
+	PID_setIntegralLimits(&pid_rpm, -10, 10);
+	PID_disableComputeDerivative(&pid_rpm);
+	PID_enableOutputConstrain(&pid_rpm);
+	PID_setOutputLimits(&pid_rpm, -15, 15);
+	
+	// Angle
+	PID_enableErrorConstrain(&pid_angle);
+	PID_setErrorLimits(&pid_rpm, -45, 45);
+	PID_enableIntegralConstrain(&pid_angle);
+	PID_setIntegralLimits(&pid_angle, -7, 7);
+	PID_disableComputeDerivative(&pid_angle);
+	PID_enableOutputConstrain(&pid_angle);
+	PID_setOutputLimits(&pid_angle, -10, 10);
 }
 
 inline void ResetMotorPID() {

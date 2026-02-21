@@ -145,7 +145,7 @@ uint8_t diags_spinMotor(char *cmd) {
 	mode = MODE_OFF;
 	while(1) {
 		for(i = 0; i < 360; i += 60) {
-			setPhaseVoltage(0.03, 0, (float)i);
+			setPhaseVoltage(0.03*vsns_vbat, 0, (float)i);
 			HAL_Delay(500);
 			printf("%.2f\n", GetPositionRaw());
 			HAL_Delay(250);
@@ -249,17 +249,17 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		printf("Motor set to electrical angle: %.4f\n", str_toFloat(arg_val));
 		printf("With power = %.2f\n", diags_power);
 		mode = MODE_OFF;
-		setPhaseVoltage(diags_power, 0, str_toFloat(arg_val));
+		setPhaseVoltage(diags_power*vsns_vbat, 0, str_toFloat(arg_val));
 		
 	} else if(str_getArgValue(cmd, "zero", arg_val)) {
 		printf("Moved to zero (space vector: 100)\n");
 		printf("With power = %.2f\n", diags_power);
 		mode = MODE_OFF;
-		setPhaseVoltage(diags_power, 0, str_toFloat(arg_val));
+		setPhaseVoltage(diags_power*vsns_vbat, 0, str_toFloat(arg_val));
 		
 		// Set phase voltages to (1, 0, 0)
 		MotorPhasePWM(0.5f+diags_power/2.0f, 0.5f-diags_power/2.0f, 0.5f-diags_power/2.0f);
-		// MotorPhasePWM(diags_power, 0, 0);
+		// MotorPhasePWM(diags_power*vsns_vbat, 0, 0);
 	
 	// Set 6 step phase
 	} else if(str_getArgValue(cmd, "-s", arg_val)) {
@@ -271,7 +271,7 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	// Spin in 6 step
 	} else if(str_getArgValue(cmd, "spin", arg_val)) {
 		for(i = 0; i < 360; i += 60) {
-			setPhaseVoltage(diags_power, 0, (float)i);
+			setPhaseVoltage(diags_power*vsns_vbat, 0, (float)i);
 			HAL_Delay(500);
 			printf("%.2f\n, ", GetPositionRaw());
 			HAL_Delay(250);
@@ -473,7 +473,7 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 	mode = MODE_OFF;
 	while(1) {
 		for(i = 0; i <= 360; i += 60) {
-			setPhaseVoltage(power, 0, (float)i);
+			setPhaseVoltage(power*vsns_vbat, 0, (float)i);
 			HAL_Delay(100);
 			
 			if(rx_rdy) {
@@ -506,7 +506,7 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 	arr_indx = 0;
 	for(j = 0; j < motor_pole_pairs; j++) {
 		for(i = 0; i < 360; i += 60) {
-			setPhaseVoltage(power, 0, (float)i);
+			setPhaseVoltage(power*vsns_vbat, 0, (float)i);
 			HAL_Delay(500);
 
 			pos_cnt = ENC_TIM->CNT;
