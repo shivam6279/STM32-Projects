@@ -255,10 +255,10 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		printf("Moved to zero (space vector: 100)\n");
 		printf("With power = %.2f\n", diags_power);
 		mode = MODE_OFF;
-		setPhaseVoltage(diags_power*vsns_vbat, 0, str_toFloat(arg_val));
+		setPhaseVoltage(0, diags_power*vsns_vbat, 0);
 		
 		// Set phase voltages to (1, 0, 0)
-		MotorPhasePWM(0.5f+diags_power/2.0f, 0.5f-diags_power/2.0f, 0.5f-diags_power/2.0f);
+		// MotorPhasePWM(0.5f+diags_power/2.0f, 0.5f-diags_power/2.0f, 0.5f-diags_power/2.0f);
 		// MotorPhasePWM(diags_power*vsns_vbat, 0, 0);
 	
 	// Set 6 step phase

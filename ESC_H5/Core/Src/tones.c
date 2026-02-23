@@ -265,7 +265,7 @@ void PlayNote(const char *in_str) {
 uint8_t PlayRTTLL(const char *in_str) {
 	unsigned int i, j, k;
 
-	char name_str[25];
+	char name_str[250];
 	char settings_str[25];
 	char note[10];
 	char temp[5];

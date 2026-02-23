@@ -5,11 +5,11 @@
 #include <math.h>
 #include "PID.h"
 
-#define ENCODER_RES 4096.0f
-#define ENCODER_RES_MASK 0xFFF
+#define ENCODER_RES 2048.0f // 4096.0f
+#define ENCODER_RES_MASK 0x7FF // 0xFFF
 
 #define FOC_DEGREE_ADVANCE 90.0f
-#define RPM_ADVANCE_FACTOR 0//0.0002f
+#define ENC_LATENCY 0.0f // 0.00001f
 
 #define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)
@@ -54,6 +54,8 @@ extern volatile float foc_id, foc_iq;
 extern volatile float isns_u, isns_v, isns_w;
 extern volatile float angle_el;
 extern volatile float sin_el, cos_el;
+
+extern volatile float thermal_energy;
 
 extern void MotorPhase(int8_t, float);
 extern void MotorPhasePWM(float, float, float);

@@ -200,8 +200,10 @@ int main(void) {
 		}
 
 //		printf("%f\n", GetPosition());
-		printf("%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
-//		printf("%.2f, %.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+//		printf("%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
+//		printf("%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
+		// printf("%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
+		printf("%.2f, %.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
 //		printf("%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
 
 //		HAL_Delay(1);
