@@ -206,7 +206,6 @@ off : Turn motor off (coast)\n\
 wave [s] : Display waveform type. Set waveform type to \"foc\", \"svpwm\", \"sin\", \"saddle\", or \"trapezoid\"\n\
 polepairs [p] : Display pole pairs. Optionally set to p.\n\
 dir [0/1] : Motor wiring direction. 0 for normal, 1 for reverse.\n\
-advance [a] : Display foc degree advance. Optionally set to a.\n\
 setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
@@ -255,10 +254,10 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		printf("Moved to zero (space vector: 100)\n");
 		printf("With power = %.2f\n", diags_power);
 		mode = MODE_OFF;
-		setPhaseVoltage(0, diags_power*vsns_vbat, 0);
+		// setPhaseVoltage(0, diags_power*vsns_vbat, 0);
 		
 		// Set phase voltages to (1, 0, 0)
-		// MotorPhasePWM(0.5f+diags_power/2.0f, 0.5f-diags_power/2.0f, 0.5f-diags_power/2.0f);
+		MotorPhasePWM(0.5f+diags_power/2.0f, 0.5f-diags_power/2.0f, 0.5f-diags_power/2.0f);
 		// MotorPhasePWM(diags_power*vsns_vbat, 0, 0);
 	
 	// Set 6 step phase
@@ -304,15 +303,6 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 			printf("Motor pole pairs set to: %.0f\n", motor_pole_pairs);
 		} else {
 			printf("Current motor pole pairs: %.0f\n", motor_pole_pairs);
-		}
-	
-	// Set foc degree advance
-	} else if(str_getArgValue(cmd, "advance", arg_val)) {
-		if(char_isDigit(arg_val[0])) {
-			foc_degree_advance = str_toInt(arg_val);
-			printf("Degree advance set to: %.2f\n", foc_degree_advance);
-		} else {
-			printf("Current degree advance: %.2f\n", foc_degree_advance);
 		}
 
 	// Set waveform

@@ -5,11 +5,10 @@
 #include <math.h>
 #include "PID.h"
 
-#define ENCODER_RES 2048.0f // 4096.0f
-#define ENCODER_RES_MASK 0x7FF // 0xFFF
+#define ENCODER_RES 4096.0f
+#define ENCODER_RES_MASK 0xFFF
 
-#define FOC_DEGREE_ADVANCE 90.0f
-#define ENC_LATENCY 0.0f // 0.00001f
+#define ENC_LATENCY 0.00001f
 
 #define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)
@@ -47,7 +46,7 @@ extern float encoder_calib_data[32];
 
 extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
-extern float motor_pole_pairs, foc_degree_advance;
+extern float motor_pole_pairs;
 extern uint8_t motor_direction, enc_direction;
 
 extern volatile float foc_id, foc_iq;

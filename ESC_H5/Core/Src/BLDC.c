@@ -22,7 +22,6 @@ static inline float wave_lut(uint16_t*, float);
 #define DEAD_TIME 25
 
 float motor_pole_pairs = 7;
-float foc_degree_advance = FOC_DEGREE_ADVANCE;
 uint8_t motor_direction = 0; // Motor wiring: 1 for reverse
 uint8_t enc_direction = 0; // Encoder direction: 1 for reverse
 
@@ -87,7 +86,7 @@ void ADC1_IRQHandler(void) {
 
 		sample_cnt = (sample_cnt + 1) & 0b1;
 		if(!sample_cnt) {
-			LED1_ON();
+			// LED1_ON();
 
 			// Read ADCs
 			adc_read_motor_isns();
@@ -147,11 +146,11 @@ void ADC1_IRQHandler(void) {
 
 			// update_motion_observer((int16_t)ENC_TIM->CNT, 0.00004f);
 
-			LED1_OFF();
+			// LED1_OFF();
 		} else {
-			LED1_ON();
+			// LED1_ON();
 			adc_read_motor_isns();
-			LED1_OFF();
+			// LED1_OFF();
 		}   
 	}
 }
@@ -165,7 +164,7 @@ void TIM5_IRQHandler(void) {
 	if(TIM5->SR & 0x1) {
 		TIM5->SR &= ~(0x1);
 
-		LED1_ON();
+		// LED1_ON();
 
 		update_motion_observer((int16_t)ENC_TIM->CNT, 0.0001f);
 			
@@ -201,7 +200,7 @@ void TIM5_IRQHandler(void) {
 			thermal_fault = 1;
 		}
 
-		LED1_OFF();
+		// LED1_OFF();
 	}
 }
 
@@ -268,7 +267,7 @@ void reset_motion_observer() {
 
 float motor_l = 160E-6f;
 float motor_kv = 400;
-float motor_resistance = 1.15;
+float motor_resistance = 0.215;
 
 void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 	static float pwm_u, pwm_v, pwm_w;
@@ -302,14 +301,14 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 		// Uq += motor_resistance * pid_focIq.setpoint;
 
 		// BEMF feedforward
-		// Uq += 0.85f * w_e *motor_flux_linkage;
+		Uq += 0.95f * w_e * motor_flux_linkage;
 
 		// Inductance feedforward
-		// Uq += 0.85f *  w_e * motor_l * foc_id;
-		// Ud += 0.85f * -w_e * motor_l * foc_iq;
+		Uq += 0.95f *  w_e * motor_l * foc_id;
+		Ud += 0.95f * -w_e * motor_l * foc_iq;
 
 		// Umag = sqrt(Uq*Uq + Ud*Ud);
-		Uq_limit = sqrt(vsns_vbat*vsns_vbat - Ud*Ud);
+		Uq_limit = sqrt(vsns_vbat*vsns_vbat/3.0f - Ud*Ud);
 		Uq = Uq < -Uq_limit ? -Uq_limit : Uq > Uq_limit ? Uq_limit : Uq;
 
 		sin = ((float)(int32_t)CORDIC->RDATA) * 4.65661287e-10f; // Sin
@@ -405,7 +404,7 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 	}
 }
 
-#define ISNS_LPF 0.5f
+#define ISNS_LPF 0.75f
 #define ISNS_OFFSET_LPF 0.0001f
 static inline void adc_read_motor_isns() {
 	static float temp_isns_v, temp_isns_w;
@@ -484,7 +483,7 @@ static inline void adc_read_other() {
 	isns_vbat += VBAT_LPF * (((float)adc21*ADC_CONV_FACTOR - ISNS_VBAT_OFFSET) * ISNS_VBAT_AMP_GAIN*ISNS_VBAT_R - isns_vbat);
 }
 
-#define FOC_IQ_LPF 0.2f
+#define FOC_IQ_LPF 0.5f
 static inline void foc_current_calc(float angle_el) {
 	static int32_t theta_q31;
 
@@ -815,10 +814,8 @@ void MotorPIDInit() {
 	PID_init(&pid_focIq);
 	PID_init(&pid_focId);
 														// Input Units	- Output Units
-	// PID_setGain(&pid_focIq,	0.08,	550.0,	0.0		);	// Iq (Amps)	- Volt
-	// PID_setGain(&pid_focId,	0.08,	550.0,	0.0		);	// Id (Amps)	- Volt
-	PID_setGain(&pid_focIq,	0.03,	50.0,	0.0		);	// Iq (Amps)	- Volt
-	PID_setGain(&pid_focId,	0.03,	50.0,	0.0		);	// Id (Amps)	- Volt
+	PID_setGain(&pid_focIq,	0.5,	750.0,	0.0		);	// Iq (Amps)	- Volt
+	PID_setGain(&pid_focId,	0.5,	750.0,	0.0		);	// Id (Amps)	- Volt
 	PID_setGain(&pid_rpm,	0.01,	0.001,	0.005	);	// RPM			- Iq (Amps)
 	PID_setGain(&pid_angle,	0.01,	0.005,	0.005	);	// Degrees		- Iq (Amps)	
 
@@ -826,17 +823,17 @@ void MotorPIDInit() {
 	// PID_enableErrorConstrain(&pid_focIq);
 	// PID_setErrorLimits(&pid_focIq, -0.5, 0.5);
 	PID_enableIntegralConstrain(&pid_focIq);
-	PID_setIntegralLimits(&pid_focIq, -6, 6);
+	PID_setIntegralLimits(&pid_focIq, -10, 10);
 	PID_enableOutputConstrain(&pid_focIq);
-	PID_setOutputLimits(&pid_focIq, -6, 6);
+	PID_setOutputLimits(&pid_focIq, -10, 10);
 	
 	// Id
 	// PID_enableErrorConstrain(&pid_focId);
 	// PID_setErrorLimits(&pid_focId, -0.8, 0.8);
 	PID_enableIntegralConstrain(&pid_focId);
-	PID_setIntegralLimits(&pid_focId, -6, 6);
+	PID_setIntegralLimits(&pid_focId, -10, 10);
 	PID_enableOutputConstrain(&pid_focId);
-	PID_setOutputLimits(&pid_focId, -6, 6);
+	PID_setOutputLimits(&pid_focId, -10, 10);
 
 	// RPM
 	PID_enableErrorConstrain(&pid_rpm);

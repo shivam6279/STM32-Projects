@@ -13,7 +13,7 @@
 #define MOTOR_VSNS_DIVIDER 4.3f // ((33.0f + 10.0f) / 10.0f)
 
 #define ISNS_AMP_GAIN 0.05f // (1.0f/20.0f)
-#define ISNS_UVW_R 1000.0f // (1.0f/0.001f)
+#define ISNS_UVW_R 200.0f // (1.0f/0.005f)
 
 // Motor Isns gain correction factors
 #define ISNS_V_GAIN_ERR 1.0f
