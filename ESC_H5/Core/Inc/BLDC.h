@@ -5,8 +5,8 @@
 #include <math.h>
 #include "PID.h"
 
-#define ENCODER_RES 4096.0f
-#define ENCODER_RES_MASK 0xFFF
+#define ENCODER_RES 2048.0f//4096.0f
+#define ENCODER_RES_MASK 0x7FF//0xFFF
 
 #define ENC_LATENCY 0.00001f
 

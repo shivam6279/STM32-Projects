@@ -18,6 +18,10 @@ typedef struct __attribute__((aligned(16))) {
 	float pid_angle[3];
 	float pid_rpm[3];
 
+	float motor_kv;
+	float motor_r;
+	float motor_l;
+
 	float enc_calib[32];
 
 	float diags_power;

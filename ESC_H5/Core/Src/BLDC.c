@@ -39,6 +39,11 @@ PID pid_angle, pid_rpm, pid_focIq, pid_focId;
 float encoder_calib_data[] = {7.91, 37.08, 66.35, 95.71, 126.4, 157.23, 187.73, 217.17, 246.35, 275.8, 306.47, 337.23};
 float encoder_LUT[(int)ENCODER_RES];
 
+// Motor constants
+float motor_kv = 750;
+float motor_l = 35E-6f * 0.5f;
+float motor_r = 0.092f * 0.5f;
+
 // FOC
 volatile float sin_el, cos_el;
 volatile float foc_id = 0.0f, foc_iq = 0.0f;
@@ -95,7 +100,7 @@ void ADC1_IRQHandler(void) {
 			// Read encoder value
 			pos_cnt = ENC_TIM->CNT & ENCODER_RES_MASK;
 
-//          position = encoder_LUT[pos_cnt] - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
+//          position = encoder_LUT[pos_cnt] - motor_zero_angle ++ (rpm * 6.0f * ENC_LATENCY);
 			position = ((float)pos_cnt * 360.0f / ENCODER_RES) - motor_zero_angle + (rpm * 6.0f * ENC_LATENCY);
 			// position = ((float)(4095 - spi_angle) * 360.0 / 4095.0) - motor_zero_angle;
 
@@ -265,10 +270,6 @@ void reset_motion_observer() {
 	est_pos = 0.0f;
 }
 
-float motor_l = 160E-6f;
-float motor_kv = 400;
-float motor_resistance = 0.215;
-
 void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 	static float pwm_u, pwm_v, pwm_w;
 
@@ -298,7 +299,7 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 		w_e = rpm * 0.10472f * motor_pole_pairs;
 
 		// Resistance feedforward
-		// Uq += motor_resistance * pid_focIq.setpoint;
+		// Uq += motor_r * pid_focIq.setpoint;
 
 		// BEMF feedforward
 		Uq += 0.95f * w_e * motor_flux_linkage;
@@ -813,11 +814,18 @@ void MotorPIDInit() {
 	PID_init(&pid_rpm);
 	PID_init(&pid_focIq);
 	PID_init(&pid_focId);
-														// Input Units	- Output Units
-	PID_setGain(&pid_focIq,	0.5,	750.0,	0.0		);	// Iq (Amps)	- Volt
-	PID_setGain(&pid_focId,	0.5,	750.0,	0.0		);	// Id (Amps)	- Volt
-	PID_setGain(&pid_rpm,	0.01,	0.001,	0.005	);	// RPM			- Iq (Amps)
-	PID_setGain(&pid_angle,	0.01,	0.005,	0.005	);	// Degrees		- Iq (Amps)	
+
+	float foc_bw = 2000.0f * 2.0f * 3.14159265358979323846f;
+
+	// FOC PID Gains
+	// Kp = L*2pi*f_bw
+	// Ki = R*2pi*f_bw
+	// f_bw = 100hz - 5000hz
+																		// Input Units	- Output Units
+	PID_setGain(&pid_focIq,	foc_bw*motor_l,	foc_bw*motor_r,	0.0		);	// Iq (Amps)	- Volt
+	PID_setGain(&pid_focId,	foc_bw*motor_l,	foc_bw*motor_r,	0.0		);	// Id (Amps)	- Volt
+	PID_setGain(&pid_rpm,	0.01,			0.001,			0.005	);	// RPM			- Iq (Amps)
+	PID_setGain(&pid_angle,	0.01,			0.005,			0.005	);	// Degrees		- Iq (Amps)	
 
 	// Iq
 	// PID_enableErrorConstrain(&pid_focIq);

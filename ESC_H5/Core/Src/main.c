@@ -654,6 +654,7 @@ static void MX_TIM2_Init(uint8_t dir) {
     TIM2->SMCR &= ~TIM_SMCR_TS;
 	TIM2->SMCR |= (7U << TIM_SMCR_TS_Pos);
 
+	// TIM2->ECR |= 0b10 << 6;
 	TIM2->ECR |= TIM_ECR_IE; // I pulse reset in both directions
 
     TIM2->CCMR1 &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_CC2S);
