@@ -21,6 +21,7 @@ DCACHE_HandleTypeDef hdcache1;
 FDCAN_HandleTypeDef hfdcan1;
 FDCAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[64];
+uint16_t can_id;
 
 SPI_HandleTypeDef hspi1;
 DMA_NodeTypeDef Node_GPDMA1_Channel2;
@@ -42,7 +43,7 @@ static void MX_GPIO_Init(void);
 static void MX_GPDMA1_Init(void);
 static void MX_DCACHE1_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_FDCAN1_Init(void);
+static void MX_FDCAN1_Init(uint8_t, uint8_t);
 static void MX_I2C1_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_TIM2_Init(uint8_t);
@@ -92,10 +93,41 @@ volatile uint8_t can_rx_rdy = 0;
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
 		HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData);
+
+		if(RxHeader.Identifier == can_id) {
+			can_rx_rdy = 1;
+		} else if(RxHeader.Identifier == (can_id+1)) {
+			rx_rdy = 2;
+			set_serial_mode(SER_MODE_BOTH);
+		}
+
 		HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
-		can_rx_rdy = 1;
 	}
-	can_rx_rdy = 1;
+}
+
+void change_motor_mode(char new_mode) {
+	pid_focIq.setpoint = 0;
+	pid_focId.setpoint = 0;
+	pid_rpm.setpoint = 0;
+	pid_angle.setpoint = 0;
+	PID_reset(&pid_focIq);
+	PID_reset(&pid_focId);
+	PID_reset(&pid_rpm);
+	PID_reset(&pid_angle);
+	if(new_mode == 'P') {
+		mode = MODE_POWER;
+	} else if(new_mode == 'R') {
+		pid_focIq.setpoint = 0;
+		pid_focId.setpoint = 0;
+		mode = MODE_RPM;
+	} else if(new_mode == 'A') {
+		reset_motion_observer();
+		mode = MODE_POS;
+	} else if(new_mode == 'X') {
+		mode = MODE_OFF;
+		MotorOff();
+		SetPower(0);
+	}
 }
 
 int main(void) {
@@ -111,7 +143,6 @@ int main(void) {
 	MX_GPDMA1_Init();
 	ADCInit();
 	MX_DCACHE1_Init();
-	MX_FDCAN1_Init();
 	MX_I2C1_Init();
 	MX_ICACHE_Init();
 	MX_TIM1_Init(50000); // Motor pwm freq
@@ -126,6 +157,8 @@ int main(void) {
 
 	MX_CORDIC_Init();
 
+	set_serial_mode(SER_MODE_UART);
+
 	// CAN PHY in normal mode (not SILENT)
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);	// CAN_S
 
@@ -138,6 +171,9 @@ int main(void) {
 	diags_power = eeprom_data.diags_power;
 	tone_power = eeprom_data.tone_power;
 	tone_amplitude = eeprom_data.tone_amplitude;
+
+	can_id = 0x300 + 0xF*(board_id-1);
+	MX_FDCAN1_Init(can_id, 0xF);	
 
 	MX_TIM2_Init(enc_direction); // Encoder timer
 //	MX_SPI1_Init();
@@ -163,20 +199,37 @@ int main(void) {
 	char rx_buffer_local[RX_BUFFER_SIZE];
 
 	pid_focId.setpoint = 0;
+	uint8_t can_motor_mode = 'X';
+	float can_float;
 	while (1) {
 
 		if(can_rx_rdy) {
 			can_rx_rdy = 0;
+			if(RxData[0] != can_motor_mode) {
+				can_motor_mode = RxData[0];
+				change_motor_mode(can_motor_mode);
+			}
+			uint32_t can_float_temp = RxData[1] << 24 | RxData[2] << 16 | RxData[3] << 8 | RxData[4];
+			can_float = *(float*)((uint32_t*)&can_float_temp);
 		}
 
 		if(rx_rdy) {
-			HAL_NVIC_DisableIRQ(USART1_IRQn);
-			for(i = 0; rx_buffer[i] != '\0'; i++) {
-				rx_buffer_local[i] = rx_buffer[i];
+			if(rx_rdy == 1) {
+				HAL_NVIC_DisableIRQ(USART1_IRQn);
+				for(i = 0; rx_buffer[i] != '\0'; i++) {
+					rx_buffer_local[i] = rx_buffer[i];
+				}
+				HAL_NVIC_EnableIRQ(USART1_IRQn);
+				rx_buffer_local[i] = '\0';
+			} else if(rx_rdy == 2) {
+				rx_rdy = 0;
+				for(i = 0; RxData[i] != '\0'; i++) {
+					rx_buffer_local[i] = RxData[i];
+				}
+				rx_buffer_local[i] = '\0';
+			} else {
+				continue;
 			}
-			rx_rdy = 0;
-			HAL_NVIC_EnableIRQ(USART1_IRQn);
-			rx_buffer_local[i] = '\0';
 
 			str_removeChar(rx_buffer_local, '\n');
 			str_removeChar(rx_buffer_local, '\r');
@@ -186,28 +239,7 @@ int main(void) {
 			} else if(str_beginsWith(rx_buffer_local, "capture")) {
 				break;
 			} else if(rx_buffer_local[1] == '\0' && (rx_buffer_local[0] >= 'A' && rx_buffer_local[0] <= 'Z')) {
-				pid_focIq.setpoint = 0;
-				pid_focId.setpoint = 0;
-				pid_rpm.setpoint = 0;
-				pid_angle.setpoint = 0;
-				PID_reset(&pid_focIq);
-				PID_reset(&pid_focId);
-				PID_reset(&pid_rpm);
-				PID_reset(&pid_angle);
-				if(rx_buffer_local[0] == 'P') {
-					mode = MODE_POWER;
-				} else if(rx_buffer_local[0] == 'R') {
-					pid_focIq.setpoint = 0;
-					pid_focId.setpoint = 0;
-					mode = MODE_RPM;
-				} else if(rx_buffer_local[0] == 'A') {
-					reset_motion_observer();
-					mode = MODE_POS;
-				} else if(rx_buffer_local[0] == 'X') {
-					mode = MODE_OFF;
-					MotorOff();
-					SetPower(0);
-				}
+				change_motor_mode(rx_buffer_local[0]);
 
 			} else if(str_isFloat(rx_buffer_local)) {
 				float input;
@@ -223,14 +255,15 @@ int main(void) {
 			}
 		}
 
-//		printf("%f\n", GetPosition());
-//		printf("%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
-//		printf("%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
-		// printf("%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
-		printf("%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
-//		printf("%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
+		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
+		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
+		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
+		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
+		snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
+		send_serial(serial_buffer);
 
-//		HAL_Delay(1);
+		// HAL_Delay(1);
 	}
 
 	for(i = 0; i < 1500; i++) {
@@ -522,7 +555,7 @@ static void MX_SPI1_Init(void) {
 	}
 }
 
-static void MX_FDCAN1_Init(void) {
+static void MX_FDCAN1_Init(uint8_t id, uint8_t range) {
 	hfdcan1.Instance = FDCAN1;
 	hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
 	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
@@ -550,10 +583,10 @@ static void MX_FDCAN1_Init(void) {
 	/* Configure Rx filter */
 	sFilterConfig.IdType = FDCAN_STANDARD_ID;
 	sFilterConfig.FilterIndex = 0;
-	sFilterConfig.FilterType = FDCAN_FILTER_MASK;
+	sFilterConfig.FilterType = FDCAN_FILTER_RANGE;
 	sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-	sFilterConfig.FilterID1 = 0;
-	sFilterConfig.FilterID2 = 0;
+	sFilterConfig.FilterID1 = id;
+	sFilterConfig.FilterID2 = sFilterConfig.FilterID1 + range;
 
 	if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig) != HAL_OK) {
 		Error_Handler();

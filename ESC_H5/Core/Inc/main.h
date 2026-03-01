@@ -36,6 +36,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 extern uint8_t board_id;
+extern uint8_t can_id;
 
 #ifdef __cplusplus
 }

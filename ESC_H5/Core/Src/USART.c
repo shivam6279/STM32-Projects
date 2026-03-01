@@ -6,6 +6,9 @@
 #include <inttypes.h>
 
 UART_HandleTypeDef huart1;
+char serial_buffer[64];
+uint8_t serial_buffer_len;
+uint8_t serial_mode = 0;
 
 #ifdef __GNUC__
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
@@ -16,6 +19,42 @@ UART_HandleTypeDef huart1;
 PUTCHAR_PROTOTYPE {
 	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
 	return ch;
+}
+
+void send_serial(char str[]) {
+	if(serial_mode != SER_MODE_UART) {
+		CAN_send_serial(str);
+	}
+	if(serial_mode != SER_MODE_CAN) {
+		HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+	}
+}
+
+void set_serial_mode(uint8_t mode) {
+	serial_mode = mode;
+}
+
+void CAN_send_serial(char str[]) {
+	static uint8_t CAN_TxData[64];
+	static uint8_t i;
+
+	CAN_TxHeader.Identifier = can_id + 1 - 0x100;
+	CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
+	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_64;
+	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
+	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
+	CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
+	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	CAN_TxHeader.MessageMarker = 0;
+
+	for(i = 0; str[i] != '\0' && i < 64; i++) {
+		CAN_TxData[i] = str[i];
+	}
+	for(; i < 64; i++) {
+		CAN_TxData[i] = '\0';
+	}
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
 }
 
 volatile unsigned char rx_buffer[RX_BUFFER_SIZE];

@@ -70,7 +70,8 @@ void diagsMenu() {
 
 	MotorOff();
 	printDiagsMenu();
-	printf("[diags]: ");
+	snprintf(serial_buffer, sizeof(serial_buffer), "[diags]: ");
+	send_serial(serial_buffer);
 	
 	while(ch != 'x') {
 		HAL_Delay(10);
@@ -83,7 +84,8 @@ void diagsMenu() {
 			
 			ch = input[0];
 			
-			printf("%s\n", input);
+			snprintf(serial_buffer, sizeof(serial_buffer), "%s\n", input);
+			send_serial(serial_buffer);
 
 			str_removeChar(input, '\r');
 			str_removeChar(input, '\n');
@@ -92,7 +94,8 @@ void diagsMenu() {
 				printDiagsMenu();
 
 			} else if(str_beginsWith(input, "exit")) {
-				printf("Exiting [diags]");
+				snprintf(serial_buffer, sizeof(serial_buffer), "Exiting [diags]\n");
+				send_serial(serial_buffer);
 				mode = MODE_OFF;
 				MotorOff();
 				return;
@@ -104,19 +107,23 @@ void diagsMenu() {
 						input_len = str_len(input);
 						if(input[input_len] == ' ' || input[input_len] == '\0') {
 							if(diags_list[i].func(input)) {
-								printf("OK\n");
+								snprintf(serial_buffer, sizeof(serial_buffer), "OK\n");
+								send_serial(serial_buffer);
 							} else {
-								printf("ERROR\n");
+								snprintf(serial_buffer, sizeof(serial_buffer), "ERROR\n");
+								send_serial(serial_buffer);
 							}
 							flag = true;
 						}
 					}
 				}
 				if(!flag && input[0] != '\0') {
-					printf("Incorrect diags command. \"help\" to see list of commands\n");
+					snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect diags command. \"help\" to see list of commands\n");
+					send_serial(serial_buffer);
 				}
 			}
-			printf("[diags]: ");
+			snprintf(serial_buffer, sizeof(serial_buffer), "[diags]: ");
+			send_serial(serial_buffer);
 		}
 	}
 }
@@ -133,9 +140,11 @@ char read_rx_char() {
 void printDiagsMenu() {
 	unsigned char i;
 	for(i = 0; i < diags_list_len; i++) {
-		printf("%s - %s\n", diags_list[i].cmd, diags_list[i].name);
+		snprintf(serial_buffer, sizeof(serial_buffer), "%s - %s\n", diags_list[i].cmd, diags_list[i].name);
+		send_serial(serial_buffer);
 	}
-	printf("exit. Exit\n");
+	snprintf(serial_buffer, sizeof(serial_buffer), "exit. Exit\n");
+	send_serial(serial_buffer);
 }
 
 uint8_t diags_spinMotor(char *cmd) {
@@ -147,7 +156,8 @@ uint8_t diags_spinMotor(char *cmd) {
 		for(i = 0; i < 360; i += 60) {
 			setPhaseVoltage(0.03*vsns_vbat, 0, (float)i);
 			HAL_Delay(500);
-			printf("%.2f\n", GetPositionRaw());
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f\n", GetPositionRaw());
+			send_serial(serial_buffer);
 			HAL_Delay(250);
 
 			if(rx_rdy) {
@@ -172,16 +182,19 @@ Commands to set/display id:\n\
 id [x] : Display board id. Optionally set to x.\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
-	printf("Board id: %d\n", board_id);
+	snprintf(serial_buffer, sizeof(serial_buffer), "Board id: %d\n", board_id);
+	send_serial(serial_buffer);
 
 	if(str_getArgValue(cmd, "id", arg_val)) {
 		if(str_isInt(arg_val)) {
 			board_id = str_toInt(arg_val);
-			printf("Board id set to: %d\n", board_id);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Board id set to: %d\n", board_id);
+			send_serial(serial_buffer);
 		}
 	}
 	
@@ -209,13 +222,15 @@ dir [0/1] : Motor wiring direction. 0 for normal, 1 for reverse.\n\
 setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 
 	// Set electrical angle
 	if(str_getArgValue(cmd, "-p", arg_val)) {
-		printf("Motor power set to: %.4f\n", str_toFloat(arg_val));
+		snprintf(serial_buffer, sizeof(serial_buffer), "Motor power set to: %.4f\n", str_toFloat(arg_val));
+		send_serial(serial_buffer);
 		mode = MODE_POWER;
 		SetPower(str_toFloat(arg_val) / 2000.0);
 
@@ -226,8 +241,10 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 			acceleration = str_toFloat(arg_val);
 		}
 
-		printf("Ramping motor power to: %.4f\n", set_power);
-		printf("\nAt an acceleration of %.2f per ms\n", acceleration);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Ramping motor power to: %.4f\n", set_power);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "\nAt an acceleration of %.2f per ms\n", acceleration);
+		send_serial(serial_buffer);
 		// SetPower(GetPower() * 2000);
 		if(set_power > power) {
 			do {
@@ -242,17 +259,22 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 				SetPower(power / 2000.0f);
 			} while(power > set_power);
 		}
-		printf("Done\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "Done\n");
+		send_serial(serial_buffer);
 
 	} else if(str_getArgValue(cmd, "-e", arg_val)) {
-		printf("Motor set to electrical angle: %.4f\n", str_toFloat(arg_val));
-		printf("With power = %.2f\n", diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Motor set to electrical angle: %.4f\n", str_toFloat(arg_val));
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", diags_power);
+		send_serial(serial_buffer);
 		mode = MODE_OFF;
 		setPhaseVoltage(diags_power*vsns_vbat, 0, str_toFloat(arg_val));
 		
 	} else if(str_getArgValue(cmd, "zero", arg_val)) {
-		printf("Moved to zero (space vector: 100)\n");
-		printf("With power = %.2f\n", diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Moved to zero (space vector: 100)\n");
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", diags_power);
+		send_serial(serial_buffer);
 		mode = MODE_OFF;
 		// setPhaseVoltage(0, diags_power*vsns_vbat, 0);
 		
@@ -262,8 +284,10 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	
 	// Set 6 step phase
 	} else if(str_getArgValue(cmd, "-s", arg_val)) {
-		printf("Move motor to six step phase: %d\n", str_toInt(arg_val));
-		printf("With power = %.2f\n", diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Move motor to six step phase: %d\n", str_toInt(arg_val));
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", diags_power);
+		send_serial(serial_buffer);
 		mode = MODE_OFF;
 		MotorPhase(str_toInt(arg_val), diags_power);
 		
@@ -272,7 +296,8 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		for(i = 0; i < 360; i += 60) {
 			setPhaseVoltage(diags_power*vsns_vbat, 0, (float)i);
 			HAL_Delay(500);
-			printf("%.2f\n, ", GetPositionRaw());
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f\n, ", GetPositionRaw());
+			send_serial(serial_buffer);
 			HAL_Delay(250);
 
 			if(rx_rdy) {
@@ -287,82 +312,105 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 
 	// Turn off motor
 	} else if(str_getArgValue(cmd, "off", arg_val)) {
-		printf("Motor off\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "Motor off\n");
+		send_serial(serial_buffer);
 		mode = MODE_OFF;
 		MotorOff();
 
 	// Set power
 	} else if(str_getArgValue(cmd, "setpower", arg_val)) {
 		diags_power = str_toFloat(arg_val);
-		printf("Power set to: %.4f\n", diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Power set to: %.4f\n", diags_power);
+		send_serial(serial_buffer);
 	
 	// Set motor pole pairs
 	} else if(str_getArgValue(cmd, "polepairs", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			motor_pole_pairs = str_toInt(arg_val);
-			printf("Motor pole pairs set to: %.0f\n", motor_pole_pairs);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Motor pole pairs set to: %.0f\n", motor_pole_pairs);
+			send_serial(serial_buffer);
 		} else {
-			printf("Current motor pole pairs: %.0f\n", motor_pole_pairs);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor pole pairs: %.0f\n", motor_pole_pairs);
+			send_serial(serial_buffer);
 		}
 
 	// Set waveform
 	} else if(str_getArgValue(cmd, "wave", arg_val)) {
 		
 		if(str_isEqual(arg_val, "")) {
-			printf("Current motor waveform type: ");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor waveform type: ");
+				send_serial(serial_buffer);
 			if(waveform_mode == MOTOR_FOC) {
-				printf("FOC\n");
+				snprintf(serial_buffer, sizeof(serial_buffer), "FOC\n");
+				send_serial(serial_buffer);
 			} else if(waveform_mode == MOTOR_SVPWM) {
-				printf("SVPWM\n");
+				snprintf(serial_buffer, sizeof(serial_buffer), "SVPWM\n");
+				send_serial(serial_buffer);
 			} else if(waveform_mode == MOTOR_SIN) {
-				printf("SIN\n");
+				snprintf(serial_buffer, sizeof(serial_buffer), "SIN\n");
+				send_serial(serial_buffer);
 			} else if(waveform_mode == MOTOR_SADDLE) {
-				printf("SADDLE\n");
+				snprintf(serial_buffer, sizeof(serial_buffer), "SADDLE\n");
+				send_serial(serial_buffer);
 			} else if(waveform_mode == MOTOR_TRAPEZOID) {
-				printf("TRAPEZOID\n");
+				snprintf(serial_buffer, sizeof(serial_buffer), "TRAPEZOID\n");
+				send_serial(serial_buffer);
 			}
 			
 		} else if(str_isEqual(arg_val, "foc")) {
 			waveform_mode = MOTOR_FOC;
-			printf("Waveform type set to: FOC\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC\n");
+			send_serial(serial_buffer);
 
 		} else if(str_isEqual(arg_val, "svpwm")) {
 			waveform_mode = MOTOR_SVPWM;
-			printf("Waveform type set to: SVPWM\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: SVPWM\n");
+			send_serial(serial_buffer);
 
 		} else if(str_isEqual(arg_val, "sin")) {
 			waveform_mode = MOTOR_SIN;
-			printf("Waveform type set to: SIN\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: SIN\n");
+			send_serial(serial_buffer);
 			
 		} else if(str_isEqual(arg_val, "saddle")) {
 			waveform_mode = MOTOR_SADDLE;
-			printf("Waveform type set to: SADDLE\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: SADDLE\n");
+			send_serial(serial_buffer);
 
 		} else if(str_isEqual(arg_val, "trapezoid")) {
 			waveform_mode = MOTOR_TRAPEZOID;
-			printf("Waveform type set to: Trapezoid (6 step)\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: Trapezoid (6 step)\n");
+			send_serial(serial_buffer);
 
 		} else {
-			printf("Incorrect arg for wave. Requires:\n");
-			printf("svpwm\n");
-			printf("sin\n");
-			printf("trapezoid\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect arg for wave. Requires:\n");
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), "svpwm\n");
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), "sin\n");
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), "trapezoid\n");
+			send_serial(serial_buffer);
 		}
 		
 	// Set motor direction
 	} else if(str_getArgValue(cmd, "dir", arg_val)) {
 		if(arg_val[0] == '0' || arg_val[0] == '1') {
 			motor_direction = arg_val[0] != '0';
-			printf("Motor direction set to: %d\n", motor_direction);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Motor direction set to: %d\n", motor_direction);
+			send_serial(serial_buffer);
 		} else {
 			if(arg_val[0] != '\0') {
-				printf("Incorrect option. Use \"0\" or \"1\" \n");
+				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect option. Use \"0\" or \"1\" \n");
+			send_serial(serial_buffer);
 			}
-			printf("Current motor direction: %d\n", motor_direction);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor direction: %d\n", motor_direction);
+			send_serial(serial_buffer);
 		}
 
 	} else {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
@@ -382,7 +430,8 @@ dir [0/1] : Encoder count direction. 0 for normal, 1 for reverse.\n\
 calib [on/off] : Enable/disable encoder calibration correction\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
@@ -391,7 +440,8 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 		while(1) {
 			pos_cnt = ENC_TIM->CNT;
 			
-			printf("%d\n", pos_cnt);
+			snprintf(serial_buffer, sizeof(serial_buffer), "%d\n", pos_cnt);
+			send_serial(serial_buffer);
 			HAL_Delay(50);
 
 			if(rx_rdy) {
@@ -406,37 +456,45 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 	} else if(str_getArgValue(cmd, "zero", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			motor_zero_angle = str_toFloat(arg_val);
-			printf("Encoder zero offset set to: %.4f degrees\n", motor_zero_angle);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder zero offset set to: %.4f degrees\n", motor_zero_angle);
+			send_serial(serial_buffer);
 		} else {
-			printf("Encoder zero offset: %.4f degrees\n", motor_zero_angle);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder zero offset: %.4f degrees\n", motor_zero_angle);
+			send_serial(serial_buffer);
 		}
 
 	} else if(str_getArgValue(cmd, "dir", arg_val)) {
 		if(arg_val[0] == '0' || arg_val[0] == '1') {
 			enc_direction = arg_val[0] != '0';
-			printf("Encoder direction set to: %d\n", enc_direction);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder direction set to: %d\n", enc_direction);
+			send_serial(serial_buffer);
 		} else {
 			if(arg_val[0] != '\0') {
-				printf("Incorrect option. Use \"0\" or \"1\" \n");
+				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect option. Use \"0\" or \"1\" \n");
+			send_serial(serial_buffer);
 			}
-			printf("Current encoder direction: %d\n", enc_direction);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current encoder direction: %d\n", enc_direction);
+			send_serial(serial_buffer);
 		}
 	
 	// Encoder calibration correction
 	} else if(str_getArgValue(cmd, "calib", arg_val)) {
 		if(str_isEqual(arg_val, "on")) {
 			interpolate_encoder_lut(encoder_calib_data, 32);
-			printf("Encoder calibration correction enabled\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder calibration correction enabled\n");
+			send_serial(serial_buffer);
 		} else if(str_isEqual(arg_val, "off")) {
 			init_encoder_lut();
-			printf("Encoder calibration correction disabled\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder calibration correction disabled\n");
+			send_serial(serial_buffer);
 		}
 
 	// Display calibrated encoder data
 	} else {
 //		FOC_TIMER_ON();
 		while(1) {
-			printf("%.2f, %.4f\n", GetPositionRaw(), GetRPM());
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.4f\n", GetPositionRaw(), GetRPM());
+			send_serial(serial_buffer);
 			HAL_Delay(50);
 
 			if(rx_rdy) {
@@ -535,10 +593,12 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 		}
 	}
 	
-	printf("%.4f\n", zero_offset);
+	snprintf(serial_buffer, sizeof(serial_buffer), "%.4f\n", zero_offset);
+	send_serial(serial_buffer);
 
 	for(arr_indx = 0; arr_indx < (motor_pole_pairs*6); arr_indx++) {
-		printf("%.4f, %.4f\n", output[arr_indx][0], output[arr_indx][1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "%.4f, %.4f\n", output[arr_indx][0], output[arr_indx][1]);
+	send_serial(serial_buffer);
 	}
 	
 	mode = MODE_OFF;
@@ -563,27 +623,32 @@ Read temp sensor TMP1075:\n\
 -r : Output raw data\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
 		if(f < 1.0f || f > 10000.0f) {
-			printf("Invalid frequency\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
+			send_serial(serial_buffer);
 		} else {
-			printf("Set streaming fequency to %.4f Hz\n", f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", f);
+			send_serial(serial_buffer);
 			delay = 1000 / f;
 		}
 	}
 	
 	if(str_getArgValue(cmd, "-s", arg_val)) {
-		printf("MCU, FETs\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "MCU, FETs\n");
+		send_serial(serial_buffer);
 		while(1) {
 			uint32_t current_tick = HAL_GetTick();
 			TMP1075_getTemp(0, &t1);
 			TMP1075_getTemp(1, &t2);
-			printf("%.2f, %.2f\n", t2, t1);
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", t2, t1);
+			send_serial(serial_buffer);
 			while((HAL_GetTick() - current_tick) < delay);
 
 			if(rx_rdy) {
@@ -597,15 +662,19 @@ Read temp sensor TMP1075:\n\
 		TMP1075_getRawTemp(0, &t1_raw);
 		TMP1075_getRawTemp(1, &t2_raw);
 
-		printf("0: %d\n", t1_raw);
-		printf("1: %d\n", t2_raw);
+		snprintf(serial_buffer, sizeof(serial_buffer), "0: %d\n", t1_raw);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "1: %d\n", t2_raw);
+		send_serial(serial_buffer);
 
 	} else {
 		TMP1075_getTemp(0, &t1);
 		TMP1075_getTemp(1, &t2);
 
-		printf("MCU: %.2f C\n", t2);
-		printf("FETs: %.2f C\n", t1);
+		snprintf(serial_buffer, sizeof(serial_buffer), "MCU: %.2f C\n", t2);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FETs: %.2f C\n", t1);
+		send_serial(serial_buffer);
 	}
 	
 	return true;
@@ -622,16 +691,19 @@ Read ADC data\n\
 stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadrature currents, -v: motor phase voltages -f [x]: Set streaming frequency to f [1, 10000] (Hz)\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
 		if(f < 1.0f || f > 1000.0f) {
-			printf("Invalid frequency\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
+			send_serial(serial_buffer);
 		} else {
-			printf("Set streaming fequency to %.4f Hz\n", f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", f);
+			send_serial(serial_buffer);
 			delay = 1000000 / f;
 		}
 	}
@@ -642,7 +714,8 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				// TODO: us counter
 //				StartDelayusCounter();
 
-				printf("%.3f, %.3f, %.3f\n", isns_u, isns_v, isns_w);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.3f, %.3f, %.3f\n", isns_u, isns_v, isns_w);
+				send_serial(serial_buffer);
 
 				//TODO: us counter
 //				while(us_counter() < delay);
@@ -659,7 +732,8 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				//TODO: us counter
 //				StartDelayusCounter();
 
-				printf("%.2f, %.2f\n", foc_iq, foc_id);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", foc_iq, foc_id);
+				send_serial(serial_buffer);
 
 				//TODO: us counter
 //				while(us_counter() < delay);
@@ -676,7 +750,8 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				//TODO: us counter
 //				StartDelayusCounter();
 
-				printf("%.2f, %.2f, %.2f, %.2f\n", vsns_u, vsns_v, vsns_w, vsns_x);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f\n", vsns_u, vsns_v, vsns_w, vsns_x);
+				send_serial(serial_buffer);
 
 				//TODO: us counter
 //				while(us_counter() < delay);
@@ -693,7 +768,8 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				//TODO: us counter
 //				StartDelayusCounter();
 
-				printf("%.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f\n", vsns_u, vsns_v, vsns_w, vsns_x, isns_u, isns_v, isns_w);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f\n", vsns_u, vsns_v, vsns_w, vsns_x, isns_u, isns_v, isns_w);
+				send_serial(serial_buffer);
 
 				//TODO: us counter
 //				while(us_counter() < delay);
@@ -708,15 +784,24 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 		}
 	} else {
 		
-		printf("VSNS U: %.2f V\n", vsns_u);		
-		printf("VSNS V: %.2f V\n", vsns_w);		
-		printf("VSNS W: %.2f V\n", vsns_v);		
-		printf("VSNS X: %.2f V\n", vsns_x);		
-		printf("ISNS U: %.3f A\n", isns_u);
-		printf("ISNS V: %.3f A\n", isns_v);
-		printf("ISNS W: %.3f A\n", isns_w);
-		printf("VSNS VBAT: %.2f V\n", vsns_vbat);
-		printf("ISNS VBAT: %.3f A\n", isns_vbat);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS U: %.2f V\n", vsns_u);		
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS V: %.2f V\n", vsns_w);		
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS W: %.2f V\n", vsns_v);		
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS X: %.2f V\n", vsns_x);		
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS U: %.3f A\n", isns_u);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS V: %.3f A\n", isns_v);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS W: %.3f A\n", isns_w);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS VBAT: %.2f V\n", vsns_vbat);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS VBAT: %.3f A\n", isns_vbat);
+		send_serial(serial_buffer);
 	}
 	
 	return true;
@@ -731,7 +816,8 @@ I2C commands\n\
 scan : Scan bus and report addresses found\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
@@ -739,11 +825,13 @@ scan : Scan bus and report addresses found\n";
 	if(str_getArgValue(cmd, "scan", arg_val)) {
 		for(i = 1; i < 0x7F; i++) {
 //			if(I2C_CheckAddress(i)) {
-//				printf("0x%X\n", i);
+//				snprintf(serial_buffer, sizeof(serial_buffer), "0x%X\n", i);
+			send_serial(serial_buffer);
 //			}
 		}
 	} else {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 	}
 	
 	return true;
@@ -765,18 +853,21 @@ amplitude [p]: Display audio amplitude (degrees). Optionally set it to p (0 - 36
 wave [wave] : Set waveform type to [square] or [sin]\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
 	// Display raw
 	if(str_getArgValue(cmd, "note", arg_val)) {
 		str_toUpper(arg_val);
-		printf("Playing note: %s\n", arg_val);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Playing note: %s\n", arg_val);
+		send_serial(serial_buffer);
 		PlayNote(arg_val);
 
 	} else if(str_getArgValue(cmd, "freq", arg_val)) {
-		printf("Playing frequency: %.4f Hz\n", str_toFloat(arg_val));
+		snprintf(serial_buffer, sizeof(serial_buffer), "Playing frequency: %.4f Hz\n", str_toFloat(arg_val));
+		send_serial(serial_buffer);
 		PlayTone(str_toFloat(arg_val));
 
 	} else if(str_getArgValue(cmd, "wav", arg_val)) {
@@ -789,42 +880,52 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 		StopTone();
 
 	} else if(str_getArgValue(cmd, "rttll", arg_val)) {
-		printf("Playing rttll string\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "Playing rttll string\n");
+		send_serial(serial_buffer);
 		if(!PlayRTTLL(arg_val)) {
-			printf("Incorrect rttll string\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect rttll string\n");
+		send_serial(serial_buffer);
 		}
 		StopTone();
 		
 	} else if(str_getArgValue(cmd, "power", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			tone_power = str_toFloat(arg_val);
-			printf("Motor audio power level set to: %.4f\n", tone_power);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Motor audio power level set to: %.4f\n", tone_power);
+		send_serial(serial_buffer);
 		} else {
-			printf("Current motor audio power level: %.4f\n", tone_power);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor audio power level: %.4f\n", tone_power);
+		send_serial(serial_buffer);
 		}
 		
 	}  else if(str_getArgValue(cmd, "amplitude", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			tone_amplitude = str_toFloat(arg_val);
-			printf("Audio amplitude set to %.2f degrees\n", tone_amplitude);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Audio amplitude set to %.2f degrees\n", tone_amplitude);
+			send_serial(serial_buffer);
 		} else {
-			printf("Current audio amplitude is %.2f degrees\n", tone_amplitude);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current audio amplitude is %.2f degrees\n", tone_amplitude);
+			send_serial(serial_buffer);
 		}
 		
 	} else if(str_getArgValue(cmd, "wave", arg_val)) {
 		if(str_isEqual(arg_val, "square")) {
 			tone_waveform = SQUARE;
-			printf("Set audio waveform type to: SQUARE");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set audio waveform type to: SQUARE");
+			send_serial(serial_buffer);
 
 		} else if(str_isEqual(arg_val, "sin")) {
 			tone_waveform = SIN;
-			printf("Set audio waveform type to: SIN");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set audio waveform type to: SIN");
+			send_serial(serial_buffer);
 		} else {
-			printf("Incorrect wave type. Should be \"square\" or \"sin\"\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect wave type. Should be \"square\" or \"sin\"\n");
+			send_serial(serial_buffer);
 		}
 
 	} else {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+			send_serial(serial_buffer);
 		return true;
 	}
 
@@ -840,40 +941,51 @@ led <led no> <state>:\n\
 <state> : 0: on, 1: off, t: toggle\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 
 	if(cmd[4] == '0') {
 		if(cmd[6] == '0') {
-			printf("LED0 turned off\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "LED0 turned off\n");
+			send_serial(serial_buffer);
 			LED0_OFF();
 		} else if(cmd[6] == '1') {
-			printf("LED0 turned on\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "LED0 turned on\n");
+			send_serial(serial_buffer);
 			LED0_ON();
 		} else if(cmd[6] == 't') {
-			printf("LED0 toggled\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "LED0 toggled\n");
+			send_serial(serial_buffer);
 			LED0_TOG();
 		} else {
-			printf("Incorrect LED state selected\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect LED state selected\n");
+			send_serial(serial_buffer);
 		}
 
 	} else if(cmd[4] == '1') {
 		if(cmd[6] == '0') {
-			printf("LED1 turned off\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "LED1 turned off\n");
+			send_serial(serial_buffer);
 			LED1_OFF();
 		} else if(cmd[6] == '1') {
-			printf("LED1 turned on\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "LED1 turned on\n");
+			send_serial(serial_buffer);
 			LED1_ON();
 		} else if(cmd[6] == 't') {
-			printf("LED1 toggled\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "LED1 toggled\n");
+			send_serial(serial_buffer);
 			LED1_TOG();
 		} else {
-			printf("Incorrect LED state selected\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect LED state selected\n");
+			send_serial(serial_buffer);
 		}
 	} else {
-		printf("Incorrect LED number selected\n");
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect LED number selected\n");
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 	}
 	
 	return true;
@@ -889,25 +1001,30 @@ brake : Coast BLDC, then apply the brakes\n\
 off : Set servo pin to LOW\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 	
 	if(str_getArgValue(cmd, "us", arg_val)) {
-		printf("Setting servo pulse width to %d us\n", str_toInt(arg_val));
+		snprintf(serial_buffer, sizeof(serial_buffer), "Setting servo pulse width to %d us\n", str_toInt(arg_val));
+		send_serial(serial_buffer);
 		setServo_us(str_toInt(arg_val));
 
 	} else if(str_getArgValue(cmd, "brake", arg_val)) {
-		printf("Braking flywheel\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "Braking flywheel\n");
+		send_serial(serial_buffer);
 		// TODO: Servo brake sequence
 //		servoBrake();
 
 	} else if(str_getArgValue(cmd, "off", arg_val)) {
-		printf("Servo off\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "Servo off\n");
+		send_serial(serial_buffer);
 		servoOff();
 
 	} else {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 
@@ -928,15 +1045,18 @@ disp : Display all keys stored\n\
 diff : Display current vs eeprom diffn";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 
 	if(str_getArgValue(cmd, "read", arg_val)) {
-		printf("Command not implemented yet");
+		snprintf(serial_buffer, sizeof(serial_buffer), "Command not implemented yet");
+		send_serial(serial_buffer);
 	
 	} else if(str_getArgValue(cmd, "write", arg_val)) {
-		printf("Command not implemented yet");
+		snprintf(serial_buffer, sizeof(serial_buffer), "Command not implemented yet");
+		send_serial(serial_buffer);
 	
 	} else if(str_getArgValue(cmd, "save", arg_val)) {
 		disp_eeprom_diff();
@@ -1005,23 +1125,36 @@ diff : Display current vs eeprom diffn";
 	} else if(str_getArgValue(cmd, "disp", arg_val)) {
 		ee_read();
 
-		printf("Board ID: %d\n", eeprom_data.board_id);
-		printf("Zero offset: %.2f\n", eeprom_data.zero_offset);
-		printf("Pole pairs: %d\n", eeprom_data.pole_pairs);
-		printf("Encoder direction: %d\n", eeprom_data.enc_direction);
-		printf("Motor direction: %d\n", eeprom_data.motor_direction);
-		printf("Angle pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_angle[0], eeprom_data.pid_angle[1], eeprom_data.pid_angle[2]);
-		printf("RPM pid gains: %.5f, %.5f, %.5f\n", eeprom_data.pid_rpm[0], eeprom_data.pid_rpm[1], eeprom_data.pid_rpm[2]);
-		printf("FOC Iq pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_iq[0], eeprom_data.pid_foc_iq[1], eeprom_data.pid_foc_iq[2]);
-		printf("FOC Id pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_id[0], eeprom_data.pid_foc_id[1], eeprom_data.pid_foc_id[2]);
-		printf("Diags power: %.2f\n", eeprom_data.diags_power);
-		printf("Tone power: %.3f\n", eeprom_data.tone_power);
-		printf("Tone amplitude: %.2f\n", eeprom_data.tone_amplitude);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Board ID: %d\n", eeprom_data.board_id);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.2f\n", eeprom_data.zero_offset);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Pole pairs: %d\n", eeprom_data.pole_pairs);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Encoder direction: %d\n", eeprom_data.enc_direction);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Motor direction: %d\n", eeprom_data.motor_direction);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_angle[0], eeprom_data.pid_angle[1], eeprom_data.pid_angle[2]);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM pid gains: %.5f, %.5f, %.5f\n", eeprom_data.pid_rpm[0], eeprom_data.pid_rpm[1], eeprom_data.pid_rpm[2]);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_iq[0], eeprom_data.pid_foc_iq[1], eeprom_data.pid_foc_iq[2]);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_id[0], eeprom_data.pid_foc_id[1], eeprom_data.pid_foc_id[2]);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.2f\n", eeprom_data.diags_power);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.3f\n", eeprom_data.tone_power);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.2f\n", eeprom_data.tone_amplitude);
+		send_serial(serial_buffer);
 
 	} else if(str_getArgValue(cmd, "diff", arg_val)) {
 		disp_eeprom_diff();
 	} else {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 
@@ -1030,68 +1163,90 @@ diff : Display current vs eeprom diffn";
 
 void disp_eeprom_diff() {
 	ee_read();
-	printf("Deltas\n");
-	printf("Keyname: current, EEPROM\n");
+	snprintf(serial_buffer, sizeof(serial_buffer), "Deltas\n");
+	send_serial(serial_buffer);
+	snprintf(serial_buffer, sizeof(serial_buffer), "Keyname: current, EEPROM\n");
+	send_serial(serial_buffer);
 
 	if(board_id != eeprom_data.board_id) {
-		printf("Board ID: %d, %d\n", board_id, eeprom_data.board_id);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Board ID: %d, %d\n", board_id, eeprom_data.board_id);
+		send_serial(serial_buffer);
 	}
 	if(motor_zero_angle != eeprom_data.zero_offset) {
-		printf("Zero offset: %.4f, %.4f\n", motor_zero_angle, eeprom_data.zero_offset);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.4f, %.4f\n", motor_zero_angle, eeprom_data.zero_offset);
+		send_serial(serial_buffer);
 	}
 	if(motor_pole_pairs != eeprom_data.pole_pairs) {
-		printf("Pole pairs: %.0f, %d\n", motor_pole_pairs, eeprom_data.pole_pairs);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Pole pairs: %.0f, %d\n", motor_pole_pairs, eeprom_data.pole_pairs);
+		send_serial(serial_buffer);
 	}
 	if(enc_direction != eeprom_data.enc_direction) {
-		printf("Encoder direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Encoder direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);
+		send_serial(serial_buffer);
 	}
 	if(motor_direction != eeprom_data.motor_direction) {
-		printf("Motor direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Motor direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);
+		send_serial(serial_buffer);
 	}
 	if(pid_angle.kp != eeprom_data.pid_angle[0]) {
-		printf("Angle PID kp: %.4f, %.4f\n", pid_angle.kp, eeprom_data.pid_angle[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kp: %.4f, %.4f\n", pid_angle.kp, eeprom_data.pid_angle[0]);
+		send_serial(serial_buffer);
 	}
 	if(pid_angle.ki != eeprom_data.pid_angle[1]) {
-		printf("Angle PID ki: %.4f, %.4f\n", pid_angle.ki, eeprom_data.pid_angle[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID ki: %.4f, %.4f\n", pid_angle.ki, eeprom_data.pid_angle[1]);
+		send_serial(serial_buffer);
 	}
 	if(pid_angle.kd != eeprom_data.pid_angle[2]) {
-		printf("Angle PID kd: %.4f, %.4f\n", pid_angle.kd, eeprom_data.pid_angle[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kd: %.4f, %.4f\n", pid_angle.kd, eeprom_data.pid_angle[2]);
+		send_serial(serial_buffer);
 	}
 	if(pid_rpm.kp != eeprom_data.pid_rpm[0]) {
-		printf("RPM PID kp: %.4f, %.4f\n", pid_rpm.kp, eeprom_data.pid_rpm[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kp: %.4f, %.4f\n", pid_rpm.kp, eeprom_data.pid_rpm[0]);
+		send_serial(serial_buffer);
 	}
 	if(pid_rpm.ki != eeprom_data.pid_rpm[1]) {
-		printf("RPM PID ki: %.4f, %.4f\n", pid_rpm.ki, eeprom_data.pid_rpm[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID ki: %.4f, %.4f\n", pid_rpm.ki, eeprom_data.pid_rpm[1]);
+		send_serial(serial_buffer);
 	}
 	if(pid_rpm.kd != eeprom_data.pid_rpm[2]) {
-		printf("RPM PID kd: %.4f, %.4f\n", pid_rpm.kd, eeprom_data.pid_rpm[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kd: %.4f, %.4f\n", pid_rpm.kd, eeprom_data.pid_rpm[2]);
+		send_serial(serial_buffer);
 	}
 	if(pid_focIq.kp != eeprom_data.pid_foc_iq[0]) {
-		printf("FOC Iq PID kp: %.4f, %.4f\n", pid_focIq.kp, eeprom_data.pid_foc_iq[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", pid_focIq.kp, eeprom_data.pid_foc_iq[0]);
+		send_serial(serial_buffer);
 	}
 	if(pid_focIq.ki != eeprom_data.pid_foc_iq[1]) {
-		printf("FOC Iq PID ki: %.4f, %.4f\n", pid_focIq.ki, eeprom_data.pid_foc_iq[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID ki: %.4f, %.4f\n", pid_focIq.ki, eeprom_data.pid_foc_iq[1]);
+		send_serial(serial_buffer);
 	}
 	if(pid_focIq.kd != eeprom_data.pid_foc_iq[2]) {
-		printf("FOC Iq PID kp: %.4f, %.4f\n", pid_focIq.kd, eeprom_data.pid_foc_iq[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", pid_focIq.kd, eeprom_data.pid_foc_iq[2]);
+		send_serial(serial_buffer);
 	}
 	if(pid_focId.kp != eeprom_data.pid_foc_id[0]) {
-		printf("FOC Id PID kp: %.4f, %.4f\n", pid_focId.kp, eeprom_data.pid_foc_id[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kp: %.4f, %.4f\n", pid_focId.kp, eeprom_data.pid_foc_id[0]);
+		send_serial(serial_buffer);
 	}
 	if(pid_focId.ki != eeprom_data.pid_foc_id[1]) {
-		printf("FOC Id PID ki: %.4f, %.4f\n", pid_focId.ki, eeprom_data.pid_foc_id[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID ki: %.4f, %.4f\n", pid_focId.ki, eeprom_data.pid_foc_id[1]);
+		send_serial(serial_buffer);
 	}
 	if(pid_focId.kd != eeprom_data.pid_foc_id[2]) {
-		printf("FOC Id PID kd: %.4f, %.4f\n", pid_focId.kd, eeprom_data.pid_foc_id[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kd: %.4f, %.4f\n", pid_focId.kd, eeprom_data.pid_foc_id[2]);
+		send_serial(serial_buffer);
 	}
 	if(diags_power != eeprom_data.diags_power) {
-		printf("Diags power: %.4f, %.4f\n", diags_power, eeprom_data.diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.4f, %.4f\n", diags_power, eeprom_data.diags_power);
+		send_serial(serial_buffer);
 	}
 	if(tone_power != eeprom_data.tone_power) {
-		printf("Tone power: %.4f, %.4f\n", tone_power, eeprom_data.tone_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.4f, %.4f\n", tone_power, eeprom_data.tone_power);
+		send_serial(serial_buffer);
 	}
 	if(tone_amplitude != eeprom_data.tone_amplitude) {
-		printf("Tone amplitude: %.4f, %.4f\n", tone_amplitude, eeprom_data.tone_amplitude);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.4f, %.4f\n", tone_amplitude, eeprom_data.tone_amplitude);
+		send_serial(serial_buffer);
 	}
 }
 
@@ -1108,27 +1263,32 @@ Comparator output\n\
 -f [x]: Set streaming frequency to f [1, 10000] (Hz).\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
-		printf(help_str);
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
 		return true;
 	}
 
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
 		if(f < 1.0f || f > 10000.0f) {
-			printf("Invalid frequency\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
+		send_serial(serial_buffer);
 		} else {
-			printf("Set streaming fequency to %.4f Hz\n", f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", f);
+		send_serial(serial_buffer);
 			delay = 100000 / f;
 		}
 	}
 
 	if(str_getArgValue(cmd, "-s", arg_val)) {
-		printf("U, V, W\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "U, V, W\n");
+		send_serial(serial_buffer);
 		while(1) {
 			comp = comparator;
 			// TODO: us counter
 //			StartDelayusCounter();
-			printf("%d, %d, %d\n", (comparator >> 2) & 1, (comparator >> 1) & 1, comparator & 1);
+			snprintf(serial_buffer, sizeof(serial_buffer), "%d, %d, %d\n", (comparator >> 2) & 1, (comparator >> 1) & 1, comparator & 1);
+		send_serial(serial_buffer);
 			// TODO: us counter
 //			while(us_counter() < delay);
 
@@ -1142,9 +1302,12 @@ Comparator output\n\
 
 	} else {
 		comp = comparator;
-		printf("U: %d\n", (comparator >> 2) & 1);
-		printf("V: %d\n", (comparator >> 1) & 1);
-		printf("W: %d\n", comparator & 1);
+		snprintf(serial_buffer, sizeof(serial_buffer), "U: %d\n", (comparator >> 2) & 1);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "V: %d\n", (comparator >> 1) & 1);
+		send_serial(serial_buffer);
+		snprintf(serial_buffer, sizeof(serial_buffer), "W: %d\n", comparator & 1);
+		send_serial(serial_buffer);
 	}
 	
 	return true;
