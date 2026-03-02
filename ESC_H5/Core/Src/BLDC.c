@@ -262,7 +262,7 @@ static inline void update_motion_observer(int16_t current_raw_count, float dt) {
 	// acc += 0.5 * ((est_acc * 60.0f) / enc_res - acc); // RPM/s
 
 	pos_filt = position;
-	rpm += 0.003 * (delta/dt*60.0f/enc_res - rpm);
+	rpm += 0.003f * (delta/dt*60.0f/enc_res - rpm);
 }
 
 void reset_motion_observer() {
@@ -295,7 +295,7 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 	
 	if(waveform_mode == MOTOR_FOC) {
 
-		motor_flux_linkage = 5.513288954 / (motor_kv * motor_pole_pairs);
+		motor_flux_linkage = 5.513288954f / (motor_kv * motor_pole_pairs);
 		w_e = rpm * 0.10472f * motor_pole_pairs;
 
 		// Resistance feedforward

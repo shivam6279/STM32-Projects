@@ -21,25 +21,16 @@ PUTCHAR_PROTOTYPE {
 	return ch;
 }
 
-void send_serial(char str[]) {
-	if(serial_mode != SER_MODE_UART) {
-		CAN_send_serial(str);
-	}
-	if(serial_mode != SER_MODE_CAN) {
-		HAL_UART_Transmit(&huart1, str, strlen(str), HAL_MAX_DELAY);
-	}
-}
+volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
+static volatile unsigned int rx_buffer_index = 0;
+volatile unsigned char rx_rdy = 0;
 
-void set_serial_mode(uint8_t mode) {
-	serial_mode = mode;
-}
-
-void CAN_send_serial(char str[]) {
-	static uint8_t CAN_TxData[64];
+void CAN_send_serial(char str[], uint16_t can_id) {
+	uint8_t CAN_TxData[64];
 	static uint8_t i;
 	FDCAN_TxHeaderTypeDef CAN_TxHeader;
 
-	CAN_TxHeader.Identifier = can_id + 1 - 0x100;
+	CAN_TxHeader.Identifier = can_id;
 	CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
 	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
 	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_64;
@@ -52,17 +43,12 @@ void CAN_send_serial(char str[]) {
 	for(i = 0; str[i] != '\0' && i < 64; i++) {
 		CAN_TxData[i] = str[i];
 	}
+	CAN_TxData[i++] = '\r';
 	for(; i < 64; i++) {
 		CAN_TxData[i] = '\0';
 	}
 	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
 }
-
-volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
-static volatile unsigned int rx_buffer_index = 0;
-volatile unsigned char rx_rdy = 0;
-volatile unsigned char play_tone = 0;
-volatile unsigned char auto_stop = 1;
 
 void USART1_IRQHandler(void) {
 	static unsigned int r;

@@ -43,7 +43,7 @@ static void MX_GPIO_Init(void);
 static void MX_GPDMA1_Init(void);
 static void MX_DCACHE1_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_FDCAN1_Init(uint8_t, uint8_t);
+static void MX_FDCAN1_Init(uint16_t, uint16_t);
 static void MX_I2C1_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_TIM2_Init(uint8_t);
@@ -103,6 +103,14 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 		HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	}
+}
+
+void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorITs) {
+    if ((ErrorITs & FDCAN_IT_BUS_OFF) != 0) {
+        // The hardware will recover itself, but you might need 
+        // to re-enable notifications or clear flags here.
+        HAL_FDCAN_Start(hfdcan); 
+    }
 }
 
 void change_motor_mode(char new_mode) {
@@ -172,8 +180,8 @@ int main(void) {
 	tone_power = eeprom_data.tone_power;
 	tone_amplitude = eeprom_data.tone_amplitude;
 
-	can_id = 0x300 + 0xF*(board_id-1);
-	MX_FDCAN1_Init(can_id, 0xF);	
+	can_id = 0x300 + 0x10*(board_id-1);
+	MX_FDCAN1_Init(can_id, 0xF);
 
 	MX_TIM2_Init(enc_direction); // Encoder timer
 //	MX_SPI1_Init();
@@ -198,6 +206,8 @@ int main(void) {
 
 	char rx_buffer_local[RX_BUFFER_SIZE];
 
+	uint32_t esc_tx_tick = HAL_GetTick();
+
 	pid_focId.setpoint = 0;
 	uint8_t can_motor_mode = 'X';
 	float can_float;
@@ -219,14 +229,15 @@ int main(void) {
 				for(i = 0; rx_buffer[i] != '\0'; i++) {
 					rx_buffer_local[i] = rx_buffer[i];
 				}
+				rx_rdy = 0;
 				HAL_NVIC_EnableIRQ(USART1_IRQn);
 				rx_buffer_local[i] = '\0';
 			} else if(rx_rdy == 2) {
-				rx_rdy = 0;
 				for(i = 0; RxData[i] != '\0'; i++) {
 					rx_buffer_local[i] = RxData[i];
 				}
 				rx_buffer_local[i] = '\0';
+				rx_rdy = 0;
 			} else {
 				continue;
 			}
@@ -255,15 +266,16 @@ int main(void) {
 			}
 		}
 
-		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
-		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
-		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
-		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
-		snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
-		// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
-		send_serial(serial_buffer);
-
-		// HAL_Delay(1);
+		if((HAL_GetTick() - esc_tx_tick) >= 2) {
+			esc_tx_tick = HAL_GetTick();
+			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
+			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
+			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
+			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
+			snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
+			send_serial(serial_buffer);
+		}
 	}
 
 	for(i = 0; i < 1500; i++) {
@@ -555,26 +567,33 @@ static void MX_SPI1_Init(void) {
 	}
 }
 
-static void MX_FDCAN1_Init(uint8_t id, uint8_t range) {
+static void MX_FDCAN1_Init(uint16_t id, uint16_t range) {
 	hfdcan1.Instance = FDCAN1;
 	hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
-	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
+	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_NO_BRS;
 	hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
 	hfdcan1.Init.AutoRetransmission = DISABLE;
 	hfdcan1.Init.TransmitPause = DISABLE;
 	hfdcan1.Init.ProtocolException = DISABLE;
-	hfdcan1.Init.NominalPrescaler = 5;
-	hfdcan1.Init.NominalSyncJumpWidth = 10;
-	hfdcan1.Init.NominalTimeSeg1 = 39;
-	hfdcan1.Init.NominalTimeSeg2 = 10;
-	hfdcan1.Init.DataPrescaler = 2;
-	hfdcan1.Init.DataSyncJumpWidth = 5;
-	hfdcan1.Init.DataTimeSeg1 = 19;
-	hfdcan1.Init.DataTimeSeg2 = 5;
-	hfdcan1.Init.StdFiltersNbr = 0;
+	hfdcan1.Init.NominalPrescaler = 1;
+	hfdcan1.Init.NominalSyncJumpWidth = 50;
+	hfdcan1.Init.NominalTimeSeg1 = 199;
+	hfdcan1.Init.NominalTimeSeg2 = 50;
+	hfdcan1.Init.DataPrescaler = 1;
+	hfdcan1.Init.DataSyncJumpWidth = 12;
+	hfdcan1.Init.DataTimeSeg1 = 37;
+	hfdcan1.Init.DataTimeSeg2 = 12;
+	hfdcan1.Init.StdFiltersNbr = 1;
 	hfdcan1.Init.ExtFiltersNbr = 0;
 	hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
 	if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 7, 0) != HAL_OK) {
+		Error_Handler();
+	}
+	if (HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1) != HAL_OK) {
 		Error_Handler();
 	}
 
@@ -586,23 +605,14 @@ static void MX_FDCAN1_Init(uint8_t id, uint8_t range) {
 	sFilterConfig.FilterType = FDCAN_FILTER_RANGE;
 	sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
 	sFilterConfig.FilterID1 = id;
-	sFilterConfig.FilterID2 = sFilterConfig.FilterID1 + range;
+	sFilterConfig.FilterID2 = id + range;
 
-	if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig) != HAL_OK) {
-		Error_Handler();
-	}
+	HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig);
 
 	/* Start the FDCAN module */
 	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
 		Error_Handler();
 	}
-
-//	if (HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 7, 0) != HAL_OK) {
-//		Error_Handler();
-//	}
-//	if (HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1) != HAL_OK) {
-//		Error_Handler();
-//	}
 
 	if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
 		Error_Handler();
@@ -673,10 +683,6 @@ static void MX_TIM2_Init(uint8_t dir) {
 	GPIO_InitStruct.Pin = GPIO_PIN_15; // I
 	GPIO_InitStruct.Alternate = GPIO_AF14_TIM2;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	TIM_Encoder_InitTypeDef sConfig = {0};
-	TIM_MasterConfigTypeDef sMasterConfig = {0};
-	TIMEx_EncoderIndexConfigTypeDef sEncoderIndexConfig = {0};
 
 	__HAL_RCC_TIM2_CLK_ENABLE();
 

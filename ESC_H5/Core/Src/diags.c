@@ -76,11 +76,23 @@ void diagsMenu() {
 	while(ch != 'x') {
 		HAL_Delay(10);
 		if(rx_rdy) {
-			for(i = 0; rx_buffer[i] != '\0'; i++) {
-				input[i] = rx_buffer[i];
+			if(rx_rdy == 1) {
+				HAL_NVIC_DisableIRQ(USART1_IRQn);
+				for(i = 0; rx_buffer[i] != '\0'; i++) {
+					input[i] = rx_buffer[i];
+				}
+				rx_rdy = 0;
+				HAL_NVIC_EnableIRQ(USART1_IRQn);
+				input[i] = '\0';
+			} else if(rx_rdy == 2) {
+				for(i = 0; RxData[i] != '\0'; i++) {
+					input[i] = RxData[i];
+				}
+				input[i] = '\0';
+				rx_rdy = 0;
+			} else {
+				continue;
 			}
-			input[i] = '\0';
-			rx_rdy = 0;
 			
 			ch = input[0];
 			
