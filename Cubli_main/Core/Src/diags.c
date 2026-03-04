@@ -122,8 +122,8 @@ uint8_t diags_escConnect(char *cmd) {
 	char arg_val[10];
 	uint16_t i;
 	uint16_t node_id;
-	char input[RX_BUFFER_SIZE];
-	CanMessage_t *can_msg;
+	char input[RX_BUFFER_SIZE] __attribute__((aligned(32)));
+	CanMessage_t can_msg;
 	
 	const char help_str[] = "\
 Connect to ESCs and pipe UART over CAN:\n\
@@ -156,10 +156,10 @@ con [x] : x = ESC node ID\n";
 				}
 			}
 			if(can_rxbuffer_available()) {
-				can_msg = pop_can_rxbuffer();
-				if(can_msg->Identifier == (node_id - 0x100)) {
-					can_msg->Data[63] = '\0';
-					printf("%s", can_msg->Data);
+				pop_can_rxbuffer(&can_msg);
+				if(can_msg.Identifier == (node_id - 0x100)) {
+					can_msg.Data[63] = '\0';
+					printf("%s", can_msg.Data);
 				}
 			}
 		}

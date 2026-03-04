@@ -195,10 +195,11 @@ int main(void) {
 	GPIOC->ODR |= 1 << 14; // Enable encoder vcc
 
 	PlayWav();
-	HAL_Delay(500);
 
+	HAL_Delay(board_id*100); // Desync servo enables on all ESCs to limit instantaneous current draw
 	TIM3->CCR1 = 1000;// Enable servo vcc
 	TIM3->CCR2 = 0;
+	HAL_Delay(500 - board_id*100);
 
 	SetPower(0);
 	mode = MODE_OFF;

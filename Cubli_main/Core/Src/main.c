@@ -76,12 +76,13 @@ uint8_t can_rxbuffer_available() {
 	return (can_buffer_head + CAN_BUFFER_SIZE - can_buffer_tail) % CAN_BUFFER_SIZE;
 }
 
-CanMessage_t* pop_can_rxbuffer() {
-	CanMessage_t *ptr;
+void pop_can_rxbuffer(CanMessage_t *ret) {
 	if(can_buffer_head != can_buffer_tail) {
-		ptr = &can_rxBuffer[can_buffer_tail];
+		HAL_FDCAN_DeactivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE);
+		*ret = can_rxBuffer[can_buffer_tail];
 		can_buffer_tail = (can_buffer_tail + 1) % CAN_BUFFER_SIZE;
-		return ptr;
+		HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+		return ret;
 	}
 }
 
@@ -118,11 +119,6 @@ int main(void) {
 	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	CAN_TxHeader.MessageMarker = 0;
 
-	HAL_FDCAN_Start(&hfdcan1);
-
-	if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
-		Error_Handler();
-	}
 	printf("Start\n");
 
 	uint16_t i;
@@ -267,40 +263,18 @@ static void MX_FDCAN1_Init(void) {
 	sFilterConfig.FilterIndex = 0;
 	sFilterConfig.FilterType = FDCAN_FILTER_RANGE;
 	sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-	sFilterConfig.FilterID1 = 0x000;
-	sFilterConfig.FilterID2 = 0x7FF;
+	sFilterConfig.FilterID1 = 0x200;
+	sFilterConfig.FilterID2 = 0x2FF;
 
-	// 1. Enter Configuration Mode (CCE and INIT bits)
-	hfdcan1.Instance->CCCR |= FDCAN_CCCR_INIT;
-	while ((hfdcan1.Instance->CCCR & FDCAN_CCCR_INIT) == 0);
-	hfdcan1.Instance->CCCR |= FDCAN_CCCR_CCE;
+	HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig);
 
-	// 2. Configure RX FIFO 0 (RXF0C Register)
-	// Bits [23:16]: F0S (Size = 3 elements)
-	// Bits [15:2]:  F0SA (Start Address offset = 0)
-	hfdcan1.Instance->RXF0C = (3 << 16) | 0x0;
+	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
+		Error_Handler();
+	}
 
-	// 3. Configure RX Element Size (RXESC Register)
-	// Bits [2:0]: F0DS (0x7 = 64-byte data field)
-	hfdcan1.Instance->RXESC = 0x7; 
-
-	// 4. Configure TX Buffer/FIFO (TXBC Register)
-	// Bits [29:24]: TFQS (Size = 3 elements)
-	// Bits [15:2]:  TBSA (Start Address offset = 128 words / 512 bytes)
-	hfdcan1.Instance->TXBC = (3 << 24) | 0x80;
-
-	// 5. Configure TX Element Size (TXESC Register)
-	// Bits [2:0]: TBDS (0x7 = 64-byte data field)
-	hfdcan1.Instance->TXESC = 0x7;
-
-	// 6. Enable Transceiver Delay Compensation (TDC) - CRITICAL for 5Mbps
-	// This is what stops the "Form Error" you saw in Normal Mode
-	hfdcan1.Instance->DBTP |= FDCAN_DBTP_TDC;
-	hfdcan1.Instance->TDCR = (10 << 8); // TDCO: Offset of 10 clock cycles
-
-	// 7. Exit Configuration Mode
-	hfdcan1.Instance->CCCR &= ~FDCAN_CCCR_CCE;
-	hfdcan1.Instance->CCCR &= ~FDCAN_CCCR_INIT;
+	if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 static void MX_I2C1_Init(void) {

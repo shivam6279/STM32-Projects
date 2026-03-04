@@ -18,7 +18,7 @@ typedef struct CanMessage_t {
 #define CAN_BUFFER_SIZE 16
 
 extern uint8_t can_rxbuffer_available();
-extern CanMessage_t* pop_can_rxbuffer();
+extern void pop_can_rxbuffer(CanMessage_t*);
 
 void Error_Handler(void);
 

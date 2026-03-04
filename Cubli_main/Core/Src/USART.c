@@ -47,7 +47,25 @@ void CAN_send_serial(char str[], uint16_t can_id) {
 	for(; i < 64; i++) {
 		CAN_TxData[i] = '\0';
 	}
-	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
+
+	HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
+
+	uint32_t *pTxRAM = (uint32_t *)(0x4000AC00 + 0x278);
+	if (FDCAN1->TXBRP & (1 << 0)) return;
+	for(int i=0; i<18; i++) pTxRAM[i] = 0;
+	pTxRAM[0] = (can_id << 18);
+	pTxRAM[1] = (0xF << 16) | (1 << 21);
+	uint32_t *pData32 = (uint32_t *)CAN_TxData;
+	for (int i = 0; i < 16; i++) {
+		pTxRAM[2 + i] = pData32[i];
+	}
+	FDCAN1->TXBAR = (1 << 0);
+
+//	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
+
+	HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
 }
 
 void USART1_IRQHandler(void) {
