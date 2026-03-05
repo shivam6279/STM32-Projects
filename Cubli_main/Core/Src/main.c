@@ -267,6 +267,7 @@ static void MX_FDCAN1_Init(void) {
 	sFilterConfig.FilterID2 = 0x2FF;
 
 	HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig);
+	HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
 
 	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
 		Error_Handler();

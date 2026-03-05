@@ -85,11 +85,15 @@ void diagsMenu() {
 				HAL_NVIC_EnableIRQ(USART1_IRQn);
 				input[i] = '\0';
 			} else if(rx_rdy == 2) {
+				HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
+				HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
 				for(i = 0; RxData[i] != '\0'; i++) {
 					input[i] = RxData[i];
 				}
-				input[i] = '\0';
 				rx_rdy = 0;
+				HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+				HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
+				input[i] = '\0';
 			} else {
 				continue;
 			}

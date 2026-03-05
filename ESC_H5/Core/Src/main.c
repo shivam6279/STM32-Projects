@@ -19,9 +19,9 @@ CORDIC_HandleTypeDef hcordic;
 DCACHE_HandleTypeDef hdcache1;
 
 FDCAN_HandleTypeDef hfdcan1;
-FDCAN_RxHeaderTypeDef RxHeader;
-uint8_t RxData[64];
-uint16_t can_id;
+volatile FDCAN_RxHeaderTypeDef RxHeader;
+volatile uint8_t RxData[64];
+volatile uint16_t can_id;
 
 SPI_HandleTypeDef hspi1;
 DMA_NodeTypeDef Node_GPDMA1_Channel2;
@@ -100,15 +100,11 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			rx_rdy = 2;
 			set_serial_mode(SER_MODE_BOTH);
 		}
-
-		HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	}
 }
 
 void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorITs) {
     if ((ErrorITs & FDCAN_IT_BUS_OFF) != 0) {
-        // The hardware will recover itself, but you might need 
-        // to re-enable notifications or clear flags here.
         HAL_FDCAN_Start(hfdcan); 
     }
 }
@@ -215,6 +211,9 @@ int main(void) {
 	while (1) {
 
 		if(can_rx_rdy) {
+			HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
+			HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
+
 			can_rx_rdy = 0;
 			if(RxData[0] != can_motor_mode) {
 				can_motor_mode = RxData[0];
@@ -222,6 +221,9 @@ int main(void) {
 			}
 			uint32_t can_float_temp = RxData[1] << 24 | RxData[2] << 16 | RxData[3] << 8 | RxData[4];
 			can_float = *(float*)((uint32_t*)&can_float_temp);
+
+			HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+			HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
 		}
 
 		if(rx_rdy) {
@@ -234,11 +236,15 @@ int main(void) {
 				HAL_NVIC_EnableIRQ(USART1_IRQn);
 				rx_buffer_local[i] = '\0';
 			} else if(rx_rdy == 2) {
+				HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
+				HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
 				for(i = 0; RxData[i] != '\0'; i++) {
 					rx_buffer_local[i] = RxData[i];
 				}
-				rx_buffer_local[i] = '\0';
 				rx_rdy = 0;
+				HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+				HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
+				rx_buffer_local[i] = '\0';
 			} else {
 				continue;
 			}
@@ -609,6 +615,7 @@ static void MX_FDCAN1_Init(uint16_t id, uint16_t range) {
 	sFilterConfig.FilterID2 = id + range;
 
 	HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig);
+	HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
 
 	/* Start the FDCAN module */
 	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
