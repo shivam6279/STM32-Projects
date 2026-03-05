@@ -44,7 +44,7 @@ void CAN_send_serial(char str[]) {
 	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
 	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_64;
 	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
-	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
+	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
 	CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
 	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	CAN_TxHeader.MessageMarker = 0;

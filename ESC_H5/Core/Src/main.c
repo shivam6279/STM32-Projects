@@ -164,7 +164,7 @@ int main(void) {
 	set_serial_mode(SER_MODE_UART);
 
 	// CAN PHY in normal mode (not SILENT)
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);	// CAN_S
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);	// CAN_S
 
 	ee_read();
 	board_id = eeprom_data.board_id;
@@ -273,7 +273,7 @@ int main(void) {
 			}
 		}
 
-		if((HAL_GetTick() - esc_tx_tick) >= 2) {
+		if((HAL_GetTick() - esc_tx_tick) >= 250) {
 			esc_tx_tick = HAL_GetTick();
 			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
 			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
@@ -577,19 +577,19 @@ static void MX_SPI1_Init(void) {
 static void MX_FDCAN1_Init(uint16_t id, uint16_t range) {
 	hfdcan1.Instance = FDCAN1;
 	hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
-	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_NO_BRS;
+	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
 	hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
 	hfdcan1.Init.AutoRetransmission = DISABLE;
 	hfdcan1.Init.TransmitPause = DISABLE;
 	hfdcan1.Init.ProtocolException = DISABLE;
 	hfdcan1.Init.NominalPrescaler = 1;
-	hfdcan1.Init.NominalSyncJumpWidth = 50;
-	hfdcan1.Init.NominalTimeSeg1 = 199;
-	hfdcan1.Init.NominalTimeSeg2 = 50;
+	hfdcan1.Init.NominalSyncJumpWidth = 30;
+	hfdcan1.Init.NominalTimeSeg1 = 179;
+	hfdcan1.Init.NominalTimeSeg2 = 60;
 	hfdcan1.Init.DataPrescaler = 1;
-	hfdcan1.Init.DataSyncJumpWidth = 12;
-	hfdcan1.Init.DataTimeSeg1 = 37;
-	hfdcan1.Init.DataTimeSeg2 = 12;
+	hfdcan1.Init.DataSyncJumpWidth = 16;
+	hfdcan1.Init.DataTimeSeg1 = 25;
+	hfdcan1.Init.DataTimeSeg2 = 25;
 	hfdcan1.Init.StdFiltersNbr = 1;
 	hfdcan1.Init.ExtFiltersNbr = 0;
 	hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
@@ -597,12 +597,8 @@ static void MX_FDCAN1_Init(uint16_t id, uint16_t range) {
 		Error_Handler();
 	}
 
-	if (HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 7, 0) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1) != HAL_OK) {
-		Error_Handler();
-	}
+	HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 12, 0);
+	HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1);
 
 	FDCAN_FilterTypeDef sFilterConfig;
 

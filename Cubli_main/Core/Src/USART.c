@@ -34,8 +34,8 @@ void CAN_send_serial(char str[], uint16_t can_id) {
 	CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
 	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
 	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_64;
-	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
-	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
+	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
 	CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
 	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	CAN_TxHeader.MessageMarker = 0;
@@ -51,18 +51,18 @@ void CAN_send_serial(char str[], uint16_t can_id) {
 	HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
 	HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
 
-	uint32_t *pTxRAM = (uint32_t *)(0x4000AC00 + 0x278);
-	if (FDCAN1->TXBRP & (1 << 0)) return;
-	for(int i=0; i<18; i++) pTxRAM[i] = 0;
-	pTxRAM[0] = (can_id << 18);
-	pTxRAM[1] = (0xF << 16) | (1 << 21);
-	uint32_t *pData32 = (uint32_t *)CAN_TxData;
-	for (int i = 0; i < 16; i++) {
-		pTxRAM[2 + i] = pData32[i];
-	}
-	FDCAN1->TXBAR = (1 << 0);
+	// uint32_t *pTxRAM = (uint32_t *)(0x4000AC00 + 0x278);
+	// if (FDCAN1->TXBRP & (1 << 0)) return;
+	// for(int i=0; i<18; i++) pTxRAM[i] = 0;
+	// pTxRAM[0] = (can_id << 18);
+	// pTxRAM[1] = (0xF << 16) | (1 << 21) | (1 << 20);
+	// uint32_t *pData32 = (uint32_t *)CAN_TxData;
+	// for (int i = 0; i < 16; i++) {
+	// 	pTxRAM[2 + i] = pData32[i];
+	// }
+	// FDCAN1->TXBAR = (1 << 0);
 
-//	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
 
 	HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
 	HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);

@@ -36,9 +36,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 extern uint8_t board_id;
-extern uint16_t can_id;
+extern volatile uint16_t can_id;
 extern FDCAN_HandleTypeDef hfdcan1;
-extern uint8_t RxData[];
+extern volatile uint8_t RxData[];
 extern volatile uint8_t can_rx_rdy;
 
 #ifdef __cplusplus

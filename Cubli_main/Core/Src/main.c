@@ -3,6 +3,7 @@
 #include "ADC.h"
 #include "diags.h"
 #include "USART.h"
+#include "string_utils.h"
 #include "EEPROM.h"
 
 DCACHE_HandleTypeDef hdcache1;
@@ -82,7 +83,6 @@ void pop_can_rxbuffer(CanMessage_t *ret) {
 		*ret = can_rxBuffer[can_buffer_tail];
 		can_buffer_tail = (can_buffer_tail + 1) % CAN_BUFFER_SIZE;
 		HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
-		return ret;
 	}
 }
 
@@ -109,20 +109,15 @@ int main(void) {
 	HAL_Delay(500);
 	initial_delay = 1;
 
-	CAN_TxHeader.Identifier = 0x100;
-	CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
-	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_8;
-	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
-	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
-	CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
-	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	CAN_TxHeader.MessageMarker = 0;
-
 	printf("Start\n");
 
 	uint16_t i;
 	char rx_buffer_local[RX_BUFFER_SIZE];
+	while(1) {
+		uint32_t psr = FDCAN1->PSR;
+		CAN_send_serial("ªªªªªªªª", 0x301);
+		HAL_Delay(1);
+	}
 
 	while (1) {
 
@@ -229,19 +224,20 @@ static void MX_DCACHE1_Init(void) {
 static void MX_FDCAN1_Init(void) {
 	hfdcan1.Instance = FDCAN1;
 	hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
-	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_NO_BRS;
+	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
 	hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
+	// hfdcan1.Init.Mode = FDCAN_MODE_EXTERNAL_LOOPBACK;
 	hfdcan1.Init.AutoRetransmission = DISABLE;
 	hfdcan1.Init.TransmitPause = DISABLE;
 	hfdcan1.Init.ProtocolException = DISABLE;
-	hfdcan1.Init.NominalPrescaler = 1;
-	hfdcan1.Init.NominalSyncJumpWidth = 50;
-	hfdcan1.Init.NominalTimeSeg1 = 199;
-	hfdcan1.Init.NominalTimeSeg2 = 50;
-	hfdcan1.Init.DataPrescaler = 1;
-	hfdcan1.Init.DataSyncJumpWidth = 12;
-	hfdcan1.Init.DataTimeSeg1 = 37;
-	hfdcan1.Init.DataTimeSeg2 = 12;
+	hfdcan1.Init.NominalPrescaler = 2;
+	hfdcan1.Init.NominalSyncJumpWidth = 30;
+	hfdcan1.Init.NominalTimeSeg1 = 94;
+	hfdcan1.Init.NominalTimeSeg2 = 30;
+	hfdcan1.Init.DataPrescaler = 2;
+	hfdcan1.Init.DataSyncJumpWidth = 5; // Max = 16
+	hfdcan1.Init.DataTimeSeg1 = 19; // Max = 32
+	hfdcan1.Init.DataTimeSeg2 = 5; // Max = 16
 	hfdcan1.Init.StdFiltersNbr = 1;
 	hfdcan1.Init.ExtFiltersNbr = 0;
 	hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
@@ -249,12 +245,8 @@ static void MX_FDCAN1_Init(void) {
 		Error_Handler();
 	}
 
-	if (HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 7, 0) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1) != HAL_OK) {
-		Error_Handler();
-	}
+	HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 12, 0);
+	HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1);
 
 	FDCAN_FilterTypeDef sFilterConfig;
 
