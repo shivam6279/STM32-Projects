@@ -221,6 +221,7 @@ int main(void) {
 			}
 			uint32_t can_float_temp = RxData[1] << 24 | RxData[2] << 16 | RxData[3] << 8 | RxData[4];
 			can_float = *(float*)((uint32_t*)&can_float_temp);
+			send_serial(can_float);
 
 			HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
 			HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
@@ -275,12 +276,12 @@ int main(void) {
 
 		if((HAL_GetTick() - esc_tx_tick) >= 250) {
 			esc_tx_tick = HAL_GetTick();
-			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
-			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
-			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
-			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
+			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
+			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
+			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
+			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
 			snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
-			// serial_buffer_len = snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
+			// snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
 			send_serial(serial_buffer);
 		}
 	}
@@ -582,14 +583,14 @@ static void MX_FDCAN1_Init(uint16_t id, uint16_t range) {
 	hfdcan1.Init.AutoRetransmission = DISABLE;
 	hfdcan1.Init.TransmitPause = DISABLE;
 	hfdcan1.Init.ProtocolException = DISABLE;
-	hfdcan1.Init.NominalPrescaler = 1;
+	hfdcan1.Init.NominalPrescaler = 2;
 	hfdcan1.Init.NominalSyncJumpWidth = 30;
-	hfdcan1.Init.NominalTimeSeg1 = 179;
-	hfdcan1.Init.NominalTimeSeg2 = 60;
-	hfdcan1.Init.DataPrescaler = 1;
-	hfdcan1.Init.DataSyncJumpWidth = 16;
-	hfdcan1.Init.DataTimeSeg1 = 25;
-	hfdcan1.Init.DataTimeSeg2 = 25;
+	hfdcan1.Init.NominalTimeSeg1 = 94;
+	hfdcan1.Init.NominalTimeSeg2 = 30;
+	hfdcan1.Init.DataPrescaler = 2;
+	hfdcan1.Init.DataSyncJumpWidth = 5; // Max = 16
+	hfdcan1.Init.DataTimeSeg1 = 19; // Max = 32
+	hfdcan1.Init.DataTimeSeg2 = 5; // Max = 16
 	hfdcan1.Init.StdFiltersNbr = 1;
 	hfdcan1.Init.ExtFiltersNbr = 0;
 	hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
@@ -597,7 +598,9 @@ static void MX_FDCAN1_Init(uint16_t id, uint16_t range) {
 		Error_Handler();
 	}
 
-	HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 12, 0);
+	// Should be less than DataPrescaler * DataTimeSeg1 = 38
+	// Should be ~half of data time period = DataPrescaler * (DataTimeSeg1 + DataTimeSeg2 + 1) / 2
+	HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 20, 0);
 	HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1);
 
 	FDCAN_FilterTypeDef sFilterConfig;

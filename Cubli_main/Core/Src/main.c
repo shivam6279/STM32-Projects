@@ -5,6 +5,8 @@
 #include "USART.h"
 #include "string_utils.h"
 #include "EEPROM.h"
+#include "ahrs.h"
+#include "MPU6050.h"
 
 DCACHE_HandleTypeDef hdcache1;
 FDCAN_HandleTypeDef hfdcan1;
@@ -226,14 +228,15 @@ static void MX_FDCAN1_Init(void) {
 	hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
 	hfdcan1.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
 	hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
-	// hfdcan1.Init.Mode = FDCAN_MODE_EXTERNAL_LOOPBACK;
 	hfdcan1.Init.AutoRetransmission = DISABLE;
 	hfdcan1.Init.TransmitPause = DISABLE;
 	hfdcan1.Init.ProtocolException = DISABLE;
+	// 1M - 84%
 	hfdcan1.Init.NominalPrescaler = 2;
 	hfdcan1.Init.NominalSyncJumpWidth = 30;
 	hfdcan1.Init.NominalTimeSeg1 = 94;
 	hfdcan1.Init.NominalTimeSeg2 = 30;
+	// 5M - 76.9%
 	hfdcan1.Init.DataPrescaler = 2;
 	hfdcan1.Init.DataSyncJumpWidth = 5; // Max = 16
 	hfdcan1.Init.DataTimeSeg1 = 19; // Max = 32
@@ -245,7 +248,9 @@ static void MX_FDCAN1_Init(void) {
 		Error_Handler();
 	}
 
-	HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 12, 0);
+	// Should be less than DataPrescaler * DataTimeSeg1 = 38
+	// Should be ~half of data time period = DataPrescaler * (DataTimeSeg1 + DataTimeSeg2 + 1) / 2
+	HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan1, 20, 0);
 	HAL_FDCAN_EnableTxDelayCompensation(&hfdcan1);
 
 	FDCAN_FilterTypeDef sFilterConfig;
