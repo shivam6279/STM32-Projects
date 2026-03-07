@@ -35,7 +35,7 @@ void set_serial_mode(uint8_t mode) {
 }
 
 void CAN_send_serial(char str[]) {
-	static uint8_t CAN_TxData[64];
+	uint8_t CAN_TxData[64];
 	static uint8_t i;
 	FDCAN_TxHeaderTypeDef CAN_TxHeader;
 
@@ -43,7 +43,7 @@ void CAN_send_serial(char str[]) {
 	CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
 	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
 	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_64;
-	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
+	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
 	CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
 	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
@@ -55,7 +55,11 @@ void CAN_send_serial(char str[]) {
 	for(; i < 64; i++) {
 		CAN_TxData[i] = '\0';
 	}
+	HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
 	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
+	HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
 }
 
 volatile unsigned char rx_buffer[RX_BUFFER_SIZE];

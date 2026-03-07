@@ -8,8 +8,8 @@
 #include "USART.h"
 
 // #include "wav_metroid_save.h"
-// #include "wav_metroid_item.h"
-#include "wav_zelda_puzzle.h"
+#include "wav_metroid_item.h"
+// #include "wav_zelda_puzzle.h"
 
 #define WAV_FILE_BIT_DEPTH 16
 
@@ -49,22 +49,28 @@ void TIM12_IRQHandler(void) {
 		LED0_TOG();
 	
 		if(play_wav) {
-			setPhaseVoltage(tone_power*vsns_vbat, 0, wav_value * tone_amplitude * wav_amplitude_correction);
 #if WAV_FILE_BIT_DEPTH == 16
-			wav_index += 2;
 			wav_value = (int16_t)(wav[wav_index+1] << 8 | wav[wav_index]);
 			wav_value /= 32767.0f;
 #elif WAV_FILE_BIT_DEPTH == 8
-			wav_index += 1;
 			wav_value = (int8_t)wav[wav_index];
 			wav_value /= 127.0f;
+#endif
+
+			setPhaseVoltage(tone_power*vsns_vbat, 0, tone_amplitude + wav_value * tone_amplitude * wav_amplitude_correction);
+			
+#if WAV_FILE_BIT_DEPTH == 16
+			wav_index += 2;
+#elif WAV_FILE_BIT_DEPTH == 8
+			wav_index += 1;
 #endif
 			if(wav_index >= wav_size) {
 				wav_index -= WAV_FILE_BIT_DEPTH / 8;
 				TIM12->CR1 &= ~1;
 				play_wav = false;
+				return;
 			}
-			
+
 		} else {
 			if(tone_waveform == SQUARE) {
 				tone_phase = (tone_phase ^ 0x01) & 0x01;

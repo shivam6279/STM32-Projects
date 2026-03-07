@@ -164,7 +164,7 @@ int main(void) {
 	set_serial_mode(SER_MODE_UART);
 
 	// CAN PHY in normal mode (not SILENT)
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);	// CAN_S
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);	// CAN_S
 
 	ee_read();
 	board_id = eeprom_data.board_id;
@@ -221,7 +221,8 @@ int main(void) {
 			}
 			uint32_t can_float_temp = RxData[1] << 24 | RxData[2] << 16 | RxData[3] << 8 | RxData[4];
 			can_float = *(float*)((uint32_t*)&can_float_temp);
-			send_serial(can_float);
+			snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", can_float);
+			send_serial(serial_buffer);
 
 			HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
 			HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
@@ -274,7 +275,7 @@ int main(void) {
 			}
 		}
 
-		if((HAL_GetTick() - esc_tx_tick) >= 250) {
+		if(HAL_GetTick() - esc_tx_tick >= 2) {
 			esc_tx_tick = HAL_GetTick();
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
@@ -287,7 +288,7 @@ int main(void) {
 	}
 
 	for(i = 0; i < 1500; i++) {
-		save_data[i][0] = angle_el/180.0f;
+		save_data[i][0] = angle_el;
 		save_data[i][1] = vsns_u;
 		save_data[i][2] = vsns_v;
 		save_data[i][3] = vsns_w;
@@ -304,16 +305,16 @@ int main(void) {
 	MotorOff();
 	for(i = 0; i < 1500; i++) {
 		printf("%.6f, ", save_data[i][0]);
-		// printf("%.2f, ", save_data[i][1]);
-		// printf("%.2f, ", save_data[i][2]);
-		// printf("%.2f, ", save_data[i][3]);
-		// printf("%.6f, ", save_data[i][4]);
+		printf("%.2f, ", save_data[i][1]);
+		printf("%.2f, ", save_data[i][2]);
+		printf("%.2f, ", save_data[i][3]);
+		printf("%.6f, ", save_data[i][4]);
 		printf("%.6f, ", save_data[i][5]);
 		printf("%.6f, ", save_data[i][6]);
 		printf("%.6f, ", save_data[i][7]);
 		printf("%.6f, ", save_data[i][8]);
 		printf("%.6f\n", save_data[i][9]);
-		HAL_Delay(10);
+		HAL_Delay(2);
 	}
 	while(1);
 
@@ -583,10 +584,12 @@ static void MX_FDCAN1_Init(uint16_t id, uint16_t range) {
 	hfdcan1.Init.AutoRetransmission = DISABLE;
 	hfdcan1.Init.TransmitPause = DISABLE;
 	hfdcan1.Init.ProtocolException = DISABLE;
+	// 1M - 84%
 	hfdcan1.Init.NominalPrescaler = 2;
 	hfdcan1.Init.NominalSyncJumpWidth = 30;
 	hfdcan1.Init.NominalTimeSeg1 = 94;
 	hfdcan1.Init.NominalTimeSeg2 = 30;
+	// 5M - 76.9%
 	hfdcan1.Init.DataPrescaler = 2;
 	hfdcan1.Init.DataSyncJumpWidth = 5; // Max = 16
 	hfdcan1.Init.DataTimeSeg1 = 19; // Max = 32
@@ -700,13 +703,14 @@ static void MX_TIM2_Init(uint8_t dir) {
     TIM2->SMCR &= ~TIM_SMCR_TS;
 	TIM2->SMCR |= (7U << TIM_SMCR_TS_Pos);
 
-	// TIM2->ECR |= 0b10 << 6;
+	TIM2->ECR = 0;
+	TIM2->ECR |= 0b10 << 6;
 	TIM2->ECR |= TIM_ECR_IE; // I pulse reset in both directions
 
     TIM2->CCMR1 &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_CC2S);
     TIM2->CCMR1 |= (1U << TIM_CCMR1_CC1S_Pos) | (1U << TIM_CCMR1_CC2S_Pos); // Set to inputs
 
-    TIM2->CCMR1 |= (3U << TIM_CCMR1_IC1F_Pos) | (3U << TIM_CCMR1_IC2F_Pos); // Filter
+    TIM2->CCMR1 |= (1U << TIM_CCMR1_IC1F_Pos) | (1U << TIM_CCMR1_IC2F_Pos); // Filter
 
     // Reset Counter and set Max Range
     TIM2->CNT = 0;

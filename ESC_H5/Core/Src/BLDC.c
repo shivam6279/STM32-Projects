@@ -289,6 +289,13 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 	
 	// angle_el_in += motor_polarity;
 
+	angle_el_in -= 360.0f * (int)(angle_el * 0.002777778f);
+	if(angle_el_in < 0.0f) {
+		angle_el_in += 360.0f;
+	} else if(angle_el_in > 360.0f) {
+		angle_el_in -= 360.0f;
+	}
+
 	static int32_t theta_q31;
 	theta_q31 = (uint32_t)(angle_el_in * 11930464.711111f);
 	CORDIC->WDATA = theta_q31;

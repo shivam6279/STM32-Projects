@@ -8,7 +8,7 @@
 #define ENCODER_RES 2048.0f//4096.0f
 #define ENCODER_RES_MASK 0x7FF//0xFFF
 
-#define ENC_LATENCY 0.00001f
+#define ENC_LATENCY 0.0f // 0.00001f
 
 #define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)

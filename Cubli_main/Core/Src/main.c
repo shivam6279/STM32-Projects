@@ -115,11 +115,6 @@ int main(void) {
 
 	uint16_t i;
 	char rx_buffer_local[RX_BUFFER_SIZE];
-	while(1) {
-		uint32_t psr = FDCAN1->PSR;
-		CAN_send_serial("ªªªªªªªª", 0x301);
-		HAL_Delay(1);
-	}
 
 	while (1) {
 
