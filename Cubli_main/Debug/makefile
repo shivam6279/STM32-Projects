@@ -61,7 +61,7 @@ main-build: Cubli_main.elf secondary-outputs
 
 # Tool invocations
 Cubli_main.elf Cubli_main.map: $(OBJS) $(USER_OBJS) D:\Projects\STM32-Projects\Cubli_main\STM32H573RIVX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Cubli_main.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"D:\Projects\STM32-Projects\Cubli_main\STM32H573RIVX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_main.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "Cubli_main.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"D:\Projects\STM32-Projects\Cubli_main\STM32H573RIVX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_main.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -861,7 +861,7 @@ void MotorPIDInit() {
 	
 	// Angle
 	PID_enableErrorConstrain(&pid_angle);
-	PID_setErrorLimits(&pid_rpm, -45, 45);
+	PID_setErrorLimits(&pid_angle, -45, 45);
 	PID_enableIntegralConstrain(&pid_angle);
 	PID_setIntegralLimits(&pid_angle, -7, 7);
 	PID_disableComputeDerivative(&pid_angle);

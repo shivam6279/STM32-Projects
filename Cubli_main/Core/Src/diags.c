@@ -41,7 +41,7 @@ const diags_menu_item diags_list[] = {
 };
 
 unsigned char diags_list_len = sizeof(diags_list) / sizeof(diags_list[0]);
-float diags_power = 0.1;
+float diags_power = 0.1f;
 
 void diagsMenu() {
 	char input[RX_BUFFER_SIZE];
@@ -137,7 +137,7 @@ con [x] : x = ESC node ID\n";
 	if(str_getArgValue(cmd, "con", arg_val)) {
 		if(!str_isInt(arg_val)) {
 			printf(help_str);
-			return;
+			return 0;
 		}
 		node_id = 0x301 + 0x10*(str_toInt(arg_val) - 1);
 		while(1) {
@@ -194,7 +194,7 @@ Read temp sensor TMP1075:\n\
 			printf("Invalid frequency\n");
 		} else {
 			printf("Set streaming fequency to %.4f Hz\n", f);
-			delay = 1000 / f;
+			delay = 1000.0f / f;
 		}
 	}
 	
@@ -256,7 +256,7 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 			printf("Invalid frequency\n");
 		} else {
 			printf("Set streaming fequency to %.4f Hz\n", f);
-			delay = 1000000 / f;
+			delay = 1000000.0f / f;
 		}
 	}
 

@@ -27,7 +27,7 @@ extern unsigned int str_removeChar(char*, char);
 extern void str_concat(char*, char*, char*);
 extern signed int str_toInt(char *str);
 extern unsigned int str_toIntHex();
-extern double str_toFloat(char*);
+extern float str_toFloat(char*);
 
 extern void intToStr(char*, signed int);
 extern void hexToStr(char*, signed int);

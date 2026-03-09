@@ -85,6 +85,9 @@ void AHRS_QuatToEuler(const float q[4],
                        float *pitch_rad,
                        float *yaw_rad);
 
+void AHRS_InitFromSensors(float q[4], float ax, float ay, float az, float mx, float my, float mz);
+void AHRS_InitFromAccelYaw(float q[4], float ax, float ay, float az, float yaw_rad);
+
 Mahony_Gains_t  Mahony_DefaultGains(void);
 Madgwick_Gains_t Madgwick_DefaultGains(void);
 

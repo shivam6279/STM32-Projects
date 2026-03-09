@@ -204,11 +204,17 @@ int main(void) {
 	char rx_buffer_local[RX_BUFFER_SIZE];
 
 	uint32_t esc_tx_tick = HAL_GetTick();
+	uint32_t can_tx_safety_tick = HAL_GetTick();
 
 	pid_focId.setpoint = 0;
 	uint8_t can_motor_mode = 'X';
 	float can_float;
 	while (1) {
+
+		if(HAL_GetTick() - can_tx_safety_tick > 500U) {
+			change_motor_mode('X');
+			can_motor_mode = 'X';
+		}
 
 		if(can_rx_rdy) {
 			HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
@@ -219,13 +225,21 @@ int main(void) {
 				can_motor_mode = RxData[0];
 				change_motor_mode(can_motor_mode);
 			}
-			uint32_t can_float_temp = RxData[1] << 24 | RxData[2] << 16 | RxData[3] << 8 | RxData[4];
-			can_float = *(float*)((uint32_t*)&can_float_temp);
-			snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", can_float);
-			send_serial(serial_buffer);
-
+			uint32_t can_float_temp = RxData[4] << 24 | RxData[3] << 16 | RxData[2] << 8 | RxData[1];
 			HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
 			HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
+
+			can_float = *(float*)((uint32_t*)&can_float_temp);
+
+			if(mode == MODE_POWER) {
+				SetPower(can_float / 2000.0f);
+				pid_focIq.setpoint = can_float;
+			} else if(mode == MODE_RPM) {
+				pid_rpm.setpoint = can_float;
+			} else if(mode == MODE_POS) {
+				pid_angle.setpoint = can_float;
+			}
+			can_tx_safety_tick = HAL_GetTick();
 		}
 
 		if(rx_rdy) {
@@ -283,7 +297,7 @@ int main(void) {
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
 			snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
-			send_serial(serial_buffer);
+//			send_serial(serial_buffer);
 		}
 	}
 

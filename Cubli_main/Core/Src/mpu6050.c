@@ -116,18 +116,14 @@ MPU6050_Status_t MPU6050_RequestData(MPU6050_Handle_t *hdev)
 	if (!hdev || hdev->state == MPU6050_STATE_RESET) {
 		return MPU6050_ERR;
 	}
-	if (hdev->state != MPU6050_STATE_IDLE &&
-		hdev->state != MPU6050_STATE_DATA_READY) {
+	if (hdev->state != MPU6050_STATE_IDLE && hdev->state != MPU6050_STATE_DATA_READY) {
 		return MPU6050_BUSY;
 	}
 
-	/* Point the MPU6050 internal register pointer to ACCEL_XOUT_H.
-	   We send just the register address byte in interrupt mode. */
 	hdev->tx_buf[0] = MPU6050_REG_ACCEL_XOUT_H;
 	hdev->state     = MPU6050_STATE_TX_REG;
 
-	if (HAL_I2C_Master_Transmit_IT(hdev->hi2c, hdev->dev_addr,
-									hdev->tx_buf, 1U) != HAL_OK) {
+	if (HAL_I2C_Master_Transmit_IT(hdev->hi2c, hdev->dev_addr, hdev->tx_buf, 1U) != HAL_OK) {
 		hdev->state = MPU6050_STATE_ERROR;
 		return MPU6050_ERR;
 	}
@@ -150,15 +146,13 @@ void MPU6050_IRQHandler(MPU6050_Handle_t *hdev, I2C_HandleTypeDef *hi2c)
 	}
 
 	switch (hdev->state) {
-
 	case MPU6050_STATE_TX_REG:
 		/* Register address sent — now read 14 bytes in one burst:
 		   ACCEL_X[H:L], ACCEL_Y[H:L], ACCEL_Z[H:L],
 		   TEMP[H:L],
 		   GYRO_X[H:L],  GYRO_Y[H:L],  GYRO_Z[H:L]  */
 		hdev->state = MPU6050_STATE_RX_DATA;
-		if (HAL_I2C_Master_Receive_IT(hdev->hi2c, hdev->dev_addr,
-									   hdev->rx_buf, 14U) != HAL_OK) {
+		if (HAL_I2C_Master_Seq_Receive_IT(hdev->hi2c, hdev->dev_addr, hdev->rx_buf, 14U, I2C_LAST_FRAME) != HAL_OK) {
 			hdev->state = MPU6050_STATE_ERROR;
 		}
 		break;

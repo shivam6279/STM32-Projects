@@ -6,7 +6,10 @@
 #include "string_utils.h"
 #include "EEPROM.h"
 #include "ahrs.h"
+#include "cubli_lqr.h"
 #include "MPU6050.h"
+#include "LIS3MDL.h"
+#include "pid.h"
 
 DCACHE_HandleTypeDef hdcache1;
 FDCAN_HandleTypeDef hfdcan1;
@@ -17,6 +20,13 @@ FDCAN_TxHeaderTypeDef CAN_TxHeader;
 volatile FDCAN_RxHeaderTypeDef RxHeader;
 volatile uint8_t CAN_RxData[64];
 
+MPU6050_Handle_t g_imu;
+LIS3MDL_Handle_t g_mag;
+
+// Quaternion
+float g_q[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+static Madgwick_Gains_t g_madgwick_gains;
+
 void SystemClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
@@ -26,16 +36,17 @@ static void MX_I2C1_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM13_Init(void);
+static void TIM5_init(float);
 
 volatile uint8_t initial_press = 0, initial_delay = 0;
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) {
 	if(GPIO_Pin == GPIO_PIN_3) {
-		GPIOA->ODR &= ~(1 << 7);
+		GPIOA->ODR &= ~(1U << 7U);
 
 		if(initial_press) {
 			TIM13->CNT = 0;
-			TIM13->SR &= ~(0x1);
+			TIM13->SR &= ~(0x1U);
 			HAL_TIM_Base_Start_IT(&htim13);
 		}
 	}
@@ -52,7 +63,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM13 && initial_press) {
-		GPIOA->ODR &= ~(1 << 2);
+		GPIOA->ODR &= ~(1U << 2U);
 	}
 }
 
@@ -87,6 +98,62 @@ void pop_can_rxbuffer(CanMessage_t *ret) {
 		HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	}
 }
+volatile uint8_t i2c_tx_flag;
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef * hi2c) {
+	MPU6050_IRQHandler(&g_imu, hi2c);
+	LIS3MDL_IRQHandler(&g_mag, hi2c);
+}
+
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef * hi2c) {
+	MPU6050_IRQHandler(&g_imu, hi2c);
+	LIS3MDL_IRQHandler(&g_mag, hi2c);
+}
+
+void CAN_send_motor(uint16_t can_id, char mode, float val) {
+	uint8_t CAN_TxData[5];
+	FDCAN_TxHeaderTypeDef CAN_TxHeader;
+
+	CAN_TxHeader.Identifier = can_id;
+	CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
+	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_5;
+	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
+	CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
+	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	CAN_TxHeader.MessageMarker = 0;
+
+	CAN_TxData[0] = mode;
+	CAN_TxData[1] = ((uint8_t*)&val)[0];
+	CAN_TxData[2] = ((uint8_t*)&val)[1];
+	CAN_TxData[3] = ((uint8_t*)&val)[2];
+	CAN_TxData[4] = ((uint8_t*)&val)[3];
+
+	HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
+	HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
+}
+
+void TIM5_IRQHandler(void) {
+	static uint16_t imu_cnt = 0, mag_cnt = 5;
+	if(TIM5->SR & 0x1) {
+		TIM5->SR &= ~(0x1U);
+
+		mag_cnt++;
+		imu_cnt++;
+
+		if(mag_cnt >= 1000 && g_imu.state) { // 10Hz
+			LIS3MDL_RequestData(&g_mag);
+			mag_cnt = 0;
+		}
+		if(imu_cnt >= 10 && g_mag.state) { // 1Khz
+			MPU6050_RequestData(&g_imu);
+			imu_cnt = 0;
+		}
+	}
+}
 
 int main(void) {
 	MPU_Config();
@@ -101,12 +168,31 @@ int main(void) {
 	MX_USART1_UART_Init();
 	MX_ADC1_Init();
 	MX_TIM13_Init();
+	TIM5_init(10000);
 
-	GPIOC->ODR &= ~(1 << 13); // CAN S
+	GPIOC->ODR &= ~(1U << 13U); // CAN S
 	HAL_TIM_Base_Stop_IT(&htim13);
 
 	HAL_Delay(250);
 	GPIOA->ODR |= 1 << 2;
+
+	MPU6050_Config_t imu_cfg = {
+		.accel_fs	= MPU6050_ACCEL_FS_4G,
+		.gyro_fs	= MPU6050_GYRO_FS_1000DPS,
+		.dlpf		= MPU6050_DLPF_184HZ,
+		.sample_rate_div = 0U
+	};
+	MPU6050_Init(&g_imu, &hi2c1, MPU6050_ADDR_LOW, &imu_cfg);
+
+	LIS3MDL_Config_t mag_cfg = {
+		.odr	= LIS3MDL_ODR_10HZ,
+		.fs		= LIS3MDL_FS_4GAUSS,
+		.om		= LIS3MDL_OM_ULTRA_HIGH,
+		.mode	= LIS3MDL_MODE_CONTINUOUS
+	};
+	LIS3MDL_Init(&g_mag, &hi2c1, LIS3MDL_ADDR_LOW, &mag_cfg);
+
+	g_madgwick_gains = (Madgwick_Gains_t){ .beta = 0.05f };
 
 	HAL_Delay(500);
 	initial_delay = 1;
@@ -115,6 +201,101 @@ int main(void) {
 
 	uint16_t i;
 	char rx_buffer_local[RX_BUFFER_SIZE];
+
+	MPU6050_Data_t imu_data;
+	LIS3MDL_Data_t mag_data;
+	uint32_t now, last_req_ms = 0, an = HAL_GetTick();
+
+	// Gyro offset calibration
+	float g_avg_x = 0, g_avg_y = 0, g_avg_z = 0;
+	float a_avg_x = 0, a_avg_y = 0, a_avg_z = 0;
+	for(i = 0; i < 1000; i++) {
+		now = HAL_GetTick();
+		MPU6050_RequestData(&g_imu);
+		while(g_imu.state != MPU6050_STATE_DATA_READY);
+		MPU6050_GetData(&g_imu, &imu_data);
+		g_avg_x += imu_data.gyro_x * 0.001f;
+		g_avg_y += imu_data.gyro_y * 0.001f;
+		g_avg_z += imu_data.gyro_z * 0.001f;
+
+		a_avg_x += imu_data.accel_x * 0.001f;
+		a_avg_y += imu_data.accel_y * 0.001f;
+		a_avg_z += imu_data.accel_z * 0.001f;
+
+		while(HAL_GetTick() - now < 1);
+	}
+
+	AHRS_InitFromAccelYaw(g_q, a_avg_x, a_avg_y, a_avg_z, 0.0f);
+
+	TIM5->CR1 |= 1; // Turn on IMU timer
+
+	float roll, pitch, yaw;
+	float dt;
+	const float RAD2DEG = 57.2957795f;
+
+	PID pid_pitch;
+	PID_init(&pid_pitch);
+	PID_setGain(&pid_pitch,	6.0f, 0.0f, 12.0f);
+	PID_disableComputeDerivative(&pid_pitch);
+	PID_enableOutputConstrain(&pid_pitch);
+	PID_setOutputLimits(&pid_pitch, -20, 20);
+
+	pid_pitch.setpoint = 37.4f;
+
+	float ll = pid_pitch.setpoint - 0.1f, ul = pid_pitch.setpoint + 0.1f;
+
+	while(1) {
+		if(g_imu.state == MPU6050_STATE_DATA_READY) {
+			MPU6050_GetData(&g_imu, &imu_data);
+			imu_data.gyro_x = (imu_data.gyro_x - g_avg_x) * 0.017453293f;
+			imu_data.gyro_y = (imu_data.gyro_y - g_avg_y) * 0.017453293f;
+			imu_data.gyro_z = (imu_data.gyro_z - g_avg_z) * 0.017453293f;
+
+			dt = 0.001f; // (float)(HAL_GetTick() - an) * 0.001f;
+
+			if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
+				LIS3MDL_GetData(&g_mag, &mag_data);
+				// TODO: Calibrate compass
+
+//				Madgwick_UpdateMARG(g_q, &g_madgwick_gains,
+//									imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
+//									imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
+//									mag_data.mag_x, mag_data.mag_y, mag_data.mag_z,
+//									dt);
+				Madgwick_UpdateIMU(	g_q, &g_madgwick_gains,
+									imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
+									imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
+									dt);
+			} else {
+				Madgwick_UpdateIMU(	g_q, &g_madgwick_gains,
+									imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
+									imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
+									dt);
+			}
+			an = HAL_GetTick();
+			
+			AHRS_QuatToEuler(g_q, &roll, &pitch, &yaw);
+			roll *= RAD2DEG;
+			pitch *= RAD2DEG;
+			yaw *= RAD2DEG;
+			// printf("%.2f\t%.2f\t%.2f\n", roll, pitch, yaw);
+
+			if(pitch > ll && pitch < ul) {
+				ll = 32.0f;
+				ul = 42.0f;
+
+				#define ks 0.8f // 0.02f
+				#define ko 0.0f // 0.2f
+
+				pid_pitch.setpoint += (ks*pid_pitch.error + ko*pid_pitch.output) * dt;
+
+				pid_pitch.derivative = imu_data.gyro_y;
+				PID_compute(&pid_pitch, pitch, dt);
+				CAN_send_motor(0x320, 'P', pid_pitch.output);
+				printf("%.3f\t%.3f\t%.3f\n", pitch, pid_pitch.setpoint, pid_pitch.output);
+			}
+		}
+	}
 
 	while (1) {
 
@@ -174,6 +355,26 @@ void SystemClock_Config(void) {
 	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
 		Error_Handler();
 	}
+}
+
+void TIM5_init(float f) {
+	RCC->APB1LENR |= 1 << 3;
+
+	TIM5->CR1 = 0;
+	TIM5->CR2 = 0;
+
+	TIM5->PSC = 25; // 10 MHz after prescaler
+	TIM5->ARR = (uint32_t)(10000000.0f/f);
+
+	TIM5->CNT = 0;
+
+	TIM5->EGR |= 1;
+
+	TIM5->DIER |= 1;
+
+	NVIC_SetPriority(TIM5_IRQn, 2);
+	TIM5->SR &= ~(0x1U);
+	NVIC_EnableIRQ(TIM5_IRQn);
 }
 
 static void MX_ADC1_Init(void) {
@@ -272,7 +473,7 @@ static void MX_FDCAN1_Init(void) {
 
 static void MX_I2C1_Init(void) {
 	hi2c1.Instance = I2C1;
-	hi2c1.Init.Timing = 0x60808CD3;
+	hi2c1.Init.Timing = 0x2080319C;
 	hi2c1.Init.OwnAddress1 = 0;
 	hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
 	hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -284,7 +485,7 @@ static void MX_I2C1_Init(void) {
 		Error_Handler();
 	}
 
-	if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
+	if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_DISABLE) != HAL_OK) {
 		Error_Handler();
 	}
 

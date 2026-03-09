@@ -21,9 +21,9 @@ PUTCHAR_PROTOTYPE {
 	return ch;
 }
 
-volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
-static volatile unsigned int rx_buffer_index = 0;
-volatile unsigned char rx_rdy = 0;
+volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
+static volatile uint16_t rx_buffer_index = 0;
+volatile uint8_t rx_rdy = 0;
 
 void CAN_send_serial(char str[], uint16_t can_id) {
 	uint8_t CAN_TxData[64];
@@ -40,7 +40,7 @@ void CAN_send_serial(char str[], uint16_t can_id) {
 	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	CAN_TxHeader.MessageMarker = 0;
 
-	for(i = 0; str[i] != '\0' && i < 64; i++) {
+	for(i = 0; str[i] != '\0' && i < 63; i++) {
 		CAN_TxData[i] = str[i];
 	}
 	CAN_TxData[i++] = '\r';
@@ -56,7 +56,7 @@ void CAN_send_serial(char str[], uint16_t can_id) {
 }
 
 void USART1_IRQHandler(void) {
-	static unsigned int r;
+	static uint8_t r;
 	static uint8_t overflow = 0;
 	while(USART1->ISR & USART_ISR_RXNE) {
 		r = USART1->RDR & 0xFF;
