@@ -70,17 +70,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 CanMessage_t can_rxBuffer[CAN_BUFFER_SIZE];
 volatile uint8_t can_buffer_head = 0;
 volatile uint8_t can_buffer_tail = 0;
+volatile float rpm_a = 0.0f, rpm_b = 0.0f, rpm_c = 0.0f;
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
 	static uint8_t next_head;
+	static uint32_t can_float_temp;
+	static uint8_t RxData[64];
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
 		 while(HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0) {
-			next_head = (can_buffer_head + 1) % CAN_BUFFER_SIZE;
-			if(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, can_rxBuffer[can_buffer_head].Data) == HAL_OK) {
+			if(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK) {
+				break;
+			}
+			if(RxHeader.Identifier >= 0x100 && RxHeader.Identifier < 0x200) { // Main rpm message
+				can_float_temp = RxData[3] << 24 | RxData[2] << 16 | RxData[1] << 8 | RxData[0];
+				if(RxHeader.Identifier == 0x100) {
+					rpm_a = *(float*)((uint32_t*)&can_float_temp);
+				} else if(RxHeader.Identifier == 0x110) {
+					rpm_b = *(float*)((uint32_t*)&can_float_temp);
+				} else if(RxHeader.Identifier == 0x120) {
+					rpm_c = *(float*)((uint32_t*)&can_float_temp);
+				}
+			} else { // diags message
+				next_head = (can_buffer_head + 1) % CAN_BUFFER_SIZE;
 				can_rxBuffer[can_buffer_head].Identifier = RxHeader.Identifier;
 				can_rxBuffer[can_buffer_head].DataLength = RxHeader.DataLength;
+				memcpy(can_rxBuffer[can_buffer_head].Data, RxData, 64);
 				can_buffer_head = next_head;
-			} else {
-				break;
 			}
 		 }
 	}
@@ -235,10 +249,10 @@ int main(void) {
 
 	PID pid_pitch;
 	PID_init(&pid_pitch);
-	PID_setGain(&pid_pitch,	6.0f, 0.0f, 12.0f);
+	PID_setGain(&pid_pitch,	2.0f, 0.0f, 12.0f);
 	PID_disableComputeDerivative(&pid_pitch);
 	PID_enableOutputConstrain(&pid_pitch);
-	PID_setOutputLimits(&pid_pitch, -20, 20);
+	PID_setOutputLimits(&pid_pitch, -25, 25);
 
 	pid_pitch.setpoint = 37.4f;
 
@@ -257,11 +271,11 @@ int main(void) {
 				LIS3MDL_GetData(&g_mag, &mag_data);
 				// TODO: Calibrate compass
 
-//				Madgwick_UpdateMARG(g_q, &g_madgwick_gains,
-//									imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
-//									imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
-//									mag_data.mag_x, mag_data.mag_y, mag_data.mag_z,
-//									dt);
+				// Madgwick_UpdateMARG(g_q, &g_madgwick_gains,
+				// 					imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
+				// 					imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
+				// 					mag_data.mag_x, mag_data.mag_y, mag_data.mag_z,
+				// 					dt);
 				Madgwick_UpdateIMU(	g_q, &g_madgwick_gains,
 									imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
 									imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
@@ -284,15 +298,28 @@ int main(void) {
 				ll = 32.0f;
 				ul = 42.0f;
 
-				#define ks 0.8f // 0.02f
-				#define ko 0.0f // 0.2f
+				#define ks 1.2f
+				#define kv 0.00003f
 
-				pid_pitch.setpoint += (ks*pid_pitch.error + ko*pid_pitch.output) * dt;
+				pid_pitch.setpoint += (ks*pid_pitch.error + kv*rpm_c) * dt;
 
-				pid_pitch.derivative = imu_data.gyro_y;
+				pid_pitch.derivative += 1.0 * (imu_data.gyro_y - pid_pitch.derivative);
 				PID_compute(&pid_pitch, pitch, dt);
+
+				if (fabsf(rpm_c) < 20) {
+					if(fabsf(pid_pitch.output) > 1e-6f) {
+						// pid_pitch.output += (pid_pitch.output > 0 ? 1.0f : -1.0f) * 0.02f;
+						pid_pitch.output *= 2.0;
+					}
+				}
+
 				CAN_send_motor(0x320, 'P', pid_pitch.output);
-				printf("%.3f\t%.3f\t%.3f\n", pitch, pid_pitch.setpoint, pid_pitch.output);
+				printf("%.3f\t%.3f\n", pitch, pid_pitch.setpoint);
+			} else {
+				PID_reset(&pid_pitch);
+				pid_pitch.setpoint = 37.4f;
+				ll = pid_pitch.setpoint - 0.1f;
+				ul = pid_pitch.setpoint + 0.1f;
 			}
 		}
 	}
@@ -456,7 +483,7 @@ static void MX_FDCAN1_Init(void) {
 	sFilterConfig.FilterIndex = 0;
 	sFilterConfig.FilterType = FDCAN_FILTER_RANGE;
 	sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-	sFilterConfig.FilterID1 = 0x200;
+	sFilterConfig.FilterID1 = 0x100;
 	sFilterConfig.FilterID2 = 0x2FF;
 
 	HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig);

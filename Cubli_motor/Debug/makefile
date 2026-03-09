@@ -60,8 +60,8 @@ all: main-build
 main-build: Cubli_motor.elf secondary-outputs
 
 # Tool invocations
-Cubli_motor.elf Cubli_motor.map: $(OBJS) $(USER_OBJS) D:\Projects\STM32-Projects\ESC_H5\STM32H573RIVX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Cubli_motor.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"D:\Projects\STM32-Projects\ESC_H5\STM32H573RIVX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_motor.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Cubli_motor.elf Cubli_motor.map: $(OBJS) $(USER_OBJS) D:\Projects\STM32-Projects\Cubli_motor\STM32H573RIVX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Cubli_motor.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"D:\Projects\STM32-Projects\Cubli_motor\STM32H573RIVX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cubli_motor.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

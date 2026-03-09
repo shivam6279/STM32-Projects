@@ -1,12 +1,12 @@
 #include "main.h"
-#include "BLDC.h"
-#include "PWM.h"
-#include "ADC.h"
+#include "bldc.h"
+#include "pwm.h"
+#include "adc.h"
 #include "diags.h"
-#include "USART.h"
+#include "usart.h"
 #include "string_utils.h"
 #include "tones.h"
-#include "EEPROM.h"
+#include "eeprom.h"
 
 #include <stdio.h>
 
@@ -132,6 +132,32 @@ void change_motor_mode(char new_mode) {
 		MotorOff();
 		SetPower(0);
 	}
+}
+
+void CAN_send_rpm(uint16_t can_id, float rpm) {
+	uint8_t CAN_TxData[4];
+	FDCAN_TxHeaderTypeDef CAN_TxHeader;
+
+	CAN_TxHeader.Identifier = can_id;
+	CAN_TxHeader.IdType = FDCAN_STANDARD_ID;
+	CAN_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+	CAN_TxHeader.DataLength = FDCAN_DLC_BYTES_4;
+	CAN_TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	CAN_TxHeader.BitRateSwitch = FDCAN_BRS_ON;
+	CAN_TxHeader.FDFormat = FDCAN_FD_CAN;
+	CAN_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	CAN_TxHeader.MessageMarker = 0;
+
+	CAN_TxData[0] = ((uint8_t*)&rpm)[0];
+	CAN_TxData[1] = ((uint8_t*)&rpm)[1];
+	CAN_TxData[2] = ((uint8_t*)&rpm)[2];
+	CAN_TxData[3] = ((uint8_t*)&rpm)[3];
+
+	HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
+	HAL_NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+	HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
 }
 
 int main(void) {
@@ -289,13 +315,14 @@ int main(void) {
 			}
 		}
 
-		if(HAL_GetTick() - esc_tx_tick >= 2) {
+		if(HAL_GetTick() - esc_tx_tick > 1) {
 			esc_tx_tick = HAL_GetTick();
+			CAN_send_rpm(0x100 + 0x10*(board_id-1), GetRPM());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
-			snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
 //			send_serial(serial_buffer);
 		}
