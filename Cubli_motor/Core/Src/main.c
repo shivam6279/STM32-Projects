@@ -36,6 +36,39 @@ TIM_HandleTypeDef htim2;
 
 uint8_t board_id = 0;
 
+motor_t motor_mad_4006 = {
+	.name = "mad4006",
+	.polepairs = 11,
+	.kv = 740.0f,
+	.r_p2p = 51E-3f,
+	.l_p2p = 25E-6f,
+	.stiction = 0.0f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+};
+
+motor_t motor_mad_3506 = {
+	.name = "mad3506",
+	.polepairs = 7,
+	.kv = 400.0f,
+	.r_p2p = 240E-3f,
+	.l_p2p = 180E-6f,
+	.stiction = 0.25f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+};
+
+motor_t motor_flysky = {
+	.name = "flysky",
+	.polepairs = 7,
+	.kv = 750.0f,
+	.r_p2p = 92E-3f,
+	.l_p2p = 35E-6f,
+	.stiction = 0.00f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+};
+
 void SystemClock_Config(void);
 static void MX_CORDIC_Init(void);
 static void MPU_Config(void);
@@ -208,7 +241,10 @@ int main(void) {
 	MX_TIM2_Init(enc_direction); // Encoder timer
 //	MX_SPI1_Init();
 
-	MotorPIDInit();
+	if(MotorPIDInit(motor_mad_3506) == 0) {
+		printf("Bad motor parameters\n");
+		while(1);
+	}
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 
@@ -237,10 +273,10 @@ int main(void) {
 	float can_float;
 	while (1) {
 
-		if(HAL_GetTick() - can_tx_safety_tick > 500U) {
-			change_motor_mode('X');
-			can_motor_mode = 'X';
-		}
+//		if(HAL_GetTick() - can_tx_safety_tick > 500U) {
+//			change_motor_mode('X');
+//			can_motor_mode = 'X';
+//		}
 
 		if(can_rx_rdy) {
 			HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
@@ -321,10 +357,8 @@ int main(void) {
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
-			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\n", foc_id, foc_iq, pid_focIq.ki*pid_focIq.integral, pid_focIq.output);
-			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
-			// snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", angle_el/180.0, isns_u, isns_v, isns_w);
-//			send_serial(serial_buffer);
+			 snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", GetPositionRaw(), GetRPM(), foc_iq, foc_id);
+			send_serial(serial_buffer);
 		}
 	}
 

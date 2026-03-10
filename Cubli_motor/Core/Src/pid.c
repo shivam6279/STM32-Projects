@@ -50,7 +50,7 @@ void PID_integrate(PID *pid, float deltat) {
 	if(pid->constrain_error) {
 		error = clamp(pid->error, pid->error_min, pid->error_max);
 	}
-	pid->integral += error * deltat;
+	pid->integral += pid->ki * error * deltat;
 	if(pid->constrain_integral) {
 		pid->integral = clamp(pid->integral, pid->integral_min, pid->integral_max);
 	}
@@ -80,7 +80,7 @@ float PID_compute(PID *pid, float input, float deltat) {
 				PID_integrate(pid, deltat);
 			}
 		}
-		temp_output += pid->ki * pid->integral;
+		temp_output += pid->integral;
 	}
 	// D
 	if(pid->kd) {

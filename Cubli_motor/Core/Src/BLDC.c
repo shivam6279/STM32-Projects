@@ -18,6 +18,7 @@ static inline void adc_read_motor_isns();
 static inline void adc_read_other();
 static inline void foc_current_calc(float);
 static inline float wave_lut(uint16_t*, float);
+static inline float fsignf(float x);
 
 #define DEAD_TIME 25
 
@@ -31,7 +32,7 @@ static uint16_t saddle_lut[LUT_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 1
 static uint16_t sin_lut[LUT_SIZE] = {0, 143, 286, 429, 572, 715, 859, 1002, 1145, 1288, 1431, 1574, 1717, 1861, 2004, 2147, 2290, 2433, 2576, 2719, 2862, 3005, 3148, 3291, 3434, 3577, 3720, 3863, 4006, 4149, 4292, 4435, 4577, 4720, 4863, 5006, 5148, 5291, 5434, 5577, 5719, 5862, 6004, 6147, 6289, 6432, 6574, 6717, 6859, 7002, 7144, 7286, 7429, 7571, 7713, 7855, 7997, 8139, 8281, 8423, 8565, 8707, 8849, 8991, 9133, 9275, 9416, 9558, 9700, 9841, 9983, 10124, 10266, 10407, 10548, 10690, 10831, 10972, 11113, 11254, 11395, 11536, 11677, 11818, 11959, 12099, 12240, 12381, 12521, 12662, 12802, 12943, 13083, 13223, 13363, 13504, 13644, 13784, 13924, 14063, 14203, 14343, 14483, 14622, 14762, 14901, 15041, 15180, 15319, 15458, 15597, 15737, 15875, 16014, 16153, 16292, 16430, 16569, 16708, 16846, 16984, 17122, 17261, 17399, 17537, 17675, 17812, 17950, 18088, 18225, 18363, 18500, 18638, 18775, 18912, 19049, 19186, 19323, 19460, 19596, 19733, 19869, 20006, 20142, 20278, 20414, 20550, 20686, 20822, 20958, 21093, 21229, 21364, 21499, 21635, 21770, 21905, 22040, 22174, 22309, 22444, 22578, 22713, 22847, 22981, 23115, 23249, 23383, 23516, 23650, 23783, 23917, 24050, 24183, 24316, 24449, 24582, 24714, 24847, 24979, 25112, 25244, 25376, 25508, 25640, 25771, 25903, 26034, 26166, 26297, 26428, 26559, 26690, 26821, 26951, 27082, 27212, 27342, 27472, 27602, 27732, 27861, 27991, 28120, 28250, 28379, 28508, 28637, 28765, 28894, 29022, 29151, 29279, 29407, 29535, 29662, 29790, 29917, 30045, 30172, 30299, 30426, 30553, 30679, 30806, 30932, 31058, 31184, 31310, 31436, 31561, 31687, 31812, 31937, 32062, 32187, 32311, 32436, 32560, 32684, 32808, 32932, 33056, 33179, 33303, 33426, 33549, 33672, 33795, 33917, 34040, 34162, 34284, 34406, 34528, 34649, 34771, 34892, 35013, 35134, 35255, 35376, 35496, 35616, 35736, 35856, 35976, 36096, 36215, 36334, 36453, 36572, 36691, 36810, 36928, 37046, 37164, 37282, 37400, 37517, 37634, 37752, 37868, 37985, 38102, 38218, 38334, 38450, 38566, 38682, 38797, 38913, 39028, 39143, 39258, 39372, 39486, 39601, 39715, 39828, 39942, 40055, 40169, 40282, 40394, 40507, 40620, 40732, 40844, 40956, 41067, 41179, 41290, 41401, 41512, 41623, 41733, 41844, 41954, 42064, 42173, 42283, 42392, 42501, 42610, 42719, 42827, 42935, 43044, 43151, 43259, 43366, 43474, 43581, 43688, 43794, 43901, 44007, 44113, 44219, 44324, 44429, 44535, 44640, 44744, 44849, 44953, 45057, 45161, 45265, 45368, 45471, 45574, 45677, 45780, 45882, 45984, 46086, 46188, 46289, 46390, 46491, 46592, 46693, 46793, 46893, 46993, 47093, 47192, 47291, 47390, 47489, 47588, 47686, 47784, 47882, 47980, 48077, 48174, 48271, 48368, 48464, 48561, 48657, 48753, 48848, 48943, 49039, 49133, 49228, 49322, 49417, 49510, 49604, 49698, 49791, 49884, 49977, 50069, 50161, 50253, 50345, 50437, 50528, 50619, 50710, 50800, 50891, 50981, 51071, 51160, 51250, 51339, 51428, 51516, 51605, 51693, 51781, 51868, 51956, 52043, 52130, 52216, 52303, 52389, 52475, 52560, 52646, 52731, 52816, 52900, 52985, 53069, 53153, 53236, 53320, 53403, 53486, 53568, 53651, 53733, 53815, 53896, 53978, 54059, 54139, 54220, 54300, 54380, 54460, 54540, 54619, 54698, 54776, 54855, 54933, 55011, 55089, 55166, 55243, 55320, 55397, 55473, 55549, 55625, 55701, 55776, 55851, 55926, 56000, 56075, 56149, 56222, 56296, 56369, 56442, 56514, 56587, 56659, 56731, 56802, 56873, 56944, 57015, 57086, 57156, 57226, 57295, 57365, 57434, 57503, 57571, 57639, 57707, 57775, 57843, 57910, 57977, 58043, 58110, 58176, 58241, 58307, 58372, 58437, 58502, 58566, 58630, 58694, 58758, 58821, 58884, 58947, 59009, 59071, 59133, 59195, 59256, 59317, 59378, 59438, 59498, 59558, 59618, 59677, 59736, 59795, 59853, 59911, 59969, 60027, 60084, 60141, 60198, 60254, 60310, 60366, 60422, 60477, 60532, 60587, 60641, 60696, 60749, 60803, 60856, 60909, 60962, 61014, 61066, 61118, 61170, 61221, 61272, 61323, 61373, 61423, 61473, 61522, 61571, 61620, 61669, 61717, 61765, 61813, 61860, 61907, 61954, 62001, 62047, 62093, 62139, 62184, 62229, 62274, 62318, 62362, 62406, 62450, 62493, 62536, 62579, 62621, 62663, 62705, 62746, 62787, 62828, 62869, 62909, 62949, 62989, 63028, 63067, 63106, 63144, 63183, 63220, 63258, 63295, 63332, 63369, 63405, 63441, 63477, 63512, 63548, 63582, 63617, 63651, 63685, 63719, 63752, 63785, 63818, 63850, 63882, 63914, 63946, 63977, 64008, 64038, 64068, 64098, 64128, 64157, 64186, 64215, 64244, 64272, 64300, 64327, 64354, 64381, 64408, 64434, 64460, 64486, 64511, 64536, 64561, 64585, 64609, 64633, 64657, 64680, 64703, 64725, 64748, 64770, 64791, 64813, 64834, 64854, 64875, 64895, 64915, 64934, 64953, 64972, 64991, 65009, 65027, 65045, 65062, 65079, 65096, 65112, 65128, 65144, 65159, 65174, 65189, 65204, 65218, 65232, 65246, 65259, 65272, 65284, 65297, 65309, 65321, 65332, 65343, 65354, 65364, 65374, 65384, 65394, 65403, 65412, 65421, 65429, 65437, 65444, 65452, 65459, 65466, 65472, 65478, 65484, 65489, 65494, 65499, 65504, 65508, 65512, 65516, 65519, 65522, 65524, 65527, 65529, 65531, 65532, 65533, 65534, 65534, 65535};
 
 // Compensation
-static uint8_t cogging_torque[COGGING_LUT_SIZE]
+static uint8_t cogging_torque[COGGING_LUT_SIZE];
 
 static float motor_ov = MOTOR_OV_INITIAL;
 
@@ -43,9 +44,10 @@ float encoder_calib_data[] = {7.91, 37.08, 66.35, 95.71, 126.4, 157.23, 187.73, 
 float encoder_LUT[(int)ENCODER_RES];
 
 // Motor constants
-float motor_kv = 750;
-float motor_l = 35E-6f * 0.5f;
-float motor_r = 0.092f * 0.5f;
+motor_t motor_active;
+float motor_kv = 0;
+float motor_l = 0;
+float motor_r = 0;
 
 // FOC
 volatile float sin_el, cos_el;
@@ -88,6 +90,11 @@ void ADC1_IRQHandler(void) {
 	static uint8_t sample_cnt = 0;
 	static int16_t pos_cnt;
 	static float angle_el_compensated;
+
+	float w_e;
+	float motor_flux_linkage;
+	float Uq, Ud, Uq_limit;
+	float saturation_error;
 
 	if (ADC1->ISR & ADC_ISR_JEOC) {
 		ADC1->ISR = ADC_ISR_JEOC;
@@ -134,10 +141,38 @@ void ADC1_IRQHandler(void) {
 				if(waveform_mode == MOTOR_FOC) {
 					PID_compute(&pid_focIq, foc_iq, 0.00004f);
 					PID_compute(&pid_focId, foc_id, 0.00004f);
+
+					motor_flux_linkage = 5.513288954f / (motor_kv * motor_pole_pairs);
+					w_e = rpm * 0.10472f * motor_pole_pairs;
+
+					Uq = pid_focIq.output;
+					Ud = pid_focId.output;
+
+					// Resistance feedforward
+					Uq += motor_r * pid_focIq.setpoint;
+
+					// BEMF feedforward
+					Uq += 0.95f * w_e * motor_flux_linkage;
+
+					// Inductance feedforward
+					Uq += 0.95f *  w_e * motor_l * foc_id;
+					Ud += 0.95f * -w_e * motor_l * foc_iq;
+
+					// Clamp to SVPWM circle
+					// Keep Ud, and clamp Uq
+					Uq_limit = sqrt(vsns_vbat*vsns_vbat/3.0f - Ud*Ud);
+					Uq_limit = Uq < -Uq_limit ? -Uq_limit : Uq > Uq_limit ? Uq_limit : Uq;
+
+					// De-integrate if Uq is saturated
+					saturation_error = Uq - Uq_limit;
+					pid_focIq.integral += saturation_error;
+
+					Uq = Uq_limit;
 				} else {
 					PID_reset(&pid_focIq);
 					PID_reset(&pid_focId);
-					pid_focIq.output = power * vsns_vbat;
+					Uq = power * vsns_vbat;
+					Ud = 0;
 				}
 				// if(power) {
 				//  PID_compute(&pid_focIq, foc_iq, 0.00004f);
@@ -149,7 +184,7 @@ void ADC1_IRQHandler(void) {
 				// PID_compute(&pid_focIq, foc_iq, 0.00004f);
 				// PID_compute(&pid_focId, foc_id, 0.00004f);
 
-				setPhaseVoltage(pid_focIq.output, pid_focId.output, angle_el_compensated);
+				setPhaseVoltage(Uq, Ud, angle_el_compensated);
 			}
 
 			// update_motion_observer((int16_t)ENC_TIM->CNT, 0.00004f);
@@ -164,11 +199,7 @@ void ADC1_IRQHandler(void) {
 }
 
 // RPM PID
-float Kv = 0.0001;
 void TIM5_IRQHandler(void) {
-	static float rpm_feedforward;
-	static float angle_max_rpm;
-
 	if(TIM5->SR & 0x1) {
 		TIM5->SR &= ~(0x1);
 
@@ -188,15 +219,14 @@ void TIM5_IRQHandler(void) {
 		if(mode == MODE_RPM) {
 			pid_rpm.derivative = -acc/1000.0f;
 			PID_compute(&pid_rpm, rpm, 0.0001f);
-			rpm_feedforward = 0;//pid_rpm.setpoint * Kv;
 
-			if(pid_rpm.setpoint == 0 && fabs(rpm) < 25) {
-				SetPower(0);
-				pid_focIq.setpoint = 0;
-			} else {
-				// SetPower(pid_rpm.output);
-				pid_focIq.setpoint = pid_rpm.output + rpm_feedforward;
+			float stiction_ff = 0.0f;
+			if (fabsf(rpm) < 20.0f && fabsf(pid_rpm.output) > 1E-4f) {
+				stiction_ff = motor_active.stiction * fsignf(pid_rpm.output);
 			}
+			float friction_ff = stiction_ff + motor_active.coulomb * tanhf(rpm * 0.13f) +  motor_active.viscous * rpm;
+			
+			pid_focIq.setpoint = pid_rpm.output + friction_ff;
 		}
 
 		thermal_energy += (foc_iq*foc_iq + foc_id*foc_id - thermal_ilim_2) * 0.0001f;
@@ -215,27 +245,34 @@ void TIM5_IRQHandler(void) {
 static float measured_pos = 0.0f, est_pos = 0.0f;
 
 static inline void update_motion_observer(int16_t current_raw_count, float dt) {
-	static float L1;
-	static float L2;
-	static float L3;
+	float L1;
+	float L2;
+	float L3;
 
 	static float est_vel = 0.0f;
 	static float est_acc = 0.0f;
 	static int16_t last_raw_count = 0;
 
-	static float pos_prediction;
-	static float vel_prediction;
+	float pos_prediction;
+	float vel_prediction;
 
-	static int16_t delta;
-	static float error;
+	int16_t delta;
+	float error;
 
-	static float enc_res = ENCODER_RES;
-	static float lambda;
+	float enc_res = ENCODER_RES;
+	float lambda;
 
-	lambda = 20.0f;
-	// if (rpm < 200.0f) {
-	// 	lambda = 10.0f + (rpm * 0.15f);
-	// }
+	float rpm_alpha = 0.5f;
+	float pos_alpha = 0.5f;
+
+	// Adaptive lambda based on RPM
+	if (fabsf(rpm) < 10.0f) {
+		lambda = 5.0f;
+	} else if (fabsf(rpm) < 50.0f) {
+		lambda = 5.0f + (fabsf(rpm) - 10.0f) * (15.0f / 40.0f);
+	} else {
+		lambda = 20.0f;
+	}
 	L1 = 3.0f * lambda;
 	L2 = 3.0f * lambda * lambda;
 	L3 = lambda * lambda * lambda;
@@ -245,6 +282,21 @@ static inline void update_motion_observer(int16_t current_raw_count, float dt) {
 	if(delta < -ENCODER_RES/2) delta += ENCODER_RES;
 	if (delta > 100 || delta < -100) {
 		delta = 0;
+	}
+
+	static int zero_delta_count = 0;
+
+	if (delta == 0) {
+		zero_delta_count++;
+		if (zero_delta_count > 100) { // ~10ms at 10kHz
+			est_vel = 0.0f;
+			est_acc = 0.0f;
+			rpm = 0.0f;
+			acc = 0.0f;
+			zero_delta_count = 0;
+		}
+	} else {
+		zero_delta_count = 0;
 	}
 
 	last_raw_count = current_raw_count;
@@ -260,12 +312,12 @@ static inline void update_motion_observer(int16_t current_raw_count, float dt) {
 	est_vel   = vel_prediction + (L2 * error * dt);
 	est_acc   = est_acc        + (L3 * error * dt);
 
-	// pos_filt += 0.5 * (est_pos * 360.0f / enc_res - pos_filt);
-	// rpm += 0.5 * ((est_vel * 60.0f) / enc_res - rpm); // RPM
-	// acc += 0.5 * ((est_acc * 60.0f) / enc_res - acc); // RPM/s
+	// rpm_alpha = fminf(0.5f, fmaxf(0.05f, fabsf(rpm) / 100.0f));
+	// pos_alpha = fminf(0.5f, fmaxf(0.05f, fabsf(rpm) / 100.0f));
 
-	pos_filt = position;
-	rpm += 0.003f * (delta/dt*60.0f/enc_res - rpm);
+	pos_filt +=	pos_alpha * ( est_pos * 360.0f / enc_res - pos_filt);
+	rpm 	 +=	rpm_alpha * ((est_vel * 60.0f) / enc_res - rpm); // RPM
+	acc 	 +=	rpm_alpha * ((est_acc * 60.0f) / enc_res - acc); // RPM/s
 }
 
 void reset_motion_observer() {
@@ -274,21 +326,17 @@ void reset_motion_observer() {
 }
 
 void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
-	static float pwm_u, pwm_v, pwm_w;
+	float pwm_u = 0.0f, pwm_v = 0.0f, pwm_w = 0.0f;
 
-	static float center;
-	static float Umag, Uq_limit;
-	static float Ualpha, Ubeta;
-	static float pwm_min, pwm_max;
-	static float w_e;
-	static float motor_kv_s;
-	static float motor_flux_linkage;
-	static float sin, cos;
+	float center;
+	float Ualpha, Ubeta;
+	float pwm_min, pwm_max;
+	float sin, cos;
 
-	static float offset = 0.0f;
+	float offset = 0.0f;
 	
-	static uint8_t ov_flag = 0;
-	static uint16_t *PWM_table;
+	uint8_t ov_flag = 0;
+	uint16_t *PWM_table;
 	
 	// angle_el_in += motor_polarity;
 
@@ -304,23 +352,6 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 	CORDIC->WDATA = theta_q31;
 	
 	if(waveform_mode == MOTOR_FOC) {
-
-		motor_flux_linkage = 5.513288954f / (motor_kv * motor_pole_pairs);
-		w_e = rpm * 0.10472f * motor_pole_pairs;
-
-		// Resistance feedforward
-		// Uq += motor_r * pid_focIq.setpoint;
-
-		// BEMF feedforward
-		Uq += 0.95f * w_e * motor_flux_linkage;
-
-		// Inductance feedforward
-		Uq += 0.95f *  w_e * motor_l * foc_id;
-		Ud += 0.95f * -w_e * motor_l * foc_iq;
-
-		// Umag = sqrt(Uq*Uq + Ud*Ud);
-		Uq_limit = sqrt(vsns_vbat*vsns_vbat/3.0f - Ud*Ud);
-		Uq = Uq < -Uq_limit ? -Uq_limit : Uq > Uq_limit ? Uq_limit : Uq;
 
 		sin = ((float)(int32_t)CORDIC->RDATA) * 4.65661287e-10f; // Sin
 		cos = ((float)(int32_t)CORDIC->RDATA) * 4.65661287e-10f; // Cos
@@ -421,7 +452,6 @@ static inline void adc_read_motor_isns() {
 	static float temp_isns_v, temp_isns_w;
 	static float isns_v_err, isns_w_err;
 	static float amp_gain = ISNS_AMP_GAIN * ISNS_UVW_R;
-	static float deadband = 0.007;
 
 	// Read injected ADC channels
 
@@ -450,13 +480,6 @@ static inline void adc_read_motor_isns() {
 	// Clamp offset
 	isns_v_offset = isns_v_offset < 1.55f ? 1.55f : isns_v_offset > 1.75f ? 1.75f : isns_v_offset;
 	isns_w_offset = isns_w_offset < 1.55f ? 1.55f : isns_w_offset > 1.75f ? 1.75f : isns_w_offset;
-
-	// if(temp_isns_v > (isns_v_offset - deadband) && temp_isns_v < (isns_v_offset + deadband)) {
-	// 	temp_isns_v = isns_v_offset;
-	// }
-	// if(temp_isns_w > (isns_w_offset - deadband) && temp_isns_w < (isns_w_offset + deadband)) {
-	// 	temp_isns_w = isns_w_offset;
-	// }
 
 	// Isns LPF
 	isns_v += ISNS_LPF * (((isns_v_offset - temp_isns_v) * amp_gain * isns_v_err) - isns_v) ;
@@ -819,23 +842,33 @@ void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
  |                                PID                                 |
  ----------------------------------------------------------------------*/
 
-void MotorPIDInit() {
+uint8_t MotorPIDInit(motor_t motor) {
 	PID_init(&pid_angle);
 	PID_init(&pid_rpm);
 	PID_init(&pid_focIq);
 	PID_init(&pid_focId);
 
-	float foc_bw = 2000.0f * 2.0f * 3.14159265358979323846f;
+	motor_active = motor;
+	motor_pole_pairs = motor.polepairs;
+	motor_kv = motor.kv;
+	motor_r = motor.r_p2p * 0.5f;
+	motor_l = motor.l_p2p * 0.5f;
+
+	if(motor_pole_pairs == 0 || motor_kv == 0 || motor_r == 0 || motor_l == 0) {
+		return 0;
+	}
+
+	float foc_bw = 3000.0f * 6.283185307f;
 
 	// FOC PID Gains
-	// Kp = L*2pi*f_bw
-	// Ki = R*2pi*f_bw
+	// Kp = L_phase*bw
+	// Ki = R_phase*bw
 	// f_bw = 100hz - 5000hz
 																		// Input Units	- Output Units
 	PID_setGain(&pid_focIq,	foc_bw*motor_l,	foc_bw*motor_r,	0.0		);	// Iq (Amps)	- Volt
 	PID_setGain(&pid_focId,	foc_bw*motor_l,	foc_bw*motor_r,	0.0		);	// Id (Amps)	- Volt
-	PID_setGain(&pid_rpm,	0.01,			0.001,			0.005	);	// RPM			- Iq (Amps)
-	PID_setGain(&pid_angle,	0.01,			0.005,			0.005	);	// Degrees		- Iq (Amps)	
+	PID_setGain(&pid_rpm,	0.004,			0.002,			0.0		);	// RPM			- Iq (Amps)
+	PID_setGain(&pid_angle,	0.004,			0.0,			0.001	);	// Degrees		- Iq (Amps)	
 
 	// Iq
 	// PID_enableErrorConstrain(&pid_focIq);
@@ -855,9 +888,9 @@ void MotorPIDInit() {
 
 	// RPM
 	PID_enableErrorConstrain(&pid_rpm);
-	PID_setErrorLimits(&pid_rpm, -1000, 1000);
+	PID_setErrorLimits(&pid_rpm, -500, 500);
 	PID_enableIntegralConstrain(&pid_rpm);
-	PID_setIntegralLimits(&pid_rpm, -10, 10);
+	PID_setIntegralLimits(&pid_rpm, -4, 4);
 	PID_disableComputeDerivative(&pid_rpm);
 	PID_enableOutputConstrain(&pid_rpm);
 	PID_setOutputLimits(&pid_rpm, -10, 10);
@@ -870,6 +903,8 @@ void MotorPIDInit() {
 	PID_disableComputeDerivative(&pid_angle);
 	PID_enableOutputConstrain(&pid_angle);
 	PID_setOutputLimits(&pid_angle, -10, 10);
+
+	return 1;
 }
 
 inline void ResetMotorPID() {
@@ -989,4 +1024,8 @@ static inline float wave_lut(uint16_t lut[], float angle) {
 	temp = temp < -1.0f ? -1.0f : temp > 1.0f ? 1.0f : temp;
 	
 	return temp;
+}
+
+static inline float fsignf(float x) {
+	return (x > 0.0f) - (x < 0.0f);
 }

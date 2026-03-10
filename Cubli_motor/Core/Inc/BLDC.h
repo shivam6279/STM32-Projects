@@ -34,6 +34,17 @@ typedef enum motor_mode {
 	MODE_POS
 } motor_mode;
 
+typedef struct motor_t {
+	char name[10];
+	uint8_t polepairs;
+	float kv; // Mechanical rpm/volt
+	float r_p2p; // Phase to phase resistance
+	float l_p2p; // Phase to phase inductance
+	float stiction;
+	float coulomb;
+	float viscous;
+} motor_t;
+
 extern volatile enum motor_waveform_type waveform_mode;
 extern volatile enum motor_mode mode;
 
@@ -65,7 +76,7 @@ extern void MotorShort(float);
 
 extern void init_encoder_lut();
 extern void interpolate_encoder_lut(float[], unsigned int);
-extern void MotorPIDInit();
+extern uint8_t MotorPIDInit(motor_t);
 
 extern bool bemf_phase(unsigned char);
 extern void SensorlessStart(float);
