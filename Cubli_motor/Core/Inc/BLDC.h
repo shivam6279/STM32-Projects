@@ -13,6 +13,8 @@
 #define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)
 
+#define COGGING_LUT_SIZE 1024U
+
 // #define FOC_TIMER_ON() (TIM3->CR1 |= 1)
 // #define FOC_TIMER_OFF() (TIM3->CR1 &= ~1)
 

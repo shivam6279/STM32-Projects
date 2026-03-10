@@ -357,8 +357,9 @@ int main(void) {
 		printf("%.6f\n", save_data[i][9]);
 		HAL_Delay(2);
 	}
-	while(1);
 
+	// Wait a second before restarting
+	HAL_Delay(1000);
 }
 
 void TIM4_init(float f) {
