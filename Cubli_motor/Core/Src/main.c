@@ -273,10 +273,10 @@ int main(void) {
 	float can_float;
 	while (1) {
 
-//		if(HAL_GetTick() - can_tx_safety_tick > 500U) {
-//			change_motor_mode('X');
-//			can_motor_mode = 'X';
-//		}
+		if(HAL_GetTick() - can_tx_safety_tick > 500U) {
+			change_motor_mode('X');
+			can_motor_mode = 'X';
+		}
 
 		if(can_rx_rdy) {
 			HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
@@ -357,8 +357,8 @@ int main(void) {
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\n", GetPosition());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%f\t%f\t%f\n", GetPosition(), GetRPM(), GetAcc());
 			// snprintf(serial_buffer, sizeof(serial_buffer),"%.2f, %.3f\t%.3f\n", thermal_energy, foc_iq, foc_id);
-			 snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\n", GetPositionRaw(), GetRPM(), foc_iq, foc_id);
-			send_serial(serial_buffer);
+			 snprintf(serial_buffer, sizeof(serial_buffer),"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", GetRPM(), foc_iq, foc_id, pid_focIq.output, pid_focId.output);
+//			send_serial(serial_buffer);
 		}
 	}
 

@@ -152,11 +152,11 @@ void ADC1_IRQHandler(void) {
 					Uq += motor_r * pid_focIq.setpoint;
 
 					// BEMF feedforward
-					Uq += 0.95f * w_e * motor_flux_linkage;
+					Uq += 0.9f * w_e * motor_flux_linkage;
 
 					// Inductance feedforward
-					Uq += 0.95f *  w_e * motor_l * foc_id;
-					Ud += 0.95f * -w_e * motor_l * foc_iq;
+					Uq += 0.9f *  w_e * motor_l * foc_id;
+					Ud += 0.9f * -w_e * motor_l * foc_iq;
 
 					// Clamp to SVPWM circle
 					// Keep Ud, and clamp Uq
@@ -165,7 +165,10 @@ void ADC1_IRQHandler(void) {
 
 					// De-integrate if Uq is saturated
 					saturation_error = Uq - Uq_limit;
-					pid_focIq.integral += saturation_error;
+					// pid_focIq.integral += saturation_error;
+					// if(saturation_error) {
+					// 	pid_focIq.integral *= 0.9f;
+					// }
 
 					Uq = Uq_limit;
 				} else {
@@ -186,8 +189,6 @@ void ADC1_IRQHandler(void) {
 
 				setPhaseVoltage(Uq, Ud, angle_el_compensated);
 			}
-
-			// update_motion_observer((int16_t)ENC_TIM->CNT, 0.00004f);
 
 			// LED1_OFF();
 		} else {
@@ -316,8 +317,10 @@ static inline void update_motion_observer(int16_t current_raw_count, float dt) {
 	// pos_alpha = fminf(0.5f, fmaxf(0.05f, fabsf(rpm) / 100.0f));
 
 	pos_filt +=	pos_alpha * ( est_pos * 360.0f / enc_res - pos_filt);
-	rpm 	 +=	rpm_alpha * ((est_vel * 60.0f) / enc_res - rpm); // RPM
+	// rpm 	 +=	rpm_alpha * ((est_vel * 60.0f) / enc_res - rpm); // RPM
 	acc 	 +=	rpm_alpha * ((est_acc * 60.0f) / enc_res - acc); // RPM/s
+
+	rpm += 0.01 * (((float)delta * 60.0f) / enc_res / dt - rpm);
 }
 
 void reset_motion_observer() {
@@ -874,17 +877,17 @@ uint8_t MotorPIDInit(motor_t motor) {
 	// PID_enableErrorConstrain(&pid_focIq);
 	// PID_setErrorLimits(&pid_focIq, -0.5, 0.5);
 	PID_enableIntegralConstrain(&pid_focIq);
-	PID_setIntegralLimits(&pid_focIq, -10, 10);
+	PID_setIntegralLimits(&pid_focIq, -4, 4);
 	PID_enableOutputConstrain(&pid_focIq);
-	PID_setOutputLimits(&pid_focIq, -10, 10);
+	PID_setOutputLimits(&pid_focIq, -7, 7);
 	
 	// Id
 	// PID_enableErrorConstrain(&pid_focId);
 	// PID_setErrorLimits(&pid_focId, -0.8, 0.8);
 	PID_enableIntegralConstrain(&pid_focId);
-	PID_setIntegralLimits(&pid_focId, -10, 10);
+	PID_setIntegralLimits(&pid_focId, -4, 4);
 	PID_enableOutputConstrain(&pid_focId);
-	PID_setOutputLimits(&pid_focId, -10, 10);
+	PID_setOutputLimits(&pid_focId, -7, 7);
 
 	// RPM
 	PID_enableErrorConstrain(&pid_rpm);

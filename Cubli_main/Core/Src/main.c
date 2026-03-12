@@ -1,5 +1,6 @@
 #include "main.h"
 #include <stdio.h>
+#include <string.h>
 #include "ADC.h"
 #include "diags.h"
 #include "USART.h"
@@ -25,7 +26,6 @@ LIS3MDL_Handle_t g_mag;
 
 // Quaternion
 float g_q[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
-static Madgwick_Gains_t g_madgwick_gains;
 
 void SystemClock_Config(void);
 static void MPU_Config(void);
@@ -37,6 +37,7 @@ static void MX_ICACHE_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM13_Init(void);
 static void TIM5_init(float);
+static void TIM12_init(void);
 
 volatile uint8_t initial_press = 0, initial_delay = 0;
 
@@ -183,6 +184,7 @@ int main(void) {
 	MX_ADC1_Init();
 	MX_TIM13_Init();
 	TIM5_init(10000);
+	TIM12_init();
 
 	GPIOC->ODR &= ~(1U << 13U); // CAN S
 	HAL_TIM_Base_Stop_IT(&htim13);
@@ -206,8 +208,6 @@ int main(void) {
 	};
 	LIS3MDL_Init(&g_mag, &hi2c1, LIS3MDL_ADDR_LOW, &mag_cfg);
 
-	g_madgwick_gains = (Madgwick_Gains_t){ .beta = 0.05f };
-
 	HAL_Delay(500);
 	initial_delay = 1;
 
@@ -218,7 +218,7 @@ int main(void) {
 
 	MPU6050_Data_t imu_data;
 	LIS3MDL_Data_t mag_data;
-	uint32_t now, last_req_ms = 0, an = HAL_GetTick();
+	uint32_t now, an = HAL_GetTick();
 
 	// Gyro offset calibration
 	float g_avg_x = 0, g_avg_y = 0, g_avg_z = 0;
@@ -239,7 +239,7 @@ int main(void) {
 		while(HAL_GetTick() - now < 1);
 	}
 
-	AHRS_InitFromAccelYaw(g_q, a_avg_x, a_avg_y, a_avg_z, 0.0f);
+	QuaternionInit(g_q, a_avg_x, a_avg_y, a_avg_z, 0);
 
 	TIM5->CR1 |= 1; // Turn on IMU timer
 
@@ -249,77 +249,99 @@ int main(void) {
 
 	PID pid_pitch;
 	PID_init(&pid_pitch);
-	PID_setGain(&pid_pitch,	2.0f, 0.0f, 12.0f);
+	PID_setGain(&pid_pitch,	1.0f, 0.0f, 0.2f); // Mad3506
+//	PID_setGain(&pid_pitch,	2.0f, 0.0f, 0.2f); // Flysky
 	PID_disableComputeDerivative(&pid_pitch);
 	PID_enableOutputConstrain(&pid_pitch);
 	PID_setOutputLimits(&pid_pitch, -25, 25);
 
-	pid_pitch.setpoint = 37.4f;
+	pid_pitch.setpoint = 0.0f;
 
 	float ll = pid_pitch.setpoint - 0.1f, ul = pid_pitch.setpoint + 0.1f;
+	float temp_output = 0;
 
+	TIM12->CNT = 0;
+	TIM12->CR1 |= 1;
 	while(1) {
 		if(g_imu.state == MPU6050_STATE_DATA_READY) {
 			MPU6050_GetData(&g_imu, &imu_data);
-			imu_data.gyro_x = (imu_data.gyro_x - g_avg_x) * 0.017453293f;
-			imu_data.gyro_y = (imu_data.gyro_y - g_avg_y) * 0.017453293f;
-			imu_data.gyro_z = (imu_data.gyro_z - g_avg_z) * 0.017453293f;
+			imu_data.gyro_x = (imu_data.gyro_x - g_avg_x);
+			imu_data.gyro_y = (imu_data.gyro_y - g_avg_y);
+			imu_data.gyro_z = (imu_data.gyro_z - g_avg_z);
 
-			dt = 0.001f; // (float)(HAL_GetTick() - an) * 0.001f;
+			dt = (float)TIM12->CNT * 0.000001f;
 
 			if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
 				LIS3MDL_GetData(&g_mag, &mag_data);
 				// TODO: Calibrate compass
-
-				// Madgwick_UpdateMARG(g_q, &g_madgwick_gains,
-				// 					imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
-				// 					imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
-				// 					mag_data.mag_x, mag_data.mag_y, mag_data.mag_z,
-				// 					dt);
-				Madgwick_UpdateIMU(	g_q, &g_madgwick_gains,
-									imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
-									imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
-									dt);
+				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
 			} else {
-				Madgwick_UpdateIMU(	g_q, &g_madgwick_gains,
-									imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z,
-									imu_data.accel_x, imu_data.accel_y, imu_data.accel_z,
-									dt);
+				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
 			}
-			an = HAL_GetTick();
+			TIM12->CNT = 0;
 			
-			AHRS_QuatToEuler(g_q, &roll, &pitch, &yaw);
-			roll *= RAD2DEG;
-			pitch *= RAD2DEG;
-			yaw *= RAD2DEG;
-			// printf("%.2f\t%.2f\t%.2f\n", roll, pitch, yaw);
+			QuaternionToEuler(g_q, &roll, &pitch, &yaw);
+//			printf("%.2f\t%.2f\t", roll, pitch);
 
-			if(pitch > ll && pitch < ul) {
+			/*if(pitch > ll && pitch < ul) {
 				ll = 32.0f;
 				ul = 42.0f;
 
 				#define ks 1.2f
 				#define kv 0.00003f
 
-				pid_pitch.setpoint += (ks*pid_pitch.error + kv*rpm_c) * dt;
-
-				pid_pitch.derivative += 1.0 * (imu_data.gyro_y - pid_pitch.derivative);
+				pid_pitch.derivative += 1.0f * (imu_data.gyro_y - pid_pitch.derivative);
 				PID_compute(&pid_pitch, pitch, dt);
 
-				if (fabsf(rpm_c) < 20) {
+				pid_pitch.setpoint += (ks*pid_pitch.error + kv*rpm_c) * dt;
+
+				if(fabsf(rpm_c) < 20) {
 					if(fabsf(pid_pitch.output) > 1e-6f) {
 						// pid_pitch.output += (pid_pitch.output > 0 ? 1.0f : -1.0f) * 0.02f;
-						pid_pitch.output *= 2.0;
+						pid_pitch.output *= 2.0f;
 					}
 				}
 
-				CAN_send_motor(0x320, 'P', pid_pitch.output);
+//				CAN_send_motor(0x320, 'P', pid_pitch.output);
 				printf("%.3f\t%.3f\n", pitch, pid_pitch.setpoint);
 			} else {
 				PID_reset(&pid_pitch);
 				pid_pitch.setpoint = 37.4f;
 				ll = pid_pitch.setpoint - 0.1f;
 				ul = pid_pitch.setpoint + 0.1f;
+			}*/
+
+			if(pitch > ll && pitch < ul) {
+				ll = 20.0f;
+				ul = 70.0f;
+
+				#define ks 1.3f
+				#define kv 0.0f // -0.000002f
+
+				pid_pitch.derivative += 0.8f * (imu_data.gyro_z - pid_pitch.derivative);
+				PID_compute(&pid_pitch, pitch, dt);
+
+				pid_pitch.setpoint += (ks*pid_pitch.error + kv*rpm_a) * dt;
+
+//				if(fabsf(rpm_a) < 10) {
+//					if(fabsf(pid_pitch.output) > 1e-6f) {
+//						 pid_pitch.output += (pid_pitch.output > 0 ? 1.0f : -1.0f) * 0.1f;
+////						pid_pitch.output *= 2.0f;
+//					}
+//				}
+
+				temp_output += 0.1 * (-pid_pitch.output - temp_output);
+
+				CAN_send_motor(0x300, 'P', temp_output);
+				printf("%.3f\t%.3f\n", pitch, pid_pitch.setpoint);
+			} else {
+				PID_reset(&pid_pitch);
+				pid_pitch.setpoint = 42.0f;
+				ll = pid_pitch.setpoint - 0.1f;
+				ul = pid_pitch.setpoint + 0.1f;
+				temp_output = 0;
 			}
 		}
 	}
@@ -403,6 +425,25 @@ void TIM5_init(float f) {
 	TIM5->SR &= ~(0x1U);
 	NVIC_EnableIRQ(TIM5_IRQn);
 }
+
+void TIM12_init() {
+	RCC->APB1LENR |= 1 << 6;
+
+	TIM12->CR1 = 0;
+	TIM12->CR2 = 0;
+
+	TIM12->PSC = 250-1; // 1 MHz after prescaler
+	TIM12->ARR = 0xFFFFFFFF;
+
+	TIM12->CNT = 0;
+
+	TIM12->EGR |= 1;
+
+	TIM12->DIER |= 1;
+
+	TIM12->SR &= ~(0x1U);
+}
+
 
 static void MX_ADC1_Init(void) {
 	ADC_ChannelConfTypeDef sConfig = {0};
