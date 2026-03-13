@@ -11,17 +11,18 @@
 
 extern UART_HandleTypeDef huart1;
 
-extern char serial_buffer[64];
-extern uint8_t serial_buffer_len;
+extern char serial_buffer[1024];
+extern uint16_t serial_buffer_len;
 
 extern volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
 extern volatile unsigned char rx_rdy;
 extern volatile unsigned char play_tone;
 extern volatile unsigned char auto_stop;
 
-extern void set_serial_mode(uint8_t mode);
-extern void send_serial(char []);
-extern void CAN_send_serial(char []);
-extern void MX_USART1_UART_Init(void);
+void set_serial_mode(uint8_t mode);
+uint8_t get_serial_mode();
+void send_serial(char []);
+void CAN_send_serial(char []);
+void MX_USART1_UART_Init(void);
 
 #endif

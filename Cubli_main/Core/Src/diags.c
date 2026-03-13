@@ -10,10 +10,16 @@
 #include "string_utils.h"
 #include "EEPROM.h"
 
+#include "ADC.h"
+#include "MPU6050.h"
+#include "LIS3MDL.h"
+
 void printDiagsMenu();
 char read_rx_char();
 
 uint8_t diags_escConnect(char*);
+uint8_t diags_euler(char*);
+uint8_t diags_rpm(char*);
 uint8_t diags_readTemperature(char*);
 uint8_t diags_readADC(char*);
 uint8_t diags_i2c(char*);
@@ -32,6 +38,8 @@ typedef struct diags_menu_item {
 
 const diags_menu_item diags_list[] = {
 	{ .name = "Connect to ESCs",			.cmd = "esc",	.func = diags_escConnect		},
+	{ .name = "Display euler angles",		.cmd = "euler",	.func = diags_euler				},
+	{ .name = "Display motor rpms",			.cmd = "rpm",	.func = diags_rpm				},
 	{ .name = "Read Temperature sensors",	.cmd = "temp",	.func = diags_readTemperature	},
 	{ .name = "Read ADCs",					.cmd = "adc",	.func = diags_readADC			},
 	{ .name = "I2C commands",				.cmd = "i2c",	.func = diags_i2c				},
@@ -165,6 +173,89 @@ con [x] : x = ESC node ID\n";
 		}
 	} else {
 		printf(help_str);
+	}
+}
+
+uint8_t diags_euler(char *cmd) {
+	char ch;
+	char arg_val[10];
+	
+	const char help_str[] = "\
+Display euler angles\n";
+
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		printf(help_str);
+		return true;
+	}
+
+	MPU6050_Data_t imu_data;
+	LIS3MDL_Data_t mag_data;
+	float roll, pitch, yaw;
+	uint32_t tick = 0;
+	float dt;
+	TIM12->CNT = 0;
+	TIM12->CR1 |= 1;
+	while(1) {
+		if(g_imu.state == MPU6050_STATE_DATA_READY) {
+			MPU6050_GetData(&g_imu, &imu_data);
+			imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
+			imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
+			imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
+
+			dt = (float)TIM12->CNT * 0.000001f;
+
+			if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
+				LIS3MDL_GetData(&g_mag, &mag_data);
+				// TODO: Calibrate compass
+				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
+			} else {
+				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
+			}
+			TIM12->CNT = 0;
+		}
+
+		if(HAL_GetTick() - tick > 10) {
+			tick = HAL_GetTick();
+			QuaternionToEuler(g_q, &roll, &pitch, &yaw);
+			printf("%.3f\t%.3f\t%.3f\n", roll, pitch, yaw);
+		}
+
+		if(rx_rdy) {
+			ch = read_rx_char();
+			if(ch == 'x') {
+				return true;
+			}
+		}
+	}
+}
+
+uint8_t diags_rpm(char *cmd) {
+	char ch;
+	char arg_val[10];
+	
+	const char help_str[] = "\
+Display motor rpms\n";
+
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		printf(help_str);
+		return true;
+	}
+
+	uint32_t tick = 0;
+	while(1) {
+		if(HAL_GetTick() - tick > 10) {
+			tick = HAL_GetTick();
+			printf("%.3f\t%.3f\t%.3f\n", rpm_a, rpm_b, rpm_c);
+		}
+
+		if(rx_rdy) {
+			ch = read_rx_char();
+			if(ch == 'x') {
+				return true;
+			}
+		}
 	}
 }
 

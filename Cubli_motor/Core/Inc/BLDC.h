@@ -59,6 +59,8 @@ extern float encoder_calib_data[32];
 
 extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
+extern motor_t *motor_active;
+extern motor_t motor_list[3];
 extern float motor_pole_pairs;
 extern uint8_t motor_direction, enc_direction;
 
@@ -76,7 +78,7 @@ extern void MotorShort(float);
 
 extern void init_encoder_lut();
 extern void interpolate_encoder_lut(float[], unsigned int);
-extern uint8_t MotorPIDInit(motor_t);
+extern uint8_t MotorPIDInit(motor_t*);
 
 extern bool bemf_phase(unsigned char);
 extern void SensorlessStart(float);

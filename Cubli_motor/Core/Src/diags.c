@@ -17,8 +17,8 @@
 void printDiagsMenu();
 char read_rx_char();
 
-uint8_t diags_spinMotor(char*);
 uint8_t diags_id(char*);
+uint8_t diags_comms(char*);
 uint8_t diags_calibrateEncoder(char*);
 uint8_t diags_motor(char*);
 uint8_t diags_encoder(char*);
@@ -42,8 +42,8 @@ typedef struct diags_menu_item {
 } diags_menu_item;
 
 const diags_menu_item diags_list[] = {
-	{ .name = "Spin Motor",						.cmd = "spin",	.func = diags_spinMotor			},
 	{ .name = "Board ID",						.cmd = "id",	.func = diags_id				},
+	{ .name = "Communication mode",				.cmd = "comms",	.func = diags_comms				},
 	{ .name = "Calibrate Encoder",				.cmd = "calib",	.func = diags_calibrateEncoder	},
 	{ .name = "Motor Control",					.cmd = "motor",	.func = diags_motor				},
 	{ .name = "Rotary Encoder commands",		.cmd = "enc",	.func = diags_encoder			},
@@ -163,33 +163,6 @@ void printDiagsMenu() {
 	send_serial(serial_buffer);
 }
 
-uint8_t diags_spinMotor(char *cmd) {
-	unsigned int i;
-	unsigned char ch;
-
-	mode = MODE_OFF;
-	while(1) {
-		for(i = 0; i < 360; i += 60) {
-			setPhaseVoltage(0.03*vsns_vbat, 0, (float)i);
-			HAL_Delay(500);
-			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f\n", GetPositionRaw());
-			send_serial(serial_buffer);
-			HAL_Delay(250);
-
-			if(rx_rdy) {
-				ch = read_rx_char();
-				if(ch == 'x') {
-					mode = MODE_OFF;
-					MotorOff();
-					return true;
-				}
-			}
-		}
-	}
-	
-	return true;
-}
-
 uint8_t diags_id(char *cmd) {
 	char arg_val[20];
 	
@@ -217,6 +190,43 @@ id [x] : Display board id. Optionally set to x.\n";
 	return true;
 }
 
+uint8_t diags_comms(char *cmd) {
+	char arg_val[20];
+	
+	const char help_str[] = "\
+Commands to set/display id:\n\
+comms [\"UART\", \"CAN\", \"BOTH\"] : Set communication mode.\n";
+	
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
+		return true;
+	}
+
+	if(str_getArgValue(cmd, "comms", arg_val)) {
+		str_toUpper(arg_val);
+		if(str_isEqual(arg_val, "UART")) {
+			set_serial_mode(SER_MODE_UART);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Comms set to: UART\n");
+			send_serial(serial_buffer);
+
+		} else if(str_isEqual(arg_val, "CAN")) {
+			set_serial_mode(SER_MODE_CAN);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Comms set to: CAN\n");
+			send_serial(serial_buffer);
+
+		} else if(str_isEqual(arg_val, "BOTH")) {
+			set_serial_mode(SER_MODE_BOTH);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Comms set to: BOTH\n");
+			send_serial(serial_buffer);
+		} else {
+			printf("Incorrect mode. Must be \"UART\", \"CAN\", \"BOTH\"\n");
+		}
+	}
+	
+	return true;
+}
+
 uint8_t diags_motor(char *cmd) {
 	unsigned char ch;
 	uint8_t i;
@@ -225,17 +235,18 @@ uint8_t diags_motor(char *cmd) {
 	
 	const char help_str[] = "\
 Commands to control the BLDC motor with the parameters:\n\
+off : Turn motor off (coast)\n\
+spin : Slowly spin the motor in 6 step commutation\n\
 -p [x] : Set motor power to x (-2000, 2000)\n\
 ramp [x] (-a [y]): Ramp motor power to x (-2000, 2000) an acceleration y\n\
 -e [x] : Move motor to electrical degree x\n\
-zero [x] : Move to zero (space vector: 100) x\n\
 -s [x] : Move motor to six step phase x\n\
-spin : Slowly spin the motor in 6 step commutation\n\
-off : Turn motor off (coast)\n\
+-model [x]: Display motor models, then optionally set motor model to number x\n\
+zero [x] : Move to zero (space vector: 100) x\n\
 wave [s] : Display waveform type. Set waveform type to \"foc\", \"svpwm\", \"sin\", \"saddle\", or \"trapezoid\"\n\
 polepairs [p] : Display pole pairs. Optionally set to p.\n\
 dir [0/1] : Motor wiring direction. 0 for normal, 1 for reverse.\n\
-setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
+power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
@@ -333,11 +344,60 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		mode = MODE_OFF;
 		MotorOff();
 
+	// Set motor pole pairs
+	} else if(str_getArgValue(cmd, "model", arg_val)) {
+		if(str_isInt(arg_val)) {
+			uint8_t motor_model = str_toInt(arg_val);
+			if(motor_model >= 1 && motor_model <= 3) {
+				motor_active = &motor_list[motor_model-1];
+				snprintf(serial_buffer, sizeof(serial_buffer), "Motor model set to: %s\n", motor_active->name);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Polepairs: %d\n", motor_active->polepairs);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %d\n", motor_active->kv);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", motor_active->r_p2p);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", motor_active->l_p2p);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "\n");
+				send_serial(serial_buffer);
+
+			} else {
+				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect option");
+				send_serial(serial_buffer);
+			}			
+		} else {
+			for(i = 0; i < sizeof(motor_list)/sizeof(motor_list[0]); i++) {
+				if(motor_active == &motor_list[i]) {
+					snprintf(serial_buffer, sizeof(serial_buffer), "Active motor:\n");
+					send_serial(serial_buffer);
+				}
+				snprintf(serial_buffer, sizeof(serial_buffer), "Current Motor model: %s\n", motor_list[i].name);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Polepairs: %d\n", motor_list[i].polepairs);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %.0f\n", motor_list[i].kv);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", motor_list[i].r_p2p);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", motor_list[i].l_p2p);
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), " \n");
+				send_serial(serial_buffer);
+			}
+		}
+
 	// Set power
-	} else if(str_getArgValue(cmd, "setpower", arg_val)) {
-		diags_power = str_toFloat(arg_val);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Power set to: %.4f\n", diags_power);
-		send_serial(serial_buffer);
+	} else if(str_getArgValue(cmd, "power", arg_val)) {
+		if(str_isFloat(arg_val)) {
+			diags_power = str_toFloat(arg_val);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Power set to: %.3f\n", diags_power);
+			send_serial(serial_buffer);
+		} else {
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current power: %.3f\n", diags_power);
+			send_serial(serial_buffer);
+		}
 	
 	// Set motor pole pairs
 	} else if(str_getArgValue(cmd, "polepairs", arg_val)) {
@@ -507,7 +567,6 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 
 	// Display calibrated encoder data
 	} else {
-//		FOC_TIMER_ON();
 		while(1) {
 			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.4f\n", GetPositionRaw(), GetRPM());
 			send_serial(serial_buffer);

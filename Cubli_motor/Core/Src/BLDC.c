@@ -44,10 +44,43 @@ float encoder_calib_data[] = {7.91, 37.08, 66.35, 95.71, 126.4, 157.23, 187.73, 
 float encoder_LUT[(int)ENCODER_RES];
 
 // Motor constants
-motor_t motor_active;
+motor_t *motor_active;
 float motor_kv = 0;
 float motor_l = 0;
 float motor_r = 0;
+
+motor_t motor_list[3] = {
+(struct motor_t){
+	.name = "mad3506",
+	.polepairs = 7,
+	.kv = 400.0f,
+	.r_p2p = 240E-3f,
+	.l_p2p = 180E-6f,
+	.stiction = 0.25f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+},
+(struct motor_t){
+	.name = "mad4006",
+	.polepairs = 12,
+	.kv = 740.0f,
+	.r_p2p = 51E-3f,
+	.l_p2p = 25E-6f,
+	.stiction = 0.0f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+},
+(struct motor_t){
+	.name = "flysky",
+	.polepairs = 7,
+	.kv = 750.0f,
+	.r_p2p = 92E-3f,
+	.l_p2p = 35E-6f,
+	.stiction = 0.00f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+}
+};
 
 // FOC
 volatile float sin_el, cos_el;
@@ -223,9 +256,9 @@ void TIM5_IRQHandler(void) {
 
 			float stiction_ff = 0.0f;
 			if (fabsf(rpm) < 20.0f && fabsf(pid_rpm.output) > 1E-4f) {
-				stiction_ff = motor_active.stiction * fsignf(pid_rpm.output);
+				stiction_ff = motor_active->stiction * fsignf(pid_rpm.output);
 			}
-			float friction_ff = stiction_ff + motor_active.coulomb * tanhf(rpm * 0.13f) +  motor_active.viscous * rpm;
+			float friction_ff = stiction_ff + motor_active->coulomb * tanhf(rpm * 0.13f) +  motor_active->viscous * rpm;
 			
 			pid_focIq.setpoint = pid_rpm.output + friction_ff;
 		}
@@ -845,17 +878,17 @@ void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
  |                                PID                                 |
  ----------------------------------------------------------------------*/
 
-uint8_t MotorPIDInit(motor_t motor) {
+uint8_t MotorPIDInit(motor_t *motor) {
 	PID_init(&pid_angle);
 	PID_init(&pid_rpm);
 	PID_init(&pid_focIq);
 	PID_init(&pid_focId);
 
 	motor_active = motor;
-	motor_pole_pairs = motor.polepairs;
-	motor_kv = motor.kv;
-	motor_r = motor.r_p2p * 0.5f;
-	motor_l = motor.l_p2p * 0.5f;
+	motor_pole_pairs = motor_active->polepairs;
+	motor_kv = motor_active->kv;
+	motor_r = motor_active->r_p2p * 0.5f;
+	motor_l = motor_active->l_p2p * 0.5f;
 
 	if(motor_pole_pairs == 0 || motor_kv == 0 || motor_r == 0 || motor_l == 0) {
 		return 0;

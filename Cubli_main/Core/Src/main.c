@@ -239,6 +239,10 @@ int main(void) {
 		while(HAL_GetTick() - now < 1);
 	}
 
+	g_imu.gyro_offset_x = g_avg_x;
+	g_imu.gyro_offset_y = g_avg_y;
+	g_imu.gyro_offset_z = g_avg_z;
+
 	QuaternionInit(g_q, a_avg_x, a_avg_y, a_avg_z, 0);
 
 	TIM5->CR1 |= 1; // Turn on IMU timer
@@ -247,7 +251,7 @@ int main(void) {
 	float dt;
 	const float RAD2DEG = 57.2957795f;
 
-	PID pid_pitch;
+	PID pid_pitch, pid_roll;
 	PID_init(&pid_pitch);
 	PID_setGain(&pid_pitch,	1.0f, 0.0f, 0.2f); // Mad3506
 //	PID_setGain(&pid_pitch,	2.0f, 0.0f, 0.2f); // Flysky
@@ -255,19 +259,42 @@ int main(void) {
 	PID_enableOutputConstrain(&pid_pitch);
 	PID_setOutputLimits(&pid_pitch, -25, 25);
 
+	PID_setGain(&pid_roll,	1.5f, 0.0f, 0.2f); // Mad4006
+	PID_disableComputeDerivative(&pid_roll);
+	PID_enableOutputConstrain(&pid_roll);
+	PID_setOutputLimits(&pid_roll, -25, 25);
+
 	pid_pitch.setpoint = 0.0f;
 
-	float ll = pid_pitch.setpoint - 0.1f, ul = pid_pitch.setpoint + 0.1f;
+	float ll, ul;
 	float temp_output = 0;
 
 	TIM12->CNT = 0;
 	TIM12->CR1 |= 1;
 	while(1) {
+
+		if(rx_rdy) {
+			HAL_NVIC_DisableIRQ(USART1_IRQn);
+			for(i = 0; rx_buffer[i] != '\0'; i++) {
+				rx_buffer_local[i] = rx_buffer[i];
+			}
+			rx_rdy = 0;
+			HAL_NVIC_EnableIRQ(USART1_IRQn);
+			rx_buffer_local[i] = '\0';
+
+			str_removeChar(rx_buffer_local, '\n');
+			str_removeChar(rx_buffer_local, '\r');
+
+			if(str_beginsWith(rx_buffer_local, "diags")) {
+				diagsMenu();
+			}
+		}
+
 		if(g_imu.state == MPU6050_STATE_DATA_READY) {
 			MPU6050_GetData(&g_imu, &imu_data);
-			imu_data.gyro_x = (imu_data.gyro_x - g_avg_x);
-			imu_data.gyro_y = (imu_data.gyro_y - g_avg_y);
-			imu_data.gyro_z = (imu_data.gyro_z - g_avg_z);
+			imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
+			imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
+			imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
 
 			dt = (float)TIM12->CNT * 0.000001f;
 
@@ -283,7 +310,8 @@ int main(void) {
 			TIM12->CNT = 0;
 			
 			QuaternionToEuler(g_q, &roll, &pitch, &yaw);
-//			printf("%.2f\t%.2f\t", roll, pitch);
+//			printf("%.2f\t%.2f\n", roll, pitch);
+//			printf("%.2f\t%.2f\t%.2f\n", imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z);
 
 			/*if(pitch > ll && pitch < ul) {
 				ll = 32.0f;
@@ -313,26 +341,69 @@ int main(void) {
 				ul = pid_pitch.setpoint + 0.1f;
 			}*/
 
-			if(pitch > ll && pitch < ul) {
+			if(roll > ll && roll < ul) {
+				ll = 110.0f;
+				ul = 160.0f;
+
+				#define ks 0.6f
+				#define kv 0.002f
+				#define kleak 0.8f
+				#define DEADBAND 0.3f
+
+				pid_roll.derivative += 0.8f * (-imu_data.gyro_x - pid_roll.derivative);
+				PID_compute(&pid_roll, roll, dt);
+
+				if (fabsf(pid_roll.error) > DEADBAND) {
+					pid_roll.setpoint += ks*pid_roll.error * dt;
+				}
+				pid_roll.setpoint += kv*rpm_b * dt;
+//				setpoint += kleak * (45.0f - pid_roll.setpoint) * dt;
+
+				if(fabsf(rpm_b) < 10) {
+					if(fabsf(pid_roll.output) > 1e-6f) {
+//						 pid_pitch.output += (pid_roll.output > 0 ? 1.0f : -1.0f) * 0.1f;
+//						pid_roll.output *= 2.0f;
+					}
+				}
+
+				temp_output += 0.8 * (pid_roll.output - temp_output);
+
+				CAN_send_motor(0x310, 'P', temp_output);
+				printf("%.3f\t%.3f\t%.3f\n", roll, pid_roll.setpoint, rpm_b);
+			} else {
+				PID_reset(&pid_roll);
+				pid_roll.setpoint = 139.5f;
+				ll = pid_roll.setpoint - 0.1f;
+				ul = pid_roll.setpoint + 0.1f;
+				temp_output = 0;
+			}
+
+			/*if(pitch > ll && pitch < ul) {
 				ll = 20.0f;
 				ul = 70.0f;
 
 				#define ks 1.3f
-				#define kv 0.0f // -0.000002f
+				#define kv 0//  0.00002f
+				#define kleak 0.8f
+				#define DEADBAND 0.3f
 
 				pid_pitch.derivative += 0.8f * (imu_data.gyro_z - pid_pitch.derivative);
 				PID_compute(&pid_pitch, pitch, dt);
 
-				pid_pitch.setpoint += (ks*pid_pitch.error + kv*rpm_a) * dt;
+				if (fabsf(pid_pitch.error) > DEADBAND) {
+					pid_pitch.setpoint += ks*pid_pitch.error * dt;
+				}
+				pid_pitch.setpoint += kv*rpm_a * dt;
+//				setpoint += kleak * (45.0f - pid_pitch.setpoint) * dt;
 
-//				if(fabsf(rpm_a) < 10) {
-//					if(fabsf(pid_pitch.output) > 1e-6f) {
+				if(fabsf(rpm_a) < 10) {
+					if(fabsf(pid_pitch.output) > 1e-6f) {
 //						 pid_pitch.output += (pid_pitch.output > 0 ? 1.0f : -1.0f) * 0.1f;
-////						pid_pitch.output *= 2.0f;
-//					}
-//				}
+						pid_pitch.output *= 2.0f;
+					}
+				}
 
-				temp_output += 0.1 * (-pid_pitch.output - temp_output);
+				temp_output += 0.8 * (-pid_pitch.output - temp_output);
 
 				CAN_send_motor(0x300, 'P', temp_output);
 				printf("%.3f\t%.3f\n", pitch, pid_pitch.setpoint);
@@ -342,7 +413,7 @@ int main(void) {
 				ll = pid_pitch.setpoint - 0.1f;
 				ul = pid_pitch.setpoint + 0.1f;
 				temp_output = 0;
-			}
+			}*/
 		}
 	}
 

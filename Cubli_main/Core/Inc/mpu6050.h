@@ -93,6 +93,10 @@ typedef struct {
     /* --- scale factors (precomputed at init) ---*/
     float accel_scale;               /**< LSB → m/s²  */
     float gyro_scale;                /**< LSB → °/s   */
+
+    float gyro_offset_x;
+    float gyro_offset_y;
+    float gyro_offset_z;
 } MPU6050_Handle_t;
 
 /* ── Return codes ─────────────────────────────────────────────────────────── */

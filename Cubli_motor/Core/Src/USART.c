@@ -6,8 +6,8 @@
 #include <inttypes.h>
 
 UART_HandleTypeDef huart1;
-char serial_buffer[64];
-uint8_t serial_buffer_len;
+char serial_buffer[1024];
+uint16_t serial_buffer_len;
 uint8_t serial_mode = 0;
 
 #ifdef __GNUC__
@@ -32,6 +32,10 @@ void send_serial(char str[]) {
 
 void set_serial_mode(uint8_t mode) {
 	serial_mode = mode;
+}
+
+uint8_t get_serial_mode() {
+	return serial_mode;
 }
 
 void CAN_send_serial(char str[]) {
