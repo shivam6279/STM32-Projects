@@ -12,6 +12,8 @@
 #include "LIS3MDL.h"
 #include "pid.h"
 
+#define PI 3.14159265358979f
+
 DCACHE_HandleTypeDef hdcache1;
 FDCAN_HandleTypeDef hfdcan1;
 I2C_HandleTypeDef hi2c1;
@@ -23,9 +25,13 @@ volatile uint8_t CAN_RxData[64];
 
 MPU6050_Handle_t g_imu;
 LIS3MDL_Handle_t g_mag;
+volatile uint8_t imu_new_data = 0;
 
 // Quaternion
 float g_q[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+float roll, pitch, yaw;
+
+static CubliLQR g_ctrl;
 
 void SystemClock_Config(void);
 static void MPU_Config(void);
@@ -37,7 +43,10 @@ static void MX_ICACHE_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM13_Init(void);
 static void TIM5_init(float);
+static void TIM6_init(float);
 static void TIM12_init(void);
+uint32_t get_us();
+void set_us(uint32_t);
 
 volatile uint8_t initial_press = 0, initial_delay = 0;
 
@@ -120,8 +129,35 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef * hi2c) {
 }
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef * hi2c) {
+	static uint32_t last_tick = get_us();
+	MPU6050_Data_t imu_data;
+	LIS3MDL_Data_t mag_data;
+
 	MPU6050_IRQHandler(&g_imu, hi2c);
 	LIS3MDL_IRQHandler(&g_mag, hi2c);
+
+	if(g_imu.state == MPU6050_STATE_DATA_READY) {
+		MPU6050_GetData(&g_imu, &imu_data);
+		imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
+		imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
+		imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
+
+		dt = ((float)get_us() - last_tick) * 0.000001f;
+		last_tick = get_us();
+
+		if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
+			LIS3MDL_GetData(&g_mag, &mag_data);
+			// TODO: Calibrate compass
+			MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+			MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
+		} else {
+			MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+			MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
+		}
+		
+		QuaternionToEuler(g_q, &roll, &pitch, &yaw);
+		imu_new_data = 1;
+	}
 }
 
 void CAN_send_motor(uint16_t can_id, char mode, float val) {
@@ -170,6 +206,129 @@ void TIM5_IRQHandler(void) {
 	}
 }
 
+void cubli_control_update(void) {
+    float angle_rad[3]   = { roll, pitch, yaw };
+    float rate_rad_s[3]  = { gyro_x, gyro_y, gyro_z };
+    float wheel_rad_s[3] = { rpm_a, rpm_b, rpm_c };
+
+    float torque[3];
+    CubliMode mode;
+
+    if (cubli_lqr_update(&g_ctrl, angle_rad, rate_rad_s, wheel_rad_s, torque, &mode) != 0) {
+        CAN_send_motor('P', 0x300, 0.0f);
+        CAN_send_motor('P', 0x310, 0.0f);
+        CAN_send_motor('P', 0x320, 0.0f);
+        return;
+    }
+
+    CAN_send_motor('P', 0x300, torque[0]);
+    CAN_send_motor('P', 0x310, torque[1]);
+    CAN_send_motor('P', 0x320, torque[2]);
+}
+
+void cubli_init(void) {
+
+	CubliParams p = {
+
+		.physical = {
+			.m        = 0.780f,
+			.g        = 9.81f,
+			.l_edge   = 0.0525f,    // half side length (m)
+			.l_corner = 0.0455f,    // side * sqrt(3)/2 / 2
+
+			// Measure with swing test per axis
+			.I_edge_x = 0.00143f,
+			.I_edge_y = 0.00143f,
+			.I_edge_z = 0.00143f,
+
+			// Measure with trifilar pendulum or CAD
+			.Ix = 0.00035f,
+			.Iy = 0.00035f,
+			.Iz = 0.00035f,
+
+			.Iw = 0.00125f,
+		},
+
+		.weights = {
+			.edge_q_angle   = 1000.0f,
+			.edge_q_rate    =   10.0f,
+			.edge_q_wheel   =    1.0f,
+			.edge_r_torque  =    1.0f,
+
+			.corner_q_tilt      = 1000.0f,
+			.corner_q_tilt_rate =   10.0f,
+			.corner_q_yaw       =   50.0f,
+			.corner_q_yaw_rate  =    1.0f,
+			.corner_q_wheel     =    1.0f,
+			.corner_r_torque    =    1.0f,
+		},
+
+		.setpoint = {
+			.ki_sp    = 0.02f,
+			.leak     = 0.05f,
+			.deadband = 0.5f * (PI/180.0f),
+			.max_offset = 5.0f * (PI/180.0f),
+		},
+
+		// ============================================================
+		//  EDGE TABLE  (12 entries)
+		//
+		//  balance_axis:  0=roll, 1=pitch, 2=diagonal
+		//  balance_sign:  +1 or -1, flip if motor drives wrong way
+		//  wheel_index:   0=motorA, 1=motorB, 2=motorC
+		//  gain_axis:     0=X gains, 1=Y gains, 2=Z gains
+		//  nominal_sp_rad: fill from measurement
+		//
+		//  ref_balance_deg:    ~45 or ~-45
+		//  ref_nonbalance_deg: multiple of 90 (0, 90, 180, 270)
+		// ============================================================
+		.edges = {
+			// -- X-axis edges (4): wheel A, gain_axis 0 --
+			// balance on roll, non-balance is pitch
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=0,   .balance_axis=0, .balance_sign=+1, .wheel_index=0, .gain_axis=0, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=90,  .balance_axis=0, .balance_sign=+1, .wheel_index=0, .gain_axis=0, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=180, .balance_axis=0, .balance_sign=+1, .wheel_index=0, .gain_axis=0, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=270, .balance_axis=0, .balance_sign=+1, .wheel_index=0, .gain_axis=0, .nominal_sp_rad=0 },
+
+			// -- Y-axis edges (4): wheel B, gain_axis 1 --
+			// balance on pitch, non-balance is roll
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=0,   .balance_axis=1, .balance_sign=+1, .wheel_index=1, .gain_axis=1, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=90,  .balance_axis=1, .balance_sign=+1, .wheel_index=1, .gain_axis=1, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=180, .balance_axis=1, .balance_sign=+1, .wheel_index=1, .gain_axis=1, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=270, .balance_axis=1, .balance_sign=+1, .wheel_index=1, .gain_axis=1, .nominal_sp_rad=0 },
+
+			// -- Z-axis edges (4): wheel C, gain_axis 2, diagonal --
+			// both roll and pitch near 45
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=45,  .balance_axis=2, .balance_sign=+1, .wheel_index=2, .gain_axis=2, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=45,  .ref_nonbalance_deg=-45, .balance_axis=2, .balance_sign=+1, .wheel_index=2, .gain_axis=2, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=-45, .ref_nonbalance_deg=45,  .balance_axis=2, .balance_sign=-1, .wheel_index=2, .gain_axis=2, .nominal_sp_rad=0 },
+			{ .ref_balance_deg=-45, .ref_nonbalance_deg=-45, .balance_axis=2, .balance_sign=-1, .wheel_index=2, .gain_axis=2, .nominal_sp_rad=0 },
+		},
+
+		// ============================================================
+		//  CORNER TABLE  (8 entries)
+		//
+		//  Fill ref_roll_deg, ref_pitch_deg from measurement.
+		//  Fill nominal setpoints once measured.
+		//  Placeholder values shown.
+		// ============================================================
+		.corners = {
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 }, // top corner (upright)
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 }, // fill remaining 7
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 },
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 },
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 },
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 },
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 },
+			{ .ref_roll_deg= 0,  .ref_pitch_deg= 0,  .nominal_sp_alpha=0, .nominal_sp_beta=0, .nominal_sp_gamma=0 },
+		},
+	};
+
+	if (cubli_lqr_init(&g_ctrl, &p) != 0) {
+		Error_Handler();
+	}
+}
+
 int main(void) {
 	MPU_Config();
 	HAL_Init();
@@ -184,6 +343,7 @@ int main(void) {
 	MX_ADC1_Init();
 	MX_TIM13_Init();
 	TIM5_init(10000);
+	// TIM6_init(1000);
 	TIM12_init();
 
 	GPIOC->ODR &= ~(1U << 13U); // CAN S
@@ -247,8 +407,6 @@ int main(void) {
 
 	TIM5->CR1 |= 1; // Turn on IMU timer
 
-	float roll, pitch, yaw;
-	float dt;
 	const float RAD2DEG = 57.2957795f;
 
 	PID pid_pitch, pid_roll;
@@ -290,26 +448,8 @@ int main(void) {
 			}
 		}
 
-		if(g_imu.state == MPU6050_STATE_DATA_READY) {
-			MPU6050_GetData(&g_imu, &imu_data);
-			imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
-			imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
-			imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
-
-			dt = (float)TIM12->CNT * 0.000001f;
-
-			if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
-				LIS3MDL_GetData(&g_mag, &mag_data);
-				// TODO: Calibrate compass
-				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
-				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
-			} else {
-				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
-				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
-			}
-			TIM12->CNT = 0;
-			
-			QuaternionToEuler(g_q, &roll, &pitch, &yaw);
+		if(imu_new_data) {
+			imu_new_data = 0;
 //			printf("%.2f\t%.2f\n", roll, pitch);
 //			printf("%.2f\t%.2f\t%.2f\n", imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z);
 
@@ -416,27 +556,6 @@ int main(void) {
 			}*/
 		}
 	}
-
-	while (1) {
-
-		if(rx_rdy) {
-			HAL_NVIC_DisableIRQ(USART1_IRQn);
-			for(i = 0; rx_buffer[i] != '\0'; i++) {
-				rx_buffer_local[i] = rx_buffer[i];
-			}
-			rx_rdy = 0;
-			HAL_NVIC_EnableIRQ(USART1_IRQn);
-			rx_buffer_local[i] = '\0';
-
-			str_removeChar(rx_buffer_local, '\n');
-			str_removeChar(rx_buffer_local, '\r');
-
-			if(str_beginsWith(rx_buffer_local, "diags")) {
-				diagsMenu();
-			}
-		}
-//    HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &CAN_TxHeader, CAN_TxData);
-	}
 }
 
 void SystemClock_Config(void) {
@@ -497,6 +616,26 @@ void TIM5_init(float f) {
 	NVIC_EnableIRQ(TIM5_IRQn);
 }
 
+void TIM6_init(float f) {
+	RCC->APB1LENR |= 1 << 4;
+
+	TIM6->CR1 = 0;
+	TIM6->CR2 = 0;
+
+	TIM6->PSC = 25; // 10 MHz after prescaler
+	TIM6->ARR = (uint32_t)(10000000.0f/f);
+
+	TIM6->CNT = 0;
+
+	TIM6->EGR |= 1;
+
+	TIM6->DIER |= 1;
+
+	NVIC_SetPriority(TIM6_IRQn, 2);
+	TIM6->SR &= ~(0x1U);
+	NVIC_EnableIRQ(TIM6_IRQn);
+}
+
 void TIM12_init() {
 	RCC->APB1LENR |= 1 << 6;
 
@@ -515,6 +654,13 @@ void TIM12_init() {
 	TIM12->SR &= ~(0x1U);
 }
 
+uint32_t get_us() {
+	return TIM12->CNT;
+}
+
+void set_us(uint32_t c) {
+	TIM12->CNT = c;
+}
 
 static void MX_ADC1_Init(void) {
 	ADC_ChannelConfTypeDef sConfig = {0};

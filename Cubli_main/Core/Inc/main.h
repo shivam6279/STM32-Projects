@@ -22,9 +22,14 @@ typedef struct CanMessage_t {
 uint8_t can_rxbuffer_available();
 void pop_can_rxbuffer(CanMessage_t*);
 
+uint32_t get_us();
+void set_us(uint32_t);
+
 extern MPU6050_Handle_t g_imu;
 extern LIS3MDL_Handle_t g_mag;
+extern volatile uint8_t imu_new_data;
 extern float g_q[4];
+extern float roll, pitch, yaw;
 
 extern volatile float rpm_a, rpm_b, rpm_c;
 
