@@ -304,9 +304,9 @@ unsigned int str_toIntHex(char *str) {
 	return ret;
 }
 
-double str_toFloat(char *str) {
+float str_toFloat(char *str) {
 	unsigned int i, j;
-	double ret = 0;
+	float ret = 0;
 	unsigned char flag = 0;
 	unsigned char isNeg = 0, offset = 0;
 
@@ -335,7 +335,7 @@ double str_toFloat(char *str) {
 			flag = 1;
 		}
 	}
-	ret = ret / pow(10, j);
+	ret = ret / pow(10.0f, j);
 	
 	if(isNeg) {
 		ret = -ret;

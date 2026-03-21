@@ -59,7 +59,7 @@ const diags_menu_item diags_list[] = {
 };
 
 unsigned char diags_list_len = sizeof(diags_list) / sizeof(diags_list[0]);
-float diags_power = 0.1;
+float diags_power = 0.1f;
 
 void diagsMenu() {
 	char input[RX_BUFFER_SIZE];
@@ -230,15 +230,14 @@ comms [\"UART\", \"CAN\", \"BOTH\"] : Set communication mode.\n";
 uint8_t diags_motor(char *cmd) {
 	unsigned char ch;
 	uint8_t i;
-	static float diags_acceleration = 0.5, set_power, power, acceleration;
+	static float set_power, power, acceleration;
 	char arg_val[20];
 	
 	const char help_str[] = "\
 Commands to control the BLDC motor with the parameters:\n\
 off : Turn motor off (coast)\n\
 spin : Slowly spin the motor in 6 step commutation\n\
--p [x] : Set motor power to x (-2000, 2000)\n\
-ramp [x] (-a [y]): Ramp motor power to x (-2000, 2000) an acceleration y\n\
+-v [x] : Set motor voltage to x (-vbat, vbat)\n\
 -e [x] : Move motor to electrical degree x\n\
 -s [x] : Move motor to six step phase x\n\
 -model [x]: Display motor models, then optionally set motor model to number x\n\
@@ -255,44 +254,16 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	}
 
 	// Set electrical angle
-	if(str_getArgValue(cmd, "-p", arg_val)) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Motor power set to: %.4f\n", str_toFloat(arg_val));
+	if(str_getArgValue(cmd, "-v", arg_val)) {
+		snprintf(serial_buffer, sizeof(serial_buffer), "Motor voltage (Vq) set to: %.3f\n", (double)str_toFloat(arg_val));
 		send_serial(serial_buffer);
 		mode = MODE_POWER;
-		SetPower(str_toFloat(arg_val) / 2000.0);
-
-	} else if(str_getArgValue(cmd, "ramp", arg_val)) {
-		set_power = str_toFloat(arg_val);
-		acceleration = diags_acceleration;
-		if(str_getArgValue(cmd, "-a", arg_val)) {
-			acceleration = str_toFloat(arg_val);
-		}
-
-		snprintf(serial_buffer, sizeof(serial_buffer), "Ramping motor power to: %.4f\n", set_power);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "\nAt an acceleration of %.2f per ms\n", acceleration);
-		send_serial(serial_buffer);
-		// SetPower(GetPower() * 2000);
-		if(set_power > power) {
-			do {
-				HAL_Delay(1);
-				power += diags_acceleration;
-				SetPower(power / 2000.0f);
-			} while(power < set_power);
-		} else {
-			do {
-				HAL_Delay(1);
-				power -= diags_acceleration;
-				SetPower(power / 2000.0f);
-			} while(power > set_power);
-		}
-		snprintf(serial_buffer, sizeof(serial_buffer), "Done\n");
-		send_serial(serial_buffer);
+		Vq_setpoint = str_toFloat(arg_val);
 
 	} else if(str_getArgValue(cmd, "-e", arg_val)) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Motor set to electrical angle: %.4f\n", str_toFloat(arg_val));
+		snprintf(serial_buffer, sizeof(serial_buffer), "Motor set to electrical angle: %.4f\n", (double)str_toFloat(arg_val));
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", (double)diags_power);
 		send_serial(serial_buffer);
 		mode = MODE_OFF;
 		setPhaseVoltage(diags_power*vsns_vbat, 0, str_toFloat(arg_val));
@@ -300,7 +271,7 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	} else if(str_getArgValue(cmd, "zero", arg_val)) {
 		snprintf(serial_buffer, sizeof(serial_buffer), "Moved to zero (space vector: 100)\n");
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", (double)diags_power);
 		send_serial(serial_buffer);
 		mode = MODE_OFF;
 		// setPhaseVoltage(0, diags_power*vsns_vbat, 0);
@@ -313,7 +284,7 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	} else if(str_getArgValue(cmd, "-s", arg_val)) {
 		snprintf(serial_buffer, sizeof(serial_buffer), "Move motor to six step phase: %d\n", str_toInt(arg_val));
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "With power = %.2f\n", (double)diags_power);
 		send_serial(serial_buffer);
 		mode = MODE_OFF;
 		MotorPhase(str_toInt(arg_val), diags_power);
@@ -323,7 +294,7 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		for(i = 0; i < 360; i += 60) {
 			setPhaseVoltage(diags_power*vsns_vbat, 0, (float)i);
 			HAL_Delay(500);
-			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f\n, ", GetPositionRaw());
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f\n, ", (double)GetPositionRaw());
 			send_serial(serial_buffer);
 			HAL_Delay(250);
 
@@ -354,11 +325,11 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 				send_serial(serial_buffer);
 				snprintf(serial_buffer, sizeof(serial_buffer), "Polepairs: %d\n", motor_active->polepairs);
 				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %d\n", motor_active->kv);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %d\n", (uint16_t)motor_active->kv);
 				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", motor_active->r_p2p);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", (double)motor_active->r_p2p);
 				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", motor_active->l_p2p);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", (double)motor_active->l_p2p);
 				send_serial(serial_buffer);
 				snprintf(serial_buffer, sizeof(serial_buffer), "\n");
 				send_serial(serial_buffer);
@@ -377,11 +348,11 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 				send_serial(serial_buffer);
 				snprintf(serial_buffer, sizeof(serial_buffer), "Polepairs: %d\n", motor_list[i].polepairs);
 				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %.0f\n", motor_list[i].kv);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %.0f\n", (double)motor_list[i].kv);
 				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", motor_list[i].r_p2p);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", (double)motor_list[i].r_p2p);
 				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", motor_list[i].l_p2p);
+				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", (double)motor_list[i].l_p2p);
 				send_serial(serial_buffer);
 				snprintf(serial_buffer, sizeof(serial_buffer), " \n");
 				send_serial(serial_buffer);
@@ -392,21 +363,21 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	} else if(str_getArgValue(cmd, "power", arg_val)) {
 		if(str_isFloat(arg_val)) {
 			diags_power = str_toFloat(arg_val);
-			snprintf(serial_buffer, sizeof(serial_buffer), "Power set to: %.3f\n", diags_power);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Power set to: %.3f\n", (double)diags_power);
 			send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Current power: %.3f\n", diags_power);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current power: %.3f\n", (double)diags_power);
 			send_serial(serial_buffer);
 		}
 	
 	// Set motor pole pairs
 	} else if(str_getArgValue(cmd, "polepairs", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
-			motor_pole_pairs = str_toInt(arg_val);
-			snprintf(serial_buffer, sizeof(serial_buffer), "Motor pole pairs set to: %.0f\n", motor_pole_pairs);
+			motor_pole_pairs = (float)str_toInt(arg_val);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Motor pole pairs set to: %.0f\n", (double)motor_pole_pairs);
 			send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor pole pairs: %.0f\n", motor_pole_pairs);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor pole pairs: %.0f\n", (double)motor_pole_pairs);
 			send_serial(serial_buffer);
 		}
 
@@ -416,41 +387,41 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		if(str_isEqual(arg_val, "")) {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor waveform type: ");
 				send_serial(serial_buffer);
-			if(waveform_mode == MOTOR_FOC) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "FOC\n");
+			if(waveform_mode == MOTOR_FOC_TORQUE) {
+				snprintf(serial_buffer, sizeof(serial_buffer), "FOC_TORQUE\n");
+				send_serial(serial_buffer);
+			} else if(waveform_mode == MOTOR_FOC_IQ_ID) {
+				snprintf(serial_buffer, sizeof(serial_buffer), "FOC_IQ_ID\n");
+				send_serial(serial_buffer);
+			} else if(waveform_mode == MOTOR_FOC_VQ_ID) {
+				snprintf(serial_buffer, sizeof(serial_buffer), "FOC_VQ_ID\n");
 				send_serial(serial_buffer);
 			} else if(waveform_mode == MOTOR_SVPWM) {
 				snprintf(serial_buffer, sizeof(serial_buffer), "SVPWM\n");
-				send_serial(serial_buffer);
-			} else if(waveform_mode == MOTOR_SIN) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "SIN\n");
-				send_serial(serial_buffer);
-			} else if(waveform_mode == MOTOR_SADDLE) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "SADDLE\n");
 				send_serial(serial_buffer);
 			} else if(waveform_mode == MOTOR_TRAPEZOID) {
 				snprintf(serial_buffer, sizeof(serial_buffer), "TRAPEZOID\n");
 				send_serial(serial_buffer);
 			}
+
+		} else if(str_isEqual(arg_val, "foc_torque")) {
+			waveform_mode = MOTOR_FOC_TORQUE;
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC_TORQUE\n");
+			send_serial(serial_buffer);
 			
-		} else if(str_isEqual(arg_val, "foc")) {
-			waveform_mode = MOTOR_FOC;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC\n");
+		} else if(str_isEqual(arg_val, "foc_iq_id")) {
+			waveform_mode = MOTOR_FOC_IQ_ID;
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC_IQ_ID\n");
+			send_serial(serial_buffer);
+
+		} else if(str_isEqual(arg_val, "foc_vq_id")) {
+			waveform_mode = MOTOR_FOC_VQ_ID;
+			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC_VQ_ID\n");
 			send_serial(serial_buffer);
 
 		} else if(str_isEqual(arg_val, "svpwm")) {
 			waveform_mode = MOTOR_SVPWM;
 			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: SVPWM\n");
-			send_serial(serial_buffer);
-
-		} else if(str_isEqual(arg_val, "sin")) {
-			waveform_mode = MOTOR_SIN;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: SIN\n");
-			send_serial(serial_buffer);
-			
-		} else if(str_isEqual(arg_val, "saddle")) {
-			waveform_mode = MOTOR_SADDLE;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: SADDLE\n");
 			send_serial(serial_buffer);
 
 		} else if(str_isEqual(arg_val, "trapezoid")) {
@@ -461,9 +432,9 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		} else {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect arg for wave. Requires:\n");
 			send_serial(serial_buffer);
-			snprintf(serial_buffer, sizeof(serial_buffer), "svpwm\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "foc\n");
 			send_serial(serial_buffer);
-			snprintf(serial_buffer, sizeof(serial_buffer), "sin\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "svpwm\n");
 			send_serial(serial_buffer);
 			snprintf(serial_buffer, sizeof(serial_buffer), "trapezoid\n");
 			send_serial(serial_buffer);
@@ -532,10 +503,10 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 	} else if(str_getArgValue(cmd, "zero", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			motor_zero_angle = str_toFloat(arg_val);
-			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder zero offset set to: %.4f degrees\n", motor_zero_angle);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder zero offset set to: %.4f degrees\n", (double)motor_zero_angle);
 			send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder zero offset: %.4f degrees\n", motor_zero_angle);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder zero offset: %.4f degrees\n", (double)motor_zero_angle);
 			send_serial(serial_buffer);
 		}
 
@@ -568,7 +539,7 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 	// Display calibrated encoder data
 	} else {
 		while(1) {
-			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.4f\n", GetPositionRaw(), GetRPM());
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.4f\n", (double)GetPositionRaw(), (double)GetRPM());
 			send_serial(serial_buffer);
 			HAL_Delay(50);
 
@@ -587,7 +558,7 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 uint8_t diags_calibrateEncoder(char *cmd) {
 	unsigned char ch;
 	unsigned int i, j, arr_indx;
-	float power = 0.05;
+	float power = 0.05f;
 	float pos = GetPositionRaw(), pre_pos;
 	int16_t pos_cnt;
 	
@@ -641,7 +612,7 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 				pos -= 360.0f;
 			}
 
-			output[arr_indx][0] = (360.0f * j + i) / (float)motor_pole_pairs;
+			output[arr_indx][0] = (360.0f * (float)j + (float)i) / (float)motor_pole_pairs;
 			output[arr_indx][1] = pos;
 			arr_indx++;
 
@@ -668,11 +639,11 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 		}
 	}
 	
-	snprintf(serial_buffer, sizeof(serial_buffer), "%.4f\n", zero_offset);
+	snprintf(serial_buffer, sizeof(serial_buffer), "%.4f\n", (double)zero_offset);
 	send_serial(serial_buffer);
 
 	for(arr_indx = 0; arr_indx < (motor_pole_pairs*6); arr_indx++) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "%.4f, %.4f\n", output[arr_indx][0], output[arr_indx][1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "%.4f, %.4f\n", (double)output[arr_indx][0], (double)output[arr_indx][1]);
 	send_serial(serial_buffer);
 	}
 	
@@ -709,9 +680,9 @@ Read temp sensor TMP1075:\n\
 			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
 			send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
 			send_serial(serial_buffer);
-			delay = 1000 / f;
+			delay = (uint16_t)(1000.0f / f);
 		}
 	}
 	
@@ -722,7 +693,7 @@ Read temp sensor TMP1075:\n\
 			uint32_t current_tick = HAL_GetTick();
 			TMP1075_getTemp(0, &t1);
 			TMP1075_getTemp(1, &t2);
-			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", t2, t1);
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", (double)t2, (double)t1);
 			send_serial(serial_buffer);
 			while((HAL_GetTick() - current_tick) < delay);
 
@@ -746,9 +717,9 @@ Read temp sensor TMP1075:\n\
 		TMP1075_getTemp(0, &t1);
 		TMP1075_getTemp(1, &t2);
 
-		snprintf(serial_buffer, sizeof(serial_buffer), "MCU: %.2f C\n", t2);
+		snprintf(serial_buffer, sizeof(serial_buffer), "MCU: %.2f C\n", (double)t2);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "FETs: %.2f C\n", t1);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FETs: %.2f C\n", (double)t1);
 		send_serial(serial_buffer);
 	}
 	
@@ -777,9 +748,9 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
 			send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
 			send_serial(serial_buffer);
-			delay = 1000000 / f;
+			delay = (uint16_t)(1000000.0f / f);
 		}
 	}
 
@@ -789,7 +760,7 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				// TODO: us counter
 //				StartDelayusCounter();
 
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.3f, %.3f, %.3f\n", isns_u, isns_v, isns_w);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.3f, %.3f, %.3f\n", (double)isns_u, (double)isns_v, (double)isns_w);
 				send_serial(serial_buffer);
 
 				//TODO: us counter
@@ -807,7 +778,7 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				//TODO: us counter
 //				StartDelayusCounter();
 
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", foc_iq, foc_id);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", (double)foc_iq, (double)foc_id);
 				send_serial(serial_buffer);
 
 				//TODO: us counter
@@ -825,7 +796,7 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				//TODO: us counter
 //				StartDelayusCounter();
 
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f\n", vsns_u, vsns_v, vsns_w, vsns_x);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f\n", (double)vsns_u, (double)vsns_v, (double)vsns_w, (double)vsns_x);
 				send_serial(serial_buffer);
 
 				//TODO: us counter
@@ -843,7 +814,7 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 				//TODO: us counter
 //				StartDelayusCounter();
 
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f\n", vsns_u, vsns_v, vsns_w, vsns_x, isns_u, isns_v, isns_w);
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f\n", (double)vsns_u, (double)vsns_v, (double)vsns_w, (double)vsns_x, (double)isns_u, (double)isns_v, (double)isns_w);
 				send_serial(serial_buffer);
 
 				//TODO: us counter
@@ -859,23 +830,23 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 		}
 	} else {
 		
-		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS U: %.2f V\n", vsns_u);		
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS U: %.2f V\n", (double)vsns_u);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS V: %.2f V\n", vsns_w);		
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS V: %.2f V\n", (double)vsns_w);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS W: %.2f V\n", vsns_v);		
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS W: %.2f V\n", (double)vsns_v);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS X: %.2f V\n", vsns_x);		
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS X: %.2f V\n", (double)vsns_x);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS U: %.3f A\n", isns_u);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS U: %.3f A\n", (double)isns_u);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS V: %.3f A\n", isns_v);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS V: %.3f A\n", (double)isns_v);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS W: %.3f A\n", isns_w);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS W: %.3f A\n", (double)isns_w);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS VBAT: %.2f V\n", vsns_vbat);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS VBAT: %.2f V\n", (double)vsns_vbat);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS VBAT: %.3f A\n", isns_vbat);
+		snprintf(serial_buffer, sizeof(serial_buffer), "ISNS VBAT: %.3f A\n", (double)isns_vbat);
 		send_serial(serial_buffer);
 	}
 	
@@ -941,7 +912,7 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 		PlayNote(arg_val);
 
 	} else if(str_getArgValue(cmd, "freq", arg_val)) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Playing frequency: %.4f Hz\n", str_toFloat(arg_val));
+		snprintf(serial_buffer, sizeof(serial_buffer), "Playing frequency: %.4f Hz\n", (double)str_toFloat(arg_val));
 		send_serial(serial_buffer);
 		PlayTone(str_toFloat(arg_val));
 
@@ -966,20 +937,20 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 	} else if(str_getArgValue(cmd, "power", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			tone_power = str_toFloat(arg_val);
-			snprintf(serial_buffer, sizeof(serial_buffer), "Motor audio power level set to: %.4f\n", tone_power);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Motor audio power level set to: %.4f\n", (double)tone_power);
 		send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor audio power level: %.4f\n", tone_power);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor audio power level: %.4f\n", (double)tone_power);
 		send_serial(serial_buffer);
 		}
 		
 	}  else if(str_getArgValue(cmd, "amplitude", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			tone_amplitude = str_toFloat(arg_val);
-			snprintf(serial_buffer, sizeof(serial_buffer), "Audio amplitude set to %.2f degrees\n", tone_amplitude);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Audio amplitude set to %.2f degrees\n", (double)tone_amplitude);
 			send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Current audio amplitude is %.2f degrees\n", tone_amplitude);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current audio amplitude is %.2f degrees\n", (double)tone_amplitude);
 			send_serial(serial_buffer);
 		}
 		
@@ -1084,7 +1055,7 @@ off : Set servo pin to LOW\n";
 	if(str_getArgValue(cmd, "us", arg_val)) {
 		snprintf(serial_buffer, sizeof(serial_buffer), "Setting servo pulse width to %d us\n", str_toInt(arg_val));
 		send_serial(serial_buffer);
-		setServo_us(str_toInt(arg_val));
+		setServo_us((float)str_toInt(arg_val));
 
 	} else if(str_getArgValue(cmd, "brake", arg_val)) {
 		snprintf(serial_buffer, sizeof(serial_buffer), "Braking flywheel\n");
@@ -1139,7 +1110,7 @@ diff : Display current vs eeprom diffn";
 		eeprom_data.board_id = board_id;
 		eeprom_data.zero_offset = motor_zero_angle;
 		eeprom_data.enc_direction = enc_direction;
-		eeprom_data.pole_pairs = motor_pole_pairs;
+		eeprom_data.pole_pairs = (uint8_t)motor_pole_pairs;
 		eeprom_data.motor_direction = motor_direction;
 		for(i = 0; i < 32; i++) {
 			eeprom_data.enc_calib[i] = encoder_calib_data[i];
@@ -1202,7 +1173,7 @@ diff : Display current vs eeprom diffn";
 
 		snprintf(serial_buffer, sizeof(serial_buffer), "Board ID: %d\n", eeprom_data.board_id);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.2f\n", eeprom_data.zero_offset);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.2f\n", (double)eeprom_data.zero_offset);
 		send_serial(serial_buffer);
 		snprintf(serial_buffer, sizeof(serial_buffer), "Pole pairs: %d\n", eeprom_data.pole_pairs);
 		send_serial(serial_buffer);
@@ -1210,19 +1181,19 @@ diff : Display current vs eeprom diffn";
 		send_serial(serial_buffer);
 		snprintf(serial_buffer, sizeof(serial_buffer), "Motor direction: %d\n", eeprom_data.motor_direction);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_angle[0], eeprom_data.pid_angle[1], eeprom_data.pid_angle[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle pid gains: %.4f, %.4f, %.4f\n", (double)eeprom_data.pid_angle[0],(double) eeprom_data.pid_angle[1], (double)eeprom_data.pid_angle[2]);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM pid gains: %.5f, %.5f, %.5f\n", eeprom_data.pid_rpm[0], eeprom_data.pid_rpm[1], eeprom_data.pid_rpm[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM pid gains: %.5f, %.5f, %.5f\n", (double)eeprom_data.pid_rpm[0], (double)eeprom_data.pid_rpm[1], (double)eeprom_data.pid_rpm[2]);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_iq[0], eeprom_data.pid_foc_iq[1], eeprom_data.pid_foc_iq[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq pid gains: %.4f, %.4f, %.4f\n", (double)eeprom_data.pid_foc_iq[0], (double)eeprom_data.pid_foc_iq[1], (double)eeprom_data.pid_foc_iq[2]);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id pid gains: %.4f, %.4f, %.4f\n", eeprom_data.pid_foc_id[0], eeprom_data.pid_foc_id[1], eeprom_data.pid_foc_id[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id pid gains: %.4f, %.4f, %.4f\n", (double)eeprom_data.pid_foc_id[0], (double)eeprom_data.pid_foc_id[1], (double)eeprom_data.pid_foc_id[2]);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.2f\n", eeprom_data.diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.2f\n", (double)eeprom_data.diags_power);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.3f\n", eeprom_data.tone_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.3f\n", (double)eeprom_data.tone_power);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.2f\n", eeprom_data.tone_amplitude);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.2f\n", (double)eeprom_data.tone_amplitude);
 		send_serial(serial_buffer);
 
 	} else if(str_getArgValue(cmd, "diff", arg_val)) {
@@ -1248,11 +1219,11 @@ void disp_eeprom_diff() {
 		send_serial(serial_buffer);
 	}
 	if(motor_zero_angle != eeprom_data.zero_offset) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.4f, %.4f\n", motor_zero_angle, eeprom_data.zero_offset);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.4f, %.4f\n", (double)motor_zero_angle, (double)eeprom_data.zero_offset);
 		send_serial(serial_buffer);
 	}
 	if(motor_pole_pairs != eeprom_data.pole_pairs) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Pole pairs: %.0f, %d\n", motor_pole_pairs, eeprom_data.pole_pairs);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Pole pairs: %.0f, %d\n", (double)motor_pole_pairs, eeprom_data.pole_pairs);
 		send_serial(serial_buffer);
 	}
 	if(enc_direction != eeprom_data.enc_direction) {
@@ -1264,63 +1235,63 @@ void disp_eeprom_diff() {
 		send_serial(serial_buffer);
 	}
 	if(pid_angle.kp != eeprom_data.pid_angle[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kp: %.4f, %.4f\n", pid_angle.kp, eeprom_data.pid_angle[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kp: %.4f, %.4f\n", (double)pid_angle.kp, (double)eeprom_data.pid_angle[0]);
 		send_serial(serial_buffer);
 	}
 	if(pid_angle.ki != eeprom_data.pid_angle[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID ki: %.4f, %.4f\n", pid_angle.ki, eeprom_data.pid_angle[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID ki: %.4f, %.4f\n", (double)pid_angle.ki, (double)eeprom_data.pid_angle[1]);
 		send_serial(serial_buffer);
 	}
 	if(pid_angle.kd != eeprom_data.pid_angle[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kd: %.4f, %.4f\n", pid_angle.kd, eeprom_data.pid_angle[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kd: %.4f, %.4f\n", (double)pid_angle.kd, (double)eeprom_data.pid_angle[2]);
 		send_serial(serial_buffer);
 	}
 	if(pid_rpm.kp != eeprom_data.pid_rpm[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kp: %.4f, %.4f\n", pid_rpm.kp, eeprom_data.pid_rpm[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kp: %.4f, %.4f\n", (double)pid_rpm.kp, (double)eeprom_data.pid_rpm[0]);
 		send_serial(serial_buffer);
 	}
 	if(pid_rpm.ki != eeprom_data.pid_rpm[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID ki: %.4f, %.4f\n", pid_rpm.ki, eeprom_data.pid_rpm[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID ki: %.4f, %.4f\n", (double)pid_rpm.ki, (double)eeprom_data.pid_rpm[1]);
 		send_serial(serial_buffer);
 	}
 	if(pid_rpm.kd != eeprom_data.pid_rpm[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kd: %.4f, %.4f\n", pid_rpm.kd, eeprom_data.pid_rpm[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kd: %.4f, %.4f\n", (double)pid_rpm.kd, (double)eeprom_data.pid_rpm[2]);
 		send_serial(serial_buffer);
 	}
 	if(pid_focIq.kp != eeprom_data.pid_foc_iq[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", pid_focIq.kp, eeprom_data.pid_foc_iq[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", (double)pid_focIq.kp, (double)eeprom_data.pid_foc_iq[0]);
 		send_serial(serial_buffer);
 	}
 	if(pid_focIq.ki != eeprom_data.pid_foc_iq[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID ki: %.4f, %.4f\n", pid_focIq.ki, eeprom_data.pid_foc_iq[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID ki: %.4f, %.4f\n", (double)pid_focIq.ki, (double)eeprom_data.pid_foc_iq[1]);
 		send_serial(serial_buffer);
 	}
 	if(pid_focIq.kd != eeprom_data.pid_foc_iq[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", pid_focIq.kd, eeprom_data.pid_foc_iq[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", (double)pid_focIq.kd, (double)eeprom_data.pid_foc_iq[2]);
 		send_serial(serial_buffer);
 	}
 	if(pid_focId.kp != eeprom_data.pid_foc_id[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kp: %.4f, %.4f\n", pid_focId.kp, eeprom_data.pid_foc_id[0]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kp: %.4f, %.4f\n", (double)pid_focId.kp, (double)eeprom_data.pid_foc_id[0]);
 		send_serial(serial_buffer);
 	}
 	if(pid_focId.ki != eeprom_data.pid_foc_id[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID ki: %.4f, %.4f\n", pid_focId.ki, eeprom_data.pid_foc_id[1]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID ki: %.4f, %.4f\n", (double)pid_focId.ki, (double)eeprom_data.pid_foc_id[1]);
 		send_serial(serial_buffer);
 	}
 	if(pid_focId.kd != eeprom_data.pid_foc_id[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kd: %.4f, %.4f\n", pid_focId.kd, eeprom_data.pid_foc_id[2]);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kd: %.4f, %.4f\n", (double)pid_focId.kd, (double)eeprom_data.pid_foc_id[2]);
 		send_serial(serial_buffer);
 	}
 	if(diags_power != eeprom_data.diags_power) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.4f, %.4f\n", diags_power, eeprom_data.diags_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.4f, %.4f\n", (double)diags_power, (double)eeprom_data.diags_power);
 		send_serial(serial_buffer);
 	}
 	if(tone_power != eeprom_data.tone_power) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.4f, %.4f\n", tone_power, eeprom_data.tone_power);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.4f, %.4f\n", (double)tone_power, (double)eeprom_data.tone_power);
 		send_serial(serial_buffer);
 	}
 	if(tone_amplitude != eeprom_data.tone_amplitude) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.4f, %.4f\n", tone_amplitude, eeprom_data.tone_amplitude);
+		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.4f, %.4f\n", (double)tone_amplitude, (double)eeprom_data.tone_amplitude);
 		send_serial(serial_buffer);
 	}
 }
@@ -1330,7 +1301,7 @@ uint8_t diags_comp(char *cmd) {
 	char arg_val[5];
 
 	float f;
-	static unsigned int delay = 100;
+	static uint32_t delay = 100;
 	
 	const char help_str[] = "\
 Comparator output\n\
@@ -1349,9 +1320,9 @@ Comparator output\n\
 			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
 		send_serial(serial_buffer);
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
 		send_serial(serial_buffer);
-			delay = 100000 / f;
+			delay = (uint32_t)(100000.0f / f);
 		}
 	}
 

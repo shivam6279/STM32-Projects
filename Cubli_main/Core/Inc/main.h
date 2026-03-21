@@ -28,6 +28,9 @@ void set_us(uint32_t);
 extern MPU6050_Handle_t g_imu;
 extern LIS3MDL_Handle_t g_mag;
 extern volatile uint8_t imu_new_data;
+extern volatile float acc_x, acc_y, acc_z;
+extern volatile float gyro_x, gyro_y, gyro_z;
+extern volatile float mag_x, mag_y, mag_z;
 extern float g_q[4];
 extern float roll, pitch, yaw;
 

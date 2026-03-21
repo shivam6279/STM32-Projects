@@ -24,13 +24,13 @@ extern "C" {
 
 #define ENC_TIM TIM2
 
-#define LED0_ON() (GPIOC->ODR |= 1<<10)
-#define LED0_OFF() (GPIOC->ODR &= ~(1<<10))
-#define LED0_TOG() (GPIOC->ODR ^= 1<<10)
+#define LED0_ON() (GPIOC->ODR |= 1U<<10U)
+#define LED0_OFF() (GPIOC->ODR &= ~(1U<<10U))
+#define LED0_TOG() (GPIOC->ODR ^= 1U<<10U)
 
-#define LED1_ON() (GPIOC->ODR |= 1<<15)
-#define LED1_OFF() (GPIOC->ODR &= ~(1<<15))
-#define LED1_TOG() (GPIOC->ODR ^= 1<<15)
+#define LED1_ON() (GPIOC->ODR |= 1U<<15U)
+#define LED1_OFF() (GPIOC->ODR &= ~(1U<<15U))
+#define LED1_TOG() (GPIOC->ODR ^= 1U<<15U)
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);

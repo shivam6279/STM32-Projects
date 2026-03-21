@@ -60,14 +60,14 @@ void MX_TIM1_Init(float freq) {
 
 	// Channel 4 for syncing ADC
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = period-1;
+	sConfigOC.Pulse = (uint32_t)period-1;
 	if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK) {
 		Error_Handler();
 	}
 
 	// Channel 5 for syncing SPI
 	sConfigOC.OCMode = TIM_OCMODE_TIMING;
-	sConfigOC.Pulse = period-150;
+	sConfigOC.Pulse = (uint32_t)period-150;
 	if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_5) != HAL_OK) {
 		Error_Handler();
 	}
@@ -98,9 +98,13 @@ void MX_TIM1_Init(float freq) {
 	TIM1->BDTR |= TIM_BDTR_OSSR;
 	TIM1->BDTR |= TIM_BDTR_OSSI;
 
-	TIM1->CR2 &= ~1; // Turn off preloading
+	TIM1->CR2 &= ~1U; // Turn off preloading
+	// Enable per-channel preload
+	TIM1->CCMR1 |= TIM_CCMR1_OC1PE | TIM_CCMR1_OC2PE;
+	TIM1->CCMR2 |= TIM_CCMR2_OC3PE;
 
-	PWM_MAX = period;
+
+	PWM_MAX = (uint16_t)period;
 
 	TIM1->CCR1 = 0;
 	TIM1->CCR2 = 0;
@@ -210,7 +214,7 @@ void MX_TIM15_Init(void) {
 }
 
 void setServo_us(float us) {
-	TIM15->CCR1 = us;
+	TIM15->CCR1 = (uint32_t)us;
 }
 
 void servoOff() {

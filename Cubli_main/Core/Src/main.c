@@ -27,6 +27,10 @@ MPU6050_Handle_t g_imu;
 LIS3MDL_Handle_t g_mag;
 volatile uint8_t imu_new_data = 0;
 
+volatile float acc_x, acc_y, acc_z;
+volatile float gyro_x, gyro_y, gyro_z;
+volatile float mag_x, mag_y, mag_z;
+
 // Quaternion
 float g_q[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
 float roll, pitch, yaw;
@@ -44,7 +48,7 @@ static void MX_ADC1_Init(void);
 static void MX_TIM13_Init(void);
 static void TIM5_init(float);
 static void TIM6_init(float);
-static void TIM12_init(void);
+static void TIM2_init(void);
 uint32_t get_us();
 void set_us(uint32_t);
 
@@ -91,7 +95,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 			}
 			if(RxHeader.Identifier >= 0x100 && RxHeader.Identifier < 0x200) { // Main rpm message
-				can_float_temp = RxData[3] << 24 | RxData[2] << 16 | RxData[1] << 8 | RxData[0];
+				can_float_temp = RxData[3] << 24U | RxData[2] << 16U | RxData[1] << 8U | RxData[0];
 				if(RxHeader.Identifier == 0x100) {
 					rpm_a = *(float*)((uint32_t*)&can_float_temp);
 				} else if(RxHeader.Identifier == 0x110) {
@@ -128,35 +132,57 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef * hi2c) {
 	LIS3MDL_IRQHandler(&g_mag, hi2c);
 }
 
+uint8_t imu_cal_flag = 0;
+volatile float acc_x, acc_y, acc_z;
+volatile float gyro_x, gyro_y, gyro_z;
+volatile float mag_x, mag_y, mag_z;
+
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef * hi2c) {
-	static uint32_t last_tick = get_us();
+	static uint32_t last_tick;
+	float dt;
+
 	MPU6050_Data_t imu_data;
 	LIS3MDL_Data_t mag_data;
 
 	MPU6050_IRQHandler(&g_imu, hi2c);
 	LIS3MDL_IRQHandler(&g_mag, hi2c);
 
-	if(g_imu.state == MPU6050_STATE_DATA_READY) {
-		MPU6050_GetData(&g_imu, &imu_data);
-		imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
-		imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
-		imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
+	if(imu_cal_flag) {
+		if(g_imu.state == MPU6050_STATE_DATA_READY) {
+			MPU6050_GetData(&g_imu, &imu_data);
+			imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
+			imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
+			imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
 
-		dt = ((float)get_us() - last_tick) * 0.000001f;
-		last_tick = get_us();
+			dt = (float)(get_us() - last_tick) * 0.000001f;
+			last_tick = get_us();
 
-		if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
-			LIS3MDL_GetData(&g_mag, &mag_data);
-			// TODO: Calibrate compass
-			MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
-			MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
-		} else {
-			MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
-			MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
+			if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
+				LIS3MDL_GetData(&g_mag, &mag_data);
+				// TODO: Calibrate compass
+				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
+			} else {
+				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
+				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
+			}
+
+			QuaternionToEuler(g_q, &roll, &pitch, &yaw);
+
+			acc_x = imu_data.accel_x;
+			acc_y = imu_data.accel_y;
+			acc_z = imu_data.accel_z;
+
+			gyro_x = imu_data.gyro_x;
+			gyro_y = imu_data.gyro_y;
+			gyro_z = imu_data.gyro_z;
+
+			mag_x = mag_data.mag_x;
+			mag_y = mag_data.mag_y;
+			mag_z = mag_data.mag_z;
+
+			imu_new_data = 1;
 		}
-		
-		QuaternionToEuler(g_q, &roll, &pitch, &yaw);
-		imu_new_data = 1;
 	}
 }
 
@@ -215,15 +241,15 @@ void cubli_control_update(void) {
     CubliMode mode;
 
     if (cubli_lqr_update(&g_ctrl, angle_rad, rate_rad_s, wheel_rad_s, torque, &mode) != 0) {
-        CAN_send_motor('P', 0x300, 0.0f);
-        CAN_send_motor('P', 0x310, 0.0f);
-        CAN_send_motor('P', 0x320, 0.0f);
+        CAN_send_motor(0x300,'P', 0.0f);
+        CAN_send_motor(0x310,'P', 0.0f);
+        CAN_send_motor(0x320,'P', 0.0f);
         return;
     }
 
-    CAN_send_motor('P', 0x300, torque[0]);
-    CAN_send_motor('P', 0x310, torque[1]);
-    CAN_send_motor('P', 0x320, torque[2]);
+    CAN_send_motor(0x300,'P', torque[0]);
+    CAN_send_motor(0x310,'P', torque[1]);
+    CAN_send_motor(0x320,'P', torque[2]);
 }
 
 void cubli_init(void) {
@@ -344,7 +370,7 @@ int main(void) {
 	MX_TIM13_Init();
 	TIM5_init(10000);
 	// TIM6_init(1000);
-	TIM12_init();
+	TIM2_init(); // us counter
 
 	GPIOC->ODR &= ~(1U << 13U); // CAN S
 	HAL_TIM_Base_Stop_IT(&htim13);
@@ -371,14 +397,12 @@ int main(void) {
 	HAL_Delay(500);
 	initial_delay = 1;
 
-	printf("Start\n");
-
 	uint16_t i;
 	char rx_buffer_local[RX_BUFFER_SIZE];
 
 	MPU6050_Data_t imu_data;
 	LIS3MDL_Data_t mag_data;
-	uint32_t now, an = HAL_GetTick();
+	uint32_t now;
 
 	// Gyro offset calibration
 	float g_avg_x = 0, g_avg_y = 0, g_avg_z = 0;
@@ -405,9 +429,8 @@ int main(void) {
 
 	QuaternionInit(g_q, a_avg_x, a_avg_y, a_avg_z, 0);
 
+	imu_cal_flag = 1;
 	TIM5->CR1 |= 1; // Turn on IMU timer
-
-	const float RAD2DEG = 57.2957795f;
 
 	PID pid_pitch, pid_roll;
 	PID_init(&pid_pitch);
@@ -424,11 +447,15 @@ int main(void) {
 
 	pid_pitch.setpoint = 0.0f;
 
-	float ll, ul;
+	float ll = 0, ul = 0;
 	float temp_output = 0;
+	float dt;
+	uint32_t last_tick = 0;
 
-	TIM12->CNT = 0;
-	TIM12->CR1 |= 1;
+	set_us(0);
+
+	printf("Start\n");
+
 	while(1) {
 
 		if(rx_rdy) {
@@ -450,8 +477,10 @@ int main(void) {
 
 		if(imu_new_data) {
 			imu_new_data = 0;
+			dt = (float)(get_us() - last_tick) * 0.000001f;
+			last_tick = get_us();
 //			printf("%.2f\t%.2f\n", roll, pitch);
-//			printf("%.2f\t%.2f\t%.2f\n", imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z);
+//			printf("%.2f\t%.2f\t%.2f\n", gyro_x, gyro_y, gyro_z);
 
 			/*if(pitch > ll && pitch < ul) {
 				ll = 32.0f;
@@ -460,17 +489,10 @@ int main(void) {
 				#define ks 1.2f
 				#define kv 0.00003f
 
-				pid_pitch.derivative += 1.0f * (imu_data.gyro_y - pid_pitch.derivative);
+				pid_pitch.derivative += 1.0f * (gyro_y - pid_pitch.derivative);
 				PID_compute(&pid_pitch, pitch, dt);
 
 				pid_pitch.setpoint += (ks*pid_pitch.error + kv*rpm_c) * dt;
-
-				if(fabsf(rpm_c) < 20) {
-					if(fabsf(pid_pitch.output) > 1e-6f) {
-						// pid_pitch.output += (pid_pitch.output > 0 ? 1.0f : -1.0f) * 0.02f;
-						pid_pitch.output *= 2.0f;
-					}
-				}
 
 //				CAN_send_motor(0x320, 'P', pid_pitch.output);
 				printf("%.3f\t%.3f\n", pitch, pid_pitch.setpoint);
@@ -486,11 +508,11 @@ int main(void) {
 				ul = 160.0f;
 
 				#define ks 0.6f
-				#define kv 0.002f
+				#define kv 0.00005f
 				#define kleak 0.8f
 				#define DEADBAND 0.3f
 
-				pid_roll.derivative += 0.8f * (-imu_data.gyro_x - pid_roll.derivative);
+				pid_roll.derivative += 0.8f * (-gyro_x - pid_roll.derivative);
 				PID_compute(&pid_roll, roll, dt);
 
 				if (fabsf(pid_roll.error) > DEADBAND) {
@@ -499,17 +521,15 @@ int main(void) {
 				pid_roll.setpoint += kv*rpm_b * dt;
 //				setpoint += kleak * (45.0f - pid_roll.setpoint) * dt;
 
-				if(fabsf(rpm_b) < 10) {
-					if(fabsf(pid_roll.output) > 1e-6f) {
-//						 pid_pitch.output += (pid_roll.output > 0 ? 1.0f : -1.0f) * 0.1f;
-//						pid_roll.output *= 2.0f;
-					}
-				}
+				temp_output += 0.9f * (pid_roll.output - temp_output);
 
-				temp_output += 0.8 * (pid_roll.output - temp_output);
+				if(fabs(rpm_b) < 20) {
+					temp_output *= 0.5;
+				}
 
 				CAN_send_motor(0x310, 'P', temp_output);
 				printf("%.3f\t%.3f\t%.3f\n", roll, pid_roll.setpoint, rpm_b);
+//				printf("%.3f\t%.3f\t%.3f\n", roll, temp_output, pid_roll.derivative);
 			} else {
 				PID_reset(&pid_roll);
 				pid_roll.setpoint = 139.5f;
@@ -527,7 +547,7 @@ int main(void) {
 				#define kleak 0.8f
 				#define DEADBAND 0.3f
 
-				pid_pitch.derivative += 0.8f * (imu_data.gyro_z - pid_pitch.derivative);
+				pid_pitch.derivative += 0.8f * (gyro_z - pid_pitch.derivative);
 				PID_compute(&pid_pitch, pitch, dt);
 
 				if (fabsf(pid_pitch.error) > DEADBAND) {
@@ -535,13 +555,6 @@ int main(void) {
 				}
 				pid_pitch.setpoint += kv*rpm_a * dt;
 //				setpoint += kleak * (45.0f - pid_pitch.setpoint) * dt;
-
-				if(fabsf(rpm_a) < 10) {
-					if(fabsf(pid_pitch.output) > 1e-6f) {
-//						 pid_pitch.output += (pid_pitch.output > 0 ? 1.0f : -1.0f) * 0.1f;
-						pid_pitch.output *= 2.0f;
-					}
-				}
 
 				temp_output += 0.8 * (-pid_pitch.output - temp_output);
 
@@ -596,6 +609,23 @@ void SystemClock_Config(void) {
 	}
 }
 
+void TIM2_init() {
+	RCC->APB1LENR |= 1 << 0;
+
+	TIM2->CR1 = 0;
+	TIM2->CR2 = 0;
+
+	TIM2->PSC = 250-1; // 1 MHz after prescaler
+	TIM2->ARR = 0xFFFFFFFF;
+
+	TIM2->CNT = 0;
+	TIM2->EGR |= 1;
+	TIM2->DIER |= 1;
+	TIM2->SR &= ~(0x1U);
+
+	TIM2->CR1 |= 1;
+}
+
 void TIM5_init(float f) {
 	RCC->APB1LENR |= 1 << 3;
 
@@ -636,30 +666,12 @@ void TIM6_init(float f) {
 	NVIC_EnableIRQ(TIM6_IRQn);
 }
 
-void TIM12_init() {
-	RCC->APB1LENR |= 1 << 6;
-
-	TIM12->CR1 = 0;
-	TIM12->CR2 = 0;
-
-	TIM12->PSC = 250-1; // 1 MHz after prescaler
-	TIM12->ARR = 0xFFFFFFFF;
-
-	TIM12->CNT = 0;
-
-	TIM12->EGR |= 1;
-
-	TIM12->DIER |= 1;
-
-	TIM12->SR &= ~(0x1U);
-}
-
 uint32_t get_us() {
-	return TIM12->CNT;
+	return TIM2->CNT;
 }
 
 void set_us(uint32_t c) {
-	TIM12->CNT = c;
+	TIM2->CNT = c;
 }
 
 static void MX_ADC1_Init(void) {

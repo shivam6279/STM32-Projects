@@ -86,7 +86,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
-float save_data[1500][10];
+float save_data[50000][3];
 
 volatile uint8_t can_rx_rdy = 0;
 
@@ -104,9 +104,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 }
 
 void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorITs) {
-    if ((ErrorITs & FDCAN_IT_BUS_OFF) != 0) {
-        HAL_FDCAN_Start(hfdcan); 
-    }
+	if ((ErrorITs & FDCAN_IT_BUS_OFF) != 0) {
+		HAL_FDCAN_Start(hfdcan); 
+	}
 }
 
 void change_motor_mode(char new_mode) {
@@ -125,12 +125,12 @@ void change_motor_mode(char new_mode) {
 		pid_focId.setpoint = 0;
 		mode = MODE_RPM;
 	} else if(new_mode == 'A') {
-		reset_motion_observer();
+		ResetPosition();
 		mode = MODE_POS;
 	} else if(new_mode == 'X') {
 		mode = MODE_OFF;
 		MotorOff();
-		SetPower(0);
+		Vq_setpoint = 0;
 	}
 }
 
@@ -175,7 +175,7 @@ int main(void) {
 	MX_DCACHE1_Init();
 	MX_I2C1_Init();
 	MX_ICACHE_Init();
-	MX_TIM1_Init(50000); // Motor pwm freq
+	MX_TIM1_Init(100000); // Motor pwm freq
 	MX_TIM3_Init();
 	MX_TIM15_Init();
 
@@ -208,7 +208,7 @@ int main(void) {
 	MX_TIM2_Init(enc_direction); // Encoder timer
 //	MX_SPI1_Init();
 
-	if(MotorPIDInit(&motor_list[1]) == 0) {
+	if(MotorPIDInit(&motor_list[MOTOR_LIST_MAD4006]) == 0) {
 		printf("Bad motor parameters\n");
 		while(1);
 	}
@@ -226,9 +226,8 @@ int main(void) {
 	TIM3->CCR2 = 0;
 	HAL_Delay(500 - board_id*100);
 
-	SetPower(0);
 	mode = MODE_OFF;
-	waveform_mode = MOTOR_FOC;
+	waveform_mode = MOTOR_FOC_IQ_ID;
 
 	char rx_buffer_local[RX_BUFFER_SIZE];
 
@@ -238,6 +237,7 @@ int main(void) {
 	pid_focId.setpoint = 0;
 	uint8_t can_motor_mode = 'X';
 	float can_float;
+	printf("Start\n");
 	while (1) {
 
 		if(HAL_GetTick() - can_tx_safety_tick > 500U && get_serial_mode() == SER_MODE_CAN) {
@@ -261,8 +261,9 @@ int main(void) {
 			can_float = *(float*)((uint32_t*)&can_float_temp);
 
 			if(mode == MODE_POWER) {
-				SetPower(can_float / 2000.0f);
+				Vq_setpoint = can_float * 0.577350269f;
 				pid_focIq.setpoint = can_float;
+				torque_setpoint = can_float;
 			} else if(mode == MODE_RPM) {
 				pid_rpm.setpoint = can_float;
 			} else if(mode == MODE_POS) {
@@ -308,8 +309,9 @@ int main(void) {
 				float input;
 				input = str_toFloat(rx_buffer_local);
 				if(mode == MODE_POWER) {
-					SetPower(input / 2000.0f);
+					Vq_setpoint = input * 0.577350269f;
 					pid_focIq.setpoint = input;
+					torque_setpoint = input;
 				} else if(mode == MODE_RPM) {
 					pid_rpm.setpoint = input;
 				} else if(mode == MODE_POS) {
@@ -331,38 +333,39 @@ int main(void) {
 		}
 	}
 
-	for(i = 0; i < 1500; i++) {
-		save_data[i][0] = angle_el;
-		save_data[i][1] = vsns_u;
-		save_data[i][2] = vsns_v;
-		save_data[i][3] = vsns_w;
-		save_data[i][4] = vsns_x;
-		save_data[i][5] = isns_u;
-		save_data[i][6] = isns_v;
-		save_data[i][7] = isns_w;
-		save_data[i][8] = foc_iq;
-		save_data[i][9] = foc_id;
-		delay_us(20);
-//		delay_us(200);
+	for(i = 0; i < sizeof(save_data)/sizeof(save_data[0]); i++) {
+		save_data[i][0] = TIM2->CNT;//angle_el;
+//		save_data[i][1] = vsns_u;
+//		save_data[i][2] = vsns_v;
+//		save_data[i][3] = vsns_w;
+//		save_data[i][4] = vsns_x;
+//		save_data[i][5] = isns_u;
+//		save_data[i][6] = isns_v;
+//		save_data[i][7] = isns_w;
+		save_data[i][1] = foc_iq;
+		save_data[i][2] = foc_id;
+//		delay_us(20);
+		delay_us(200);
 	}
 	mode = MODE_OFF;
 	MotorOff();
-	for(i = 0; i < 1500; i++) {
-		printf("%.6f, ", save_data[i][0]);
-		printf("%.2f, ", save_data[i][1]);
-		printf("%.2f, ", save_data[i][2]);
-		printf("%.2f, ", save_data[i][3]);
-		printf("%.6f, ", save_data[i][4]);
-		printf("%.6f, ", save_data[i][5]);
-		printf("%.6f, ", save_data[i][6]);
-		printf("%.6f, ", save_data[i][7]);
-		printf("%.6f, ", save_data[i][8]);
-		printf("%.6f\n", save_data[i][9]);
-		HAL_Delay(2);
+	for(i = 0; i < sizeof(save_data)/sizeof(save_data[0]); i++) {
+		printf("%.0f, ", (double)save_data[i][0]);
+//		printf("%.2f, ", (double)save_data[i][1]);
+//		printf("%.2f, ", (double)save_data[i][2]);
+//		printf("%.2f, ", (double)save_data[i][3]);
+//		printf("%.6f, ", (double)save_data[i][4]);
+//		printf("%.6f, ", (double)save_data[i][5]);
+//		printf("%.6f, ", (double)save_data[i][6]);
+//		printf("%.6f, ", (double)save_data[i][7]);
+		printf("%.6f, ", (double)save_data[i][1]);
+		printf("%.6f\n", (double)save_data[i][2]);
+//		HAL_Delay(2);
 	}
 
 	// Wait a second before restarting
-	HAL_Delay(1000);
+	HAL_Delay(5000);
+	NVIC_SystemReset();
 }
 
 void TIM4_init(float f) {
@@ -744,29 +747,29 @@ static void MX_TIM2_Init(uint8_t dir) {
 	TIM2->SMCR &= ~TIM_SMCR_SMS;
 	TIM2->SMCR |= (3U << TIM_SMCR_SMS_Pos); // TI1 + TI2 mode
 
-    // I signal
-    TIM2->SMCR &= ~TIM_SMCR_TS;
+	// I signal
+	TIM2->SMCR &= ~TIM_SMCR_TS;
 	TIM2->SMCR |= (7U << TIM_SMCR_TS_Pos);
 
 	TIM2->ECR = 0;
 	TIM2->ECR |= 0b10 << 6;
 	TIM2->ECR |= TIM_ECR_IE; // I pulse reset in both directions
 
-    TIM2->CCMR1 &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_CC2S);
-    TIM2->CCMR1 |= (1U << TIM_CCMR1_CC1S_Pos) | (1U << TIM_CCMR1_CC2S_Pos); // Set to inputs
+	TIM2->CCMR1 &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_CC2S);
+	TIM2->CCMR1 |= (1U << TIM_CCMR1_CC1S_Pos) | (1U << TIM_CCMR1_CC2S_Pos); // Set to inputs
 
-    TIM2->CCMR1 |= (1U << TIM_CCMR1_IC1F_Pos) | (1U << TIM_CCMR1_IC2F_Pos); // Filter
+	TIM2->CCMR1 |= (1U << TIM_CCMR1_IC1F_Pos) | (1U << TIM_CCMR1_IC2F_Pos); // Filter
 
-    // Reset Counter and set Max Range
-    TIM2->CNT = 0;
-    TIM2->ARR = 0xFFFFFFFF; // TIM2 is 32-bit
+	// Reset Counter and set Max Range
+	TIM2->CNT = 0;
+	TIM2->ARR = 0xFFFFFFFF; // TIM2 is 32-bit
 
-    if(dir) {
-    	TIM2->CCER |= TIM_CCER_CC1P;
-    }
+	if(dir) {
+		TIM2->CCER |= TIM_CCER_CC1P;
+	}
 
-    /* 4. Start Timer */
-    TIM2->CR1 |= TIM_CR1_CEN;
+	/* 4. Start Timer */
+	TIM2->CR1 |= TIM_CR1_CEN;
 }
 
 static void MX_GPIO_Init(void) {
