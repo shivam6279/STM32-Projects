@@ -66,7 +66,7 @@ motor_t motor_list[3] = {
 	.kv = 740.0f,
 	.r_p2p = 51E-3f,
 	.l_p2p = 25E-6f,
-	.stiction = 0.4f,
+	.stiction = 0.5f,
 	.coulomb = 0.26f,
 	.viscous = 0.0f,
 },
@@ -75,6 +75,16 @@ motor_t motor_list[3] = {
 	.polepairs = 7,
 	.kv = 750.0f,
 	.r_p2p = 92E-3f,
+	.l_p2p = 35E-6f,
+	.stiction = 0.00f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+},
+(struct motor_t){
+	.name = "tmotor_4004",
+	.polepairs = 12,
+	.kv = 400.0f,
+	.r_p2p = 390E-3f,
 	.l_p2p = 35E-6f,
 	.stiction = 0.00f,
 	.coulomb = 0.0f,
@@ -194,7 +204,7 @@ void ADC1_IRQHandler(void) {
 
 					#define rpm_deadband 20.0f
 
-					if(fabsf(rpm) < rpm_deadband && fabsf(torque_setpoint) > 0.01f) {
+					if(fabsf(rpm) < rpm_deadband && fabsf(torque_setpoint) > 0.001f) {
 						float blend = fabsf(rpm) / rpm_deadband;
 						float stiction_component = motor_active->stiction * (1.0f - blend);
 						float coulomb_component  = motor_active->coulomb * tanhf(0.13f * rpm);
@@ -924,7 +934,7 @@ uint8_t MotorPIDInit(motor_t *motor) {
 	motor_flux_linkage = 5.513288954f / (motor_kv * motor_pole_pairs);
 	w_e_factor = 0.10472f * motor_pole_pairs;
 
-	float foc_bw = 2000.0f * 6.283185307f;
+	float foc_bw = 1000.0f * 6.283185307f;
 
 	// FOC PID Gains
 	// Kp = L_phase*bw

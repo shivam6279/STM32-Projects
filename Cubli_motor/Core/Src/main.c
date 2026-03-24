@@ -160,6 +160,7 @@ void CAN_send_rpm(uint16_t can_id, float rpm) {
 	HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
 }
 
+//#define ESC
 int main(void) {
 	uint16_t i;
 
@@ -187,7 +188,11 @@ int main(void) {
 
 	MX_CORDIC_Init();
 
+#ifdef ESC
 	set_serial_mode(SER_MODE_CAN);
+#else
+	set_serial_mode(SER_MODE_BOTH);
+#endif
 
 	// CAN PHY in normal mode (not SILENT)
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);	// CAN_S
@@ -240,10 +245,12 @@ int main(void) {
 	printf("Start\n");
 	while (1) {
 
+#ifdef ESC
 		if(HAL_GetTick() - can_tx_safety_tick > 500U && get_serial_mode() == SER_MODE_CAN) {
 			change_motor_mode('X');
 			can_motor_mode = 'X';
 		}
+#endif
 
 		if(can_rx_rdy) {
 			HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
