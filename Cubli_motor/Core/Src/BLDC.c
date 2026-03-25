@@ -49,7 +49,7 @@ float motor_r = 0;
 static float motor_flux_linkage = 0.0f;
 static float w_e_factor = 0.0f; // 0.10472f * motor_pole_pairs
 
-motor_t motor_list[3] = {
+motor_t motor_list[MOTOR_LIST_SIZE] = {
 (struct motor_t){
 	.name = "mad3506",
 	.polepairs = 7,
@@ -81,11 +81,31 @@ motor_t motor_list[3] = {
 	.viscous = 0.0f,
 },
 (struct motor_t){
+	.name = "tmotor_2806",
+	.polepairs = 7,
+	.kv = 400.0f,
+	.r_p2p = 1.8f,
+	.l_p2p = 190E-6f,
+	.stiction = 0.00f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+},
+(struct motor_t){
 	.name = "tmotor_4004",
 	.polepairs = 12,
 	.kv = 400.0f,
-	.r_p2p = 390E-3f,
-	.l_p2p = 35E-6f,
+	.r_p2p = 0.4f,//1.8f,
+	.l_p2p = 190E-6f,
+	.stiction = 0.00f,
+	.coulomb = 0.0f,
+	.viscous = 0.0f,
+},
+(struct motor_t){
+	.name = "mt2204",
+	.polepairs = 7,
+	.kv = 2300.0f,
+	.r_p2p = 200E-3f,
+	.l_p2p = 18.5E-6f,
 	.stiction = 0.00f,
 	.coulomb = 0.0f,
 	.viscous = 0.0f,
@@ -216,7 +236,7 @@ void ADC1_IRQHandler(void) {
 					friction_ff += motor_active->viscous * rpm;
 
 					uint16_t cogging_index = (uint16_t)(position/360.0f * COGGING_LUT_SIZE) % COGGING_LUT_SIZE;
-					cogging_ff = ((float)cogging_lut[cogging_index] / 32767.0f) * COGGING_LUT_SCALE;
+					cogging_ff = 0;//((float)cogging_lut[cogging_index] / 32767.0f) * COGGING_LUT_SCALE;
 					pid_focIq.setpoint += cogging_ff + friction_ff;
 				}
 
@@ -236,11 +256,11 @@ void ADC1_IRQHandler(void) {
 					PID_compute(&pid_focIq, foc_iq, 0.00002f);
 					Uq = pid_focIq.output;
 					// Resistance feedforward
-					Uq += motor_r * pid_focIq.setpoint;
+					// Uq += motor_r * pid_focIq.setpoint;
 					// BEMF feedforward
-					Uq += 0.9f * w_e * motor_flux_linkage;
+					// Uq += 0.9f * w_e * motor_flux_linkage;
 					// Inductance feedforward
-					Uq += 0.9f *  w_e * motor_l * foc_id;
+					// Uq += 0.9f *  w_e * motor_l * foc_id;
 
 					// Clamp to SVPWM circle
 					// Keep Ud, and clamp Uq
@@ -604,7 +624,7 @@ static inline void adc_read_other() {
 	isns_vbat += VBAT_LPF * (((float)adc21*ADC_CONV_FACTOR - ISNS_VBAT_OFFSET) * ISNS_VBAT_AMP_GAIN*ISNS_VBAT_R - isns_vbat);
 }
 
-#define FOC_IQ_LPF 0.9f
+#define FOC_IQ_LPF 0.5f
 static inline void foc_current_calc(float angle_el) {
 	static int32_t theta_q31;
 

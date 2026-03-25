@@ -86,7 +86,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
-float save_data[50000][3];
+float save_data[8000][10];
 
 volatile uint8_t can_rx_rdy = 0;
 
@@ -213,7 +213,7 @@ int main(void) {
 	MX_TIM2_Init(enc_direction); // Encoder timer
 //	MX_SPI1_Init();
 
-	if(MotorPIDInit(&motor_list[MOTOR_LIST_MAD4006]) == 0) {
+	if(MotorPIDInit(&motor_list[MOTOR_LIST_MT2204]) == 0) {
 		printf("Bad motor parameters\n");
 		while(1);
 	}
@@ -341,32 +341,31 @@ int main(void) {
 	}
 
 	for(i = 0; i < sizeof(save_data)/sizeof(save_data[0]); i++) {
-		save_data[i][0] = TIM2->CNT;//angle_el;
-//		save_data[i][1] = vsns_u;
-//		save_data[i][2] = vsns_v;
-//		save_data[i][3] = vsns_w;
-//		save_data[i][4] = vsns_x;
-//		save_data[i][5] = isns_u;
-//		save_data[i][6] = isns_v;
-//		save_data[i][7] = isns_w;
-		save_data[i][1] = foc_iq;
-		save_data[i][2] = foc_id;
-//		delay_us(20);
-		delay_us(200);
+		save_data[i][0] = angle_el;
+		save_data[i][1] = vsns_u;
+		save_data[i][2] = vsns_v;
+		save_data[i][3] = vsns_w;
+		save_data[i][4] = vsns_x;
+		save_data[i][5] = isns_u;
+		save_data[i][6] = isns_v;
+		save_data[i][7] = isns_w;
+		save_data[i][8] = foc_iq;
+		save_data[i][9] = foc_id;
+		delay_us(5);
 	}
 	mode = MODE_OFF;
 	MotorOff();
 	for(i = 0; i < sizeof(save_data)/sizeof(save_data[0]); i++) {
 		printf("%.0f, ", (double)save_data[i][0]);
-//		printf("%.2f, ", (double)save_data[i][1]);
-//		printf("%.2f, ", (double)save_data[i][2]);
-//		printf("%.2f, ", (double)save_data[i][3]);
-//		printf("%.6f, ", (double)save_data[i][4]);
-//		printf("%.6f, ", (double)save_data[i][5]);
-//		printf("%.6f, ", (double)save_data[i][6]);
-//		printf("%.6f, ", (double)save_data[i][7]);
-		printf("%.6f, ", (double)save_data[i][1]);
-		printf("%.6f\n", (double)save_data[i][2]);
+		printf("%.2f, ", (double)save_data[i][1]);
+		printf("%.2f, ", (double)save_data[i][2]);
+		printf("%.2f, ", (double)save_data[i][3]);
+		printf("%.6f, ", (double)save_data[i][4]);
+		printf("%.6f, ", (double)save_data[i][5]);
+		printf("%.6f, ", (double)save_data[i][6]);
+		printf("%.6f, ", (double)save_data[i][7]);
+		printf("%.6f, ", (double)save_data[i][8]);
+		printf("%.6f\n", (double)save_data[i][9]);
 //		HAL_Delay(2);
 	}
 

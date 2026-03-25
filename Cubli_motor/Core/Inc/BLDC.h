@@ -33,7 +33,7 @@ typedef enum motor_mode {
 } motor_mode;
 
 typedef struct motor_t {
-	char name[10];
+	char name[20];
 	uint8_t polepairs;
 	float kv; // Mechanical rpm/volt
 	float r_p2p; // Phase to phase resistance
@@ -43,9 +43,14 @@ typedef struct motor_t {
 	float viscous;
 } motor_t;
 
-#define MOTOR_LIST_MAD3506	0
-#define MOTOR_LIST_MAD4006	1
-#define MOTOR_LIST_FLYSKY	2
+#define MOTOR_LIST_SIZE 6
+
+#define MOTOR_LIST_MAD3506		0
+#define MOTOR_LIST_MAD4006		1
+#define MOTOR_LIST_FLYSKY		2
+#define MOTOR_LIST_TMOTOR_2806	3
+#define MOTOR_LIST_TMOTOR_4004	4
+#define MOTOR_LIST_MT2204		5
 
 extern motor_waveform_type waveform_mode;
 extern motor_mode mode;
@@ -62,7 +67,7 @@ extern float encoder_calib_data[32];
 extern unsigned char comparator, comp_u, comp_v, comp_w;
 
 extern motor_t *motor_active;
-extern motor_t motor_list[3];
+extern motor_t motor_list[MOTOR_LIST_SIZE];
 extern float motor_pole_pairs;
 extern uint8_t motor_direction, enc_direction;
 
