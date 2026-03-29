@@ -106,9 +106,9 @@ motor_t motor_list[MOTOR_LIST_SIZE] = {
 	.kv = 2300.0f,
 	.r_p2p = 200E-3f,
 	.l_p2p = 18.5E-6f,
-	.stiction = 0.00f,
-	.coulomb = 0.0f,
-	.viscous = 0.0f,
+	.stiction = 0.2f,
+	.coulomb = 0.05f,
+	.viscous = 0.00005f,
 }
 };
 
@@ -212,12 +212,12 @@ void ADC1_IRQHandler(void) {
 				w_e = rpm * w_e_factor;
 				Uq = 0;
 				Ud = 0;
+				pid_focIq.setpoint = torque_setpoint;
 
-				if(waveform_mode >= MOTOR_FOC_TORQUE && waveform_mode <= MOTOR_FOC_VQ_ID) {
+				if(waveform_mode == MOTOR_FOC_TORQUE) {
 				// if(waveform_mode == MOTOR_FOC_TORQUE) {
 					// Apply friction_ff compensations
 					// pid_focIq.setpoint = 0.06981317008f * motor_kv * torque_setpoint / motor_pole_pairs;
-					pid_focIq.setpoint = torque_setpoint;
 
 					float friction_ff;
 					float cogging_ff;
@@ -256,11 +256,11 @@ void ADC1_IRQHandler(void) {
 					PID_compute(&pid_focIq, foc_iq, 0.00002f);
 					Uq = pid_focIq.output;
 					// Resistance feedforward
-					// Uq += motor_r * pid_focIq.setpoint;
+					Uq += motor_r * pid_focIq.setpoint;
 					// BEMF feedforward
-					// Uq += 0.9f * w_e * motor_flux_linkage;
+					Uq += 0.9f * w_e * motor_flux_linkage;
 					// Inductance feedforward
-					// Uq += 0.9f *  w_e * motor_l * foc_id;
+					Uq += 0.9f *  w_e * motor_l * foc_id;
 
 					// Clamp to SVPWM circle
 					// Keep Ud, and clamp Uq
@@ -500,8 +500,6 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 		
 	} else if(waveform_mode == MOTOR_SVPWM) {
 		PWM_table = SVPWM_table;
-		Uq *= 0.5f;
-		offset = 1.0f;
 		
 		if(Uq < 0.0f) {
 			angle_el_in += 180.0f;
@@ -509,9 +507,9 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 		}
 		angle_el_in = -angle_el_in;
 		
-		pwm_u = (wave_lut(PWM_table, angle_el_in)          + offset) * Uq / vsns_vbat;
-		pwm_v = (wave_lut(PWM_table, angle_el_in + 120.0f) + offset) * Uq / vsns_vbat;
-		pwm_w = (wave_lut(PWM_table, angle_el_in + 240.0f) + offset) * Uq / vsns_vbat;
+		pwm_u = (0.5f * wave_lut(PWM_table, angle_el_in)          + 0.5f) * Uq / vsns_vbat;
+		pwm_v = (0.5f * wave_lut(PWM_table, angle_el_in + 120.0f) + 0.5f) * Uq / vsns_vbat;
+		pwm_w = (0.5f * wave_lut(PWM_table, angle_el_in + 240.0f) + 0.5f) * Uq / vsns_vbat;
 		
 	} else if(waveform_mode == MOTOR_TRAPEZOID) {
 		if(Uq < 0.0f) {

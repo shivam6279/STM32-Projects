@@ -160,7 +160,7 @@ void CAN_send_rpm(uint16_t can_id, float rpm) {
 	HAL_NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
 }
 
-//#define ESC
+#define ESC
 int main(void) {
 	uint16_t i;
 
@@ -232,7 +232,7 @@ int main(void) {
 	HAL_Delay(500 - board_id*100);
 
 	mode = MODE_OFF;
-	waveform_mode = MOTOR_FOC_IQ_ID;
+	waveform_mode = MOTOR_FOC_TORQUE;
 
 	char rx_buffer_local[RX_BUFFER_SIZE];
 

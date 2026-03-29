@@ -434,16 +434,17 @@ int main(void) {
 
 	PID pid_pitch, pid_roll;
 	PID_init(&pid_pitch);
-	PID_setGain(&pid_pitch,	1.0f, 0.0f, 0.2f); // Mad3506
+	PID_setGain(&pid_pitch,	10.0f, 0.0f, 1.0f); // MT2204
+//	PID_setGain(&pid_pitch,	1.0f, 0.0f, 0.2f); // Mad3506
 //	PID_setGain(&pid_pitch,	2.0f, 0.0f, 0.2f); // Flysky
 	PID_disableComputeDerivative(&pid_pitch);
 	PID_enableOutputConstrain(&pid_pitch);
-	PID_setOutputLimits(&pid_pitch, -25, 25);
+	PID_setOutputLimits(&pid_pitch, -15, 15);
 
 	PID_setGain(&pid_roll,	1.5f, 0.0f, 0.2f); // Mad4006
 	PID_disableComputeDerivative(&pid_roll);
 	PID_enableOutputConstrain(&pid_roll);
-	PID_setOutputLimits(&pid_roll, -25, 25);
+	PID_setOutputLimits(&pid_roll, -15, 15);
 
 	pid_pitch.setpoint = 0.0f;
 
@@ -503,7 +504,7 @@ int main(void) {
 				ul = pid_pitch.setpoint + 0.1f;
 			}*/
 
-			if(roll > ll && roll < ul) {
+			/*if(roll > ll && roll < ul) {
 				ll = 110.0f;
 				ul = 160.0f;
 
@@ -523,10 +524,6 @@ int main(void) {
 
 				temp_output += 0.9f * (pid_roll.output - temp_output);
 
-				if(fabs(rpm_b) < 20) {
-					temp_output *= 0.5;
-				}
-
 				CAN_send_motor(0x310, 'P', temp_output);
 				printf("%.3f\t%.3f\t%.3f\n", roll, pid_roll.setpoint, rpm_b);
 //				printf("%.3f\t%.3f\t%.3f\n", roll, temp_output, pid_roll.derivative);
@@ -536,14 +533,14 @@ int main(void) {
 				ll = pid_roll.setpoint - 0.1f;
 				ul = pid_roll.setpoint + 0.1f;
 				temp_output = 0;
-			}
+			}*/
 
-			/*if(pitch > ll && pitch < ul) {
+			if(pitch > ll && pitch < ul) {
 				ll = 20.0f;
 				ul = 70.0f;
 
-				#define ks 1.3f
-				#define kv 0//  0.00002f
+				#define ks 0.8f
+				#define kv  0.0f //-0.00001f
 				#define kleak 0.8f
 				#define DEADBAND 0.3f
 
@@ -556,17 +553,17 @@ int main(void) {
 				pid_pitch.setpoint += kv*rpm_a * dt;
 //				setpoint += kleak * (45.0f - pid_pitch.setpoint) * dt;
 
-				temp_output += 0.8 * (-pid_pitch.output - temp_output);
+				temp_output += 0.8f * (-pid_pitch.output - temp_output);
 
 				CAN_send_motor(0x300, 'P', temp_output);
 				printf("%.3f\t%.3f\n", pitch, pid_pitch.setpoint);
 			} else {
 				PID_reset(&pid_pitch);
-				pid_pitch.setpoint = 42.0f;
+				pid_pitch.setpoint = 40.0f;
 				ll = pid_pitch.setpoint - 0.1f;
 				ul = pid_pitch.setpoint + 0.1f;
 				temp_output = 0;
-			}*/
+			}
 		}
 	}
 }

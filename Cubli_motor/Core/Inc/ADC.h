@@ -6,7 +6,7 @@
 #define ADC_CONV_FACTOR (3.3f / 4095.0f)
 
 #define VSNS_VBAT_DIVIDER 8.0212765957444f // ((4.7f + 33.0f)/4.7f)
-#define ISNS_VBAT_AMP_GAIN 0.02f// (1.0f/50.0f)
+#define ISNS_VBAT_AMP_GAIN 0.02f // (1.0f/50.0f)
 #define ISNS_VBAT_OFFSET 1.0551f // (4.7f/(4.7f + 10.0f) * 3.3f
 #define ISNS_VBAT_R 200.0f // (1.0f/0.005f)
 
