@@ -1,53 +1,36 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 #include "rgb_pwm.h"
 #include "lowpower.h"
-/* USER CODE END Includes */
+#include "bq25798.h"
+#include "debug_uart.h"
+#include "battery_adc.h"
+#include <stdio.h>
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
+// SoC colour: avg cell = tab3 / count; <=RED red, >=GREEN green, gradient between.
+#define BATT_CELL_COUNT      3u
+#define BATT_GREEN_MV        4100u
+#define BATT_RED_MV          3800u
+#define BATT_DISPLAY_MS      3000u   // touch-display duration
+#define BATT_BREATH_MS       2400u   // breath period
+#define BATT_BREATH_MIN_V    24u     // breath trough brightness
+#define BATT_FADE_MS         700u    // breath-out duration on unplug
+#define BATT_CHG_START_MA    64      // IBAT to consider charging started
 /* USER CODE END PD */
 
-/* Private macro -------------------------------------------------------------*/
+// Private macro -------------------------------------------------------------
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
 
-/* Private variables ---------------------------------------------------------*/
+// Private variables ---------------------------------------------------------
 ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
 
-/* Private function prototypes -----------------------------------------------*/
+// Private function prototypes -----------------------------------------------
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
@@ -55,38 +38,93 @@ static void MX_ADC1_Init(void);
 
 /* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
+// Private user code ---------------------------------------------------------
 /* USER CODE BEGIN 0 */
+static const char *bq_chg_state_name(bq_chg_state_t s) {
+  switch (s) {
+	case BQ_CHG_NOT_CHARGING: return "idle";
+	case BQ_CHG_TRICKLE:      return "trickle";
+	case BQ_CHG_PRECHARGE:    return "precharge";
+	case BQ_CHG_FAST_CC:      return "fast-cc";
+	case BQ_CHG_TAPER_CV:     return "taper-cv";
+	case BQ_CHG_TOPOFF:       return "topoff";
+	case BQ_CHG_DONE:         return "done";
+	default:                  return "?";
+  }
+}
 
-/* USER CODE END 0 */
+// avg cell mV -> hue 0 (red) .. 120 (green)
+static uint16_t soc_hue(uint16_t avg_cell_mV) {
+  int32_t v = (int32_t)avg_cell_mV;
+  if (v <= (int32_t)BATT_RED_MV)   { return 0u;   }
+  if (v >= (int32_t)BATT_GREEN_MV) { return 120u; }
+  return (uint16_t)(((v - (int32_t)BATT_RED_MV) * 120)
+					/ (int32_t)(BATT_GREEN_MV - BATT_RED_MV));
+}
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
+// Touch-display: a static SoC colour snapshot.
+static void show_battery_color(uint16_t avg_cell_mV) {
+  RGB_SetHSV(soc_hue(avg_cell_mV), 255u, 255u);   // 0=red .. 120=green
+}
 
-  /* USER CODE END 1 */
+typedef enum { CHG_LED_CHARGING, CHG_LED_FULL, CHG_LED_FAULT } chg_led_mode_t;
 
-  /* MCU Configuration--------------------------------------------------------*/
+// charging = breathing SoC colour, full = solid green, fault = red blink
+static void charging_led_update(chg_led_mode_t mode, uint16_t avg_cell_mV, uint32_t breath_base) {
+  uint32_t t = HAL_GetTick();
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  if (mode == CHG_LED_FAULT) {
+	uint8_t on = (uint8_t)((t / 250u) & 1u);
+	RGB_SetHSV(0u, 255u, on ? 255u : 0u);
+	return;
+  }
+  if (mode == CHG_LED_FULL) {
+	RGB_SetHSV(120u, 255u, 255u);
+	return;
+  }
+
+  // triangle-wave breath, anchored to breath_base (starts at the trough)
+  uint32_t phase = (uint32_t)(t - breath_base) % BATT_BREATH_MS;
+  uint32_t half  = BATT_BREATH_MS / 2u;
+  uint32_t tri   = (phase < half) ? phase : (BATT_BREATH_MS - phase);
+  uint8_t  v     = (uint8_t)(BATT_BREATH_MIN_V +
+							(255u - BATT_BREATH_MIN_V) * tri / half);
+  RGB_SetHSV(soc_hue(avg_cell_mV), 255u, v);
+}
+
+// breathe out from the current level to off, then return (used before sleep)
+static void charging_led_fade_out(uint16_t avg_cell_mV, uint32_t breath_base) {
+  uint16_t hue   = soc_hue(avg_cell_mV);
+
+  uint32_t phase = (uint32_t)(HAL_GetTick() - breath_base) % BATT_BREATH_MS;
+  uint32_t half  = BATT_BREATH_MS / 2u;
+  uint32_t tri   = (phase < half) ? phase : (BATT_BREATH_MS - phase);
+  int32_t  v0    = (int32_t)(BATT_BREATH_MIN_V + (255u - BATT_BREATH_MIN_V) * tri / half);
+
+  const int32_t steps = 64;
+  for (int32_t i = steps; i >= 0; i--) {
+	RGB_SetHSV(hue, 255u, (uint8_t)(v0 * i / steps));
+	HAL_Delay(BATT_FADE_MS / steps);
+  }
+  RGB_SetRGB(0u, 0u, 0u);
+}
+
+int main(void) {
+  // RGB LED (PA12/13/14, active-low): drive high (off) at boot before any init
+  // so there's no glow on wake. Claims PA13/14 (SWD) immediately.
+  RCC->IOPENR |= RCC_IOPENR_GPIOAEN;
+  (void)RCC->IOPENR;
+  GPIOA->BSRR  = (1U << 12) | (1U << 13) | (1U << 14);
+  GPIOA->MODER = (GPIOA->MODER & ~((3U << 24) | (3U << 26) | (3U << 28)))
+               | ((1U << 24) | (1U << 26) | (1U << 28));
+
+  // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
+  // Configure the system clock
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
+  // Initialize all configured peripherals
   MX_GPIO_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
@@ -94,23 +132,163 @@ int main(void)
    * state by MX_GPIO_Init; wait 1 s here so a debugger can attach via a normal
    * connect, then hand PA12/PA13/PA14 to the RGB driver (SWD is lost after this).
    * Skip the wait when we just woke from standby so the rainbow resumes at once. */
-  if (!LowPower_WokeFromStandby())
-  {
-    HAL_Delay(1000);
+  uint8_t woke_from_standby = LowPower_WokeFromStandby();
+  if (!woke_from_standby) {
+	HAL_Delay(1000);
   }
   RGB_PWM_Init();
   LowPower_Init();
-  /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
+  // Debug console on PA0/PA1 @ 115200 8N1 (printf retargeted here).
+  DebugUART_Init();
+  printf("\n=== Charger boot ===  woke=%u PA4=%u\n",
+		 woke_from_standby, LowPower_UsbPresent());
 
-    /* USER CODE BEGIN 3 */
-    RGB_HueCycle(10);   /* +1 hue degree every 10 ms -> full rainbow ~3.6 s */
-    LowPower_Task();    /* both wake lines low for 5 s -> standby (wake = reset) */
+  // Cell-tap ADC on PA6/PA7/PA8, analog-enable on PA11.
+  BatteryADC_Init();
+
+  // Charger answers on I2C => USB present => charge; else touch wake => show SoC.
+  bq_status_t bq_status = BQ25798_Init();
+  if (bq_status != BQ_OK) {
+	bq_status = BQ25798_Init();   // one retry in case the bus was mid-glitch
+  }
+  printf("BQ25798_Init() -> %d\n", (int)bq_status);
+
+  if (bq_status == BQ_OK) {
+	// ---- Charging mode: record charger status, then configure ----
+	uint8_t st[5];
+	if (BQ25798_ReadStatus(st) == BQ_OK) {
+	  printf("wake charger status REG1B-1F: %02X %02X %02X %02X %02X\n",
+			 st[0], st[1], st[2], st[3], st[4]);
+	}
+
+	// 3S Li-ion, ~2400 mAh pack.
+	static const bq_config_t cfg = {
+	  .cell_count    = 3u,
+	  .charge_mV     = 12600u,   // 3 * 4.2 V
+	  .charge_mA     = 1200u,    // 0.5C; raise toward 2400 if cells allow
+	  .iprechg_mA    = 240u,     // ~0.1C
+	  .iterm_mA      = 120u,     // ~0.05C
+	  .input_ilim_mA = 2000u,    // ceiling; ICO/BC1.2 may lower it
+	  .input_vlim_mV = 4600u,    // hold a 5 V source up
+	  .watchdog      = BQ_WD_DISABLE,
+	};
+	printf("BQ25798_Configure() -> %d\n", (int)BQ25798_Configure(&cfg));
+	BQ25798_EnableADC(1, 0);     // continuous ADC for telemetry
+	// disable TS ADC so REGN follows VBUS (not held up in battery-only mode)
+	BQ25798_UpdateBits(BQ_REG_ADC_FN_DIS0, BQ_ADC_FN_DIS0_TS, BQ_ADC_FN_DIS0_TS);
+  } else {
+	// ---- Touch wake (charger down): show pack SoC colour, then sleep ----
+	batt_cells_t cells;
+	BatteryADC_Read(&cells);
+	uint16_t avg_cell_mV = (uint16_t)(cells.tab_mV[2] / BATT_CELL_COUNT);
+	printf("touch wake: TAB=%u/%u/%u mV  CELL=%u/%u/%u mV  avg=%u mV\n",
+		   cells.tab_mV[0], cells.tab_mV[1], cells.tab_mV[2],
+		   cells.cell_mV[0], cells.cell_mV[1], cells.cell_mV[2], avg_cell_mV);
+
+	show_battery_color(avg_cell_mV);
+	HAL_Delay(BATT_DISPLAY_MS);
+
+	printf("display done -> standby (PA4=%u)\n", LowPower_UsbPresent());
+	BatteryADC_Sleep();          // analog-enable LOW
+	LowPower_EnterStandby();     // wake = reset; does not return
+  }
+
+  chg_led_mode_t led_mode    = CHG_LED_CHARGING;
+  uint16_t       led_avg_mV  = BATT_GREEN_MV;
+  uint8_t        led_started = 0u;            // LED stays off until charging starts
+  uint32_t       breath_base = HAL_GetTick(); // anchors the breath to charge-start
+
+  while (1) {
+	// LED off until charging starts, then breathe
+	if (led_started) {
+	  charging_led_update(led_mode, led_avg_mV, breath_base);
+	}
+	else {
+	  RGB_SetRGB(0u, 0u, 0u);
+	}
+
+	// Sleep only when PA4 (REGN 3V3 rail) is low CONTINUOUSLY for ~200 ms.
+	// A real unplug holds it low; switching-noise glitches don't survive this.
+	if (!LowPower_UsbPresent()) {
+	  uint8_t real_unplug = 1u;
+	  for (int i = 0; i < 40; i++) {        // 40 * 5 ms = 200 ms
+		if (LowPower_UsbPresent()) { real_unplug = 0u; break; }
+		HAL_Delay(5);
+	  }
+	  if (real_unplug) {
+		// Cross-check + diagnose: is the charger really gone, or did PA4 lie?
+		uint8_t s0 = 0u, fl[2] = { 0u, 0u };
+		bq_status_t r = BQ25798_ReadReg8(BQ_REG_CHG_STAT0, &s0);
+		BQ25798_ReadFaults(fl);
+		printf("PA4 low 200ms: charger r=%d REG1B=%02X FAULT=%02X %02X\n",
+			   (int)r, s0, fl[0], fl[1]);
+		if (led_started) {
+		  charging_led_fade_out(led_avg_mV, breath_base);
+		}
+		BatteryADC_Sleep();
+		LowPower_EnterStandby();   // wake = reset; does not return
+	  }
+	}
+
+	// Once per second: report charger telemetry/status.
+	static uint32_t last_poll = 0u;
+	if ((uint32_t)(HAL_GetTick() - last_poll) >= 1000u) {
+	  last_poll = HAL_GetTick();
+
+	  uint8_t        status[5];
+	  bq_adc_t       m;
+	  bq_chg_state_t cs = BQ_CHG_NOT_CHARGING;
+	  uint8_t        vbus_present = 0u;
+
+	  if (BQ25798_ReadStatus(status) == BQ_OK) {
+		vbus_present = (uint8_t)(status[0] & 0x01u);   // REG1B VBUS_PRESENT_STAT
+		uint8_t pg   = (uint8_t)((status[0] >> 3) & 0x01u); // PG_STAT
+		(void)BQ25798_GetChargeState(&cs);
+
+		uint8_t faults[2] = { 0u, 0u };
+		BQ25798_ReadFaults(faults);
+
+		if (BQ25798_ReadADC(&m) == BQ_OK) {
+		  printf("VBUS=%umV VBAT=%umV VSYS=%umV IBUS=%dmA IBAT=%dmA "
+				 "T=%dC chg=%s vbus=%u pg=%u PA4=%u FAULT=%02X %02X\n",
+				 m.vbus_mV, m.vbat_mV, m.vsys_mV, m.ibus_mA, m.ibat_mA,
+				 (int)(m.tdie_C_x10 / 10), bq_chg_state_name(cs),
+				 vbus_present, pg, LowPower_UsbPresent(), faults[0], faults[1]);
+
+		  // Update the charging LED: SoC from the charger's VBAT, plus state.
+		  led_avg_mV = (uint16_t)(m.vbat_mV / BATT_CELL_COUNT);
+		  if (faults[0] != 0u || faults[1] != 0u) {
+			led_mode = CHG_LED_FAULT;
+		  }
+		  else if (cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF) {
+			led_mode = CHG_LED_FULL;
+		  }
+		  else {
+			led_mode = CHG_LED_CHARGING;
+		  }
+
+		  // show the LED once current flows (or full/fault); anchor the breath
+		  if (!led_started &&
+			  (m.ibat_mA >= BATT_CHG_START_MA ||
+			   led_mode == CHG_LED_FULL || led_mode == CHG_LED_FAULT)) {
+			led_started = 1u;
+			breath_base = HAL_GetTick();
+		  }
+		}
+	  }
+	  else {
+		printf("BQ25798 not responding\n");
+	  }
+
+	  // Per-cell tap voltages (PA11 enable is pulsed inside the read).
+	  batt_cells_t cells;
+	  BatteryADC_Read(&cells);
+	  printf("TAB=%u/%u/%u mV  CELL=%u/%u/%u mV\n",
+			 cells.tab_mV[0], cells.tab_mV[1], cells.tab_mV[2],
+			 cells.cell_mV[0], cells.cell_mV[1], cells.cell_mV[2]);
+	  (void)vbus_present;
+	}
   }
   /* USER CODE END 3 */
 }
@@ -119,8 +297,7 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
-{
+void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
@@ -131,23 +308,21 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+	Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1;
+							  |RCC_CLOCKTYPE_PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-  {
-    Error_Handler();
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK) {
+	Error_Handler();
   }
 }
 
@@ -156,8 +331,7 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
-static void MX_ADC1_Init(void)
-{
+static void MX_ADC1_Init(void) {
 
   /* USER CODE BEGIN ADC1_Init 0 */
 
@@ -186,13 +360,12 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc1.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_1CYCLE_5;
+  hadc1.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_160CYCLES_5; // long: high-Z dividers
   hadc1.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_1CYCLE_5;
   hadc1.Init.OversamplingMode = DISABLE;
   hadc1.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    Error_Handler();
+  if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+	Error_Handler();
   }
 
   /** Configure Regular Channel
@@ -200,9 +373,8 @@ static void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+	Error_Handler();
   }
   /* USER CODE BEGIN ADC1_Init 2 */
 
@@ -215,31 +387,30 @@ static void MX_ADC1_Init(void)
   * @param None
   * @retval None
   */
-static void MX_GPIO_Init(void)
-{
+static void MX_GPIO_Init(void) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
-  /* GPIO Ports Clock Enable */
+  // GPIO Ports Clock Enable
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
+  // Configure GPIO pin Output Level
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15|GPIO_PIN_14, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
+  // Configure GPIO pin Output Level
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3|GPIO_PIN_11, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PC15 PC14 */
+  // Configure GPIO pins : PC15 PC14
   GPIO_InitStruct.Pin = GPIO_PIN_15|GPIO_PIN_14;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA0 PA1 */
+  // Configure GPIO pins : PA0 PA1
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -248,14 +419,14 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA3 PA11  (PA12/PA13/PA14 deferred to RGB_PWM_Init so
-    PA13=SWDIO / PA14=SWCLK stay usable as SWD for ~1 s after reset) */
+	PA13=SWDIO / PA14=SWCLK stay usable as SWD for ~1 s after reset) */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB6 PB7 */
+  // Configure GPIO pins : PB6 PB7
   GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -275,13 +446,11 @@ static void MX_GPIO_Init(void)
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-void Error_Handler(void)
-{
+void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  // User can add his own implementation to report the HAL error return state
   __disable_irq();
-  while (1)
-  {
+  while (1) {
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -294,11 +463,10 @@ void Error_Handler(void)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t *file, uint32_t line)
-{
+void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+	 ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
-#endif /* USE_FULL_ASSERT */
+#endif // USE_FULL_ASSERT
