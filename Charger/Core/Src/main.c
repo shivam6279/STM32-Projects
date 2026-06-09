@@ -16,6 +16,12 @@
 #define BATT_BREATH_MIN_V    24u     // breath trough brightness
 #define BATT_FADE_MS         700u    // breath-out duration on unplug
 #define BATT_CHG_START_MA    64      // IBAT to consider charging started
+// Charging-progress hue: CC ramps red->yellow (capped below green), CV ramps
+// yellow->green as IBAT tapers ICHG->ITERM. Keep these in sync with cfg.
+#define BATT_ICHG_MA         1200    // fast-charge current (cfg.charge_mA)
+#define BATT_ITERM_MA        120     // termination current (cfg.iterm_mA)
+#define BATT_BREATH_HUE_DROP 25u     // hue shifted toward red at the breath trough
+#define BATT_FULL_MORPH_MS   800u    // morph from current colour -> solid green on full
 /* USER CODE END PD */
 
 // Private macro -------------------------------------------------------------
@@ -67,43 +73,106 @@ static void show_battery_color(uint16_t avg_cell_mV) {
   RGB_SetHSV(soc_hue(avg_cell_mV), 255u, 255u);   // 0=red .. 120=green
 }
 
+// Charge-progress hue (0=red .. 120=green) from the charger's phase + current,
+// NOT loaded VBAT (which is inflated while charging). precharge/trickle = red;
+// CC bulk = red->yellow (capped below green); CV = yellow->green as IBAT tapers
+// ICHG->ITERM; done/topoff = green.
+static uint16_t charge_progress_hue(bq_chg_state_t cs, uint16_t vbat_mV, int16_t ibat_mA) {
+  switch (cs) {
+	case BQ_CHG_TRICKLE:
+	case BQ_CHG_PRECHARGE:
+	  return 0u;                                       // red: conditioning a low pack
+	case BQ_CHG_TAPER_CV: {
+	  int32_t num = (int32_t)BATT_ICHG_MA - (int32_t)ibat_mA;
+	  int32_t den = (int32_t)BATT_ICHG_MA - (int32_t)BATT_ITERM_MA;
+	  if (den < 1)   den = 1;
+	  if (num < 0)   num = 0;
+	  if (num > den) num = den;
+	  return (uint16_t)(60 + (num * 60) / den);        // yellow -> green
+	}
+	case BQ_CHG_TOPOFF:
+	case BQ_CHG_DONE:
+	  return 120u;                                     // green
+	case BQ_CHG_FAST_CC:
+	default:
+	  // bulk: red->yellow over RED_MV..GREEN_MV, capped at yellow (never green)
+	  return (uint16_t)(soc_hue((uint16_t)(vbat_mV / BATT_CELL_COUNT)) / 2u);
+  }
+}
+
 typedef enum { CHG_LED_CHARGING, CHG_LED_FULL, CHG_LED_FAULT } chg_led_mode_t;
 
-// charging = breathing SoC colour, full = solid green, fault = red blink
-static void charging_led_update(chg_led_mode_t mode, uint16_t avg_cell_mV, uint32_t breath_base) {
+// last colour actually pushed to the LED (so a transition can morph from it)
+static uint16_t s_led_hue_shown = 0u;
+static uint8_t  s_led_v_shown   = 0u;
+
+// breath fraction at tick t: 0 at trough, half at peak (triangle wave)
+static uint32_t breath_tri(uint32_t t, uint32_t breath_base, uint32_t *half_out) {
+  uint32_t phase = (uint32_t)(t - breath_base) % BATT_BREATH_MS;
+  uint32_t half  = BATT_BREATH_MS / 2u;
+  *half_out = half;
+  return (phase < half) ? phase : (BATT_BREATH_MS - phase);
+}
+
+// hue dips ~BATT_BREATH_HUE_DROP toward red on the way out (full hue at peak)
+static uint16_t breath_hue(uint16_t hue, uint32_t tri, uint32_t half) {
+  uint16_t drop = (uint16_t)(BATT_BREATH_HUE_DROP * (half - tri) / half);
+  return (hue > drop) ? (uint16_t)(hue - drop) : 0u;
+}
+
+// charging = breath that dims AND warms toward red on exhale; full = solid
+// green; fault = red blink.
+static void charging_led_update(chg_led_mode_t mode, uint16_t hue, uint32_t breath_base) {
   uint32_t t = HAL_GetTick();
 
   if (mode == CHG_LED_FAULT) {
 	uint8_t on = (uint8_t)((t / 250u) & 1u);
-	RGB_SetHSV(0u, 255u, on ? 255u : 0u);
+	s_led_hue_shown = 0u;
+	s_led_v_shown   = on ? 255u : 0u;
+	RGB_SetHSV(0u, 255u, s_led_v_shown);
 	return;
   }
   if (mode == CHG_LED_FULL) {
+	s_led_hue_shown = 120u;
+	s_led_v_shown   = 255u;
 	RGB_SetHSV(120u, 255u, 255u);
 	return;
   }
 
-  // triangle-wave breath, anchored to breath_base (starts at the trough)
-  uint32_t phase = (uint32_t)(t - breath_base) % BATT_BREATH_MS;
-  uint32_t half  = BATT_BREATH_MS / 2u;
-  uint32_t tri   = (phase < half) ? phase : (BATT_BREATH_MS - phase);
-  uint8_t  v     = (uint8_t)(BATT_BREATH_MIN_V +
-							(255u - BATT_BREATH_MIN_V) * tri / half);
-  RGB_SetHSV(soc_hue(avg_cell_mV), 255u, v);
+  uint32_t half;
+  uint32_t tri = breath_tri(t, breath_base, &half);
+  s_led_v_shown   = (uint8_t)(BATT_BREATH_MIN_V + (255u - BATT_BREATH_MIN_V) * tri / half);
+  s_led_hue_shown = breath_hue(hue, tri, half);
+  RGB_SetHSV(s_led_hue_shown, 255u, s_led_v_shown);
+}
+
+// morph from the colour currently on the LED to solid green (on charge complete)
+static void charging_led_morph_to_full(void) {
+  int32_t h0 = (int32_t)s_led_hue_shown;
+  int32_t v0 = (int32_t)s_led_v_shown;
+
+  const int32_t steps = 64;
+  for (int32_t i = 0; i <= steps; i++) {
+	uint16_t h = (uint16_t)(h0 + (120 - h0) * i / steps);
+	uint8_t  v = (uint8_t)(v0 + (255 - v0) * i / steps);
+	RGB_SetHSV(h, 255u, v);
+	HAL_Delay(BATT_FULL_MORPH_MS / steps);
+  }
+  s_led_hue_shown = 120u;
+  s_led_v_shown   = 255u;
+  RGB_SetHSV(120u, 255u, 255u);
 }
 
 // breathe out from the current level to off, then return (used before sleep)
-static void charging_led_fade_out(uint16_t avg_cell_mV, uint32_t breath_base) {
-  uint16_t hue   = soc_hue(avg_cell_mV);
-
-  uint32_t phase = (uint32_t)(HAL_GetTick() - breath_base) % BATT_BREATH_MS;
-  uint32_t half  = BATT_BREATH_MS / 2u;
-  uint32_t tri   = (phase < half) ? phase : (BATT_BREATH_MS - phase);
-  int32_t  v0    = (int32_t)(BATT_BREATH_MIN_V + (255u - BATT_BREATH_MIN_V) * tri / half);
+static void charging_led_fade_out(uint16_t hue, uint32_t breath_base) {
+  uint32_t half;
+  uint32_t tri = breath_tri(HAL_GetTick(), breath_base, &half);
+  int32_t  v0  = (int32_t)(BATT_BREATH_MIN_V + (255u - BATT_BREATH_MIN_V) * tri / half);
+  uint16_t h   = breath_hue(hue, tri, half);
 
   const int32_t steps = 64;
   for (int32_t i = steps; i >= 0; i--) {
-	RGB_SetHSV(hue, 255u, (uint8_t)(v0 * i / steps));
+	RGB_SetHSV(h, 255u, (uint8_t)(v0 * i / steps));
 	HAL_Delay(BATT_FADE_MS / steps);
   }
   RGB_SetRGB(0u, 0u, 0u);
@@ -195,14 +264,25 @@ int main(void) {
   }
 
   chg_led_mode_t led_mode    = CHG_LED_CHARGING;
-  uint16_t       led_avg_mV  = BATT_GREEN_MV;
+  uint16_t       led_hue     = 0u;            // progress hue (set from charger phase)
   uint8_t        led_started = 0u;            // LED stays off until charging starts
+  uint8_t        full_morphed = 0u;           // morphed-to-solid-green once on full
   uint32_t       breath_base = HAL_GetTick(); // anchors the breath to charge-start
 
   while (1) {
 	// LED off until charging starts, then breathe
 	if (led_started) {
-	  charging_led_update(led_mode, led_avg_mV, breath_base);
+	  // on entering FULL, morph from the current colour to solid green once
+	  if (led_mode == CHG_LED_FULL) {
+		if (!full_morphed) {
+		  charging_led_morph_to_full();
+		  full_morphed = 1u;
+		}
+	  }
+	  else {
+		full_morphed = 0u;
+	  }
+	  charging_led_update(led_mode, led_hue, breath_base);
 	}
 	else {
 	  RGB_SetRGB(0u, 0u, 0u);
@@ -224,7 +304,7 @@ int main(void) {
 		printf("PA4 low 200ms: charger r=%d REG1B=%02X FAULT=%02X %02X\n",
 			   (int)r, s0, fl[0], fl[1]);
 		if (led_started) {
-		  charging_led_fade_out(led_avg_mV, breath_base);
+		  charging_led_fade_out(led_hue, breath_base);
 		}
 		BatteryADC_Sleep();
 		LowPower_EnterStandby();   // wake = reset; does not return
@@ -256,8 +336,8 @@ int main(void) {
 				 (int)(m.tdie_C_x10 / 10), bq_chg_state_name(cs),
 				 vbus_present, pg, LowPower_UsbPresent(), faults[0], faults[1]);
 
-		  // Update the charging LED: SoC from the charger's VBAT, plus state.
-		  led_avg_mV = (uint16_t)(m.vbat_mV / BATT_CELL_COUNT);
+		  // Update the charging LED: hue from charge phase + current (not VBAT).
+		  led_hue = charge_progress_hue(cs, m.vbat_mV, m.ibat_mA);
 		  if (faults[0] != 0u || faults[1] != 0u) {
 			led_mode = CHG_LED_FAULT;
 		  }
