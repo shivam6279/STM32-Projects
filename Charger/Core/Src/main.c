@@ -5,6 +5,7 @@
 #include "bq25798.h"
 #include "debug_uart.h"
 #include "battery_adc.h"
+#include "balancer.h"
 #include <stdio.h>
 
 // SoC colour: avg cell = tab3 / count; <=RED red, >=GREEN green, gradient between.
@@ -22,6 +23,9 @@
 #define BATT_ITERM_MA        120     // termination current (cfg.iterm_mA)
 #define BATT_BREATH_HUE_DROP 25u     // hue shifted toward red at the breath trough
 #define BATT_FULL_MORPH_MS   800u    // morph from current colour -> solid green on full
+// Debug: hold charging off and print LIVE cell readings every second
+// (balancer disabled). Set to 0 to restore normal operation.
+#define DEBUG_NO_CHARGE      0
 /* USER CODE END PD */
 
 // Private macro -------------------------------------------------------------
@@ -190,6 +194,13 @@ int main(void) {
   // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
 
+  /* A debug session sets DBG_STOP/DBG_STANDBY, which keep the clocks running
+   * through Standby (mA-level drain). They survive everything except a true
+   * POR -- and VBAT keeps VSYS up, so a POR may never happen. Clear them. */
+  __HAL_RCC_DBGMCU_CLK_ENABLE();
+  DBG->CR = 0u;
+  __HAL_RCC_DBGMCU_CLK_DISABLE();
+
   // Configure the system clock
   SystemClock_Config();
 
@@ -215,6 +226,9 @@ int main(void) {
 
   // Cell-tap ADC on PA6/PA7/PA8, analog-enable on PA11.
   BatteryADC_Init();
+
+  // Cell-balance bleeds on PA3/PC14/PC15: outputs, all off.
+  Balancer_Init();
 
   // Charger answers on I2C => USB present => charge; else touch wake => show SoC.
   bq_status_t bq_status = BQ25798_Init();
@@ -243,6 +257,9 @@ int main(void) {
 	  .watchdog      = BQ_WD_DISABLE,
 	};
 	printf("BQ25798_Configure() -> %d\n", (int)BQ25798_Configure(&cfg));
+#if DEBUG_NO_CHARGE
+	printf("DEBUG: charging disabled -> %d\n", (int)BQ25798_EnableCharging(0u));
+#endif
 	BQ25798_EnableADC(1, 0);     // continuous ADC for telemetry
 	// disable TS ADC so REGN follows VBUS (not held up in battery-only mode)
 	BQ25798_UpdateBits(BQ_REG_ADC_FN_DIS0, BQ_ADC_FN_DIS0_TS, BQ_ADC_FN_DIS0_TS);
@@ -255,12 +272,31 @@ int main(void) {
 		   cells.tab_mV[0], cells.tab_mV[1], cells.tab_mV[2],
 		   cells.cell_mV[0], cells.cell_mV[1], cells.cell_mV[2], avg_cell_mV);
 
+#if DEBUG_NO_CHARGE
+	// Debug: never sleep. Keep the dividers enabled and stream live reads so
+	// the PA6/7/8 nodes can be probed with USB in/out. LED kept dark so its
+	// software PWM can't couple into the tap nodes.
+	RGB_SetRGB(0u, 0u, 0u);
+	printf("DEBUG: no-sleep loop, PA11 held high\n");
+	while (1) {
+	  batt_cells_t live;
+	  BatteryADC_Read(&live);
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
+	  printf("LIVE TAB=%u/%u/%u mV  CELL=%u/%u/%u mV  PA4=%u\n",
+			 live.tab_mV[0], live.tab_mV[1], live.tab_mV[2],
+			 live.cell_mV[0], live.cell_mV[1], live.cell_mV[2],
+			 LowPower_UsbPresent());
+	  HAL_Delay(1000);
+	}
+#else
 	show_battery_color(avg_cell_mV);
 	HAL_Delay(BATT_DISPLAY_MS);
 
 	printf("display done -> standby (PA4=%u)\n", LowPower_UsbPresent());
+	Balancer_AllOff();           // bleed FETs off
 	BatteryADC_Sleep();          // analog-enable LOW
 	LowPower_EnterStandby();     // wake = reset; does not return
+#endif
   }
 
   chg_led_mode_t led_mode    = CHG_LED_CHARGING;
@@ -290,6 +326,7 @@ int main(void) {
 
 	// Sleep only when PA4 (REGN 3V3 rail) is low CONTINUOUSLY for ~200 ms.
 	// A real unplug holds it low; switching-noise glitches don't survive this.
+#if !DEBUG_NO_CHARGE
 	if (!LowPower_UsbPresent()) {
 	  uint8_t real_unplug = 1u;
 	  for (int i = 0; i < 40; i++) {        // 40 * 5 ms = 200 ms
@@ -306,10 +343,15 @@ int main(void) {
 		if (led_started) {
 		  charging_led_fade_out(led_hue, breath_base);
 		}
+		/* ADC off so the BQ drops to its ~20 uA battery-only state; settings
+		 * persist on VBAT (watchdog disabled), so EN_ADC would stay set. */
+		BQ25798_EnableADC(0, 0);
+		Balancer_AllOff();
 		BatteryADC_Sleep();
 		LowPower_EnterStandby();   // wake = reset; does not return
 	  }
 	}
+#endif // !DEBUG_NO_CHARGE
 
 	// Once per second: report charger telemetry/status.
 	static uint32_t last_poll = 0u;
@@ -341,7 +383,10 @@ int main(void) {
 		  if (faults[0] != 0u || faults[1] != 0u) {
 			led_mode = CHG_LED_FAULT;
 		  }
-		  else if (cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF) {
+		  // FULL only once balancing is done too: keep breathing (green) while
+		  // the post-charge top-balance runs, so unplugging early is visibly
+		  // "not finished yet".
+		  else if ((cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF) && Balancer_Balanced()) {
 			led_mode = CHG_LED_FULL;
 		  }
 		  else {
@@ -361,12 +406,38 @@ int main(void) {
 		printf("BQ25798 not responding\n");
 	  }
 
-	  // Per-cell tap voltages (PA11 enable is pulsed inside the read).
-	  batt_cells_t cells;
-	  BatteryADC_Read(&cells);
-	  printf("TAB=%u/%u/%u mV  CELL=%u/%u/%u mV\n",
-			 cells.tab_mV[0], cells.tab_mV[1], cells.tab_mV[2],
-			 cells.cell_mV[0], cells.cell_mV[1], cells.cell_mV[2]);
+#if DEBUG_NO_CHARGE
+	  // Live tap read every second, charging held off, no balancing.
+	  batt_cells_t live;
+	  BatteryADC_Read(&live);
+	  printf("LIVE TAB=%u/%u/%u mV  CELL=%u/%u/%u mV\n",
+			 live.tab_mV[0], live.tab_mV[1], live.tab_mV[2],
+			 live.cell_mV[0], live.cell_mV[1], live.cell_mV[2]);
+	  // Hold the dividers enabled between reads so the PA6/7/8 nodes can be
+	  // probed with a meter (BatteryADC_Read drops the enable at the end).
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
+#else
+	  // Balance check (self-timed): pause-measure-decide on clean readings.
+	  Balancer_Task(cs);
+
+	  // Per-cell voltages: the balancer's clean snapshot (charge + bleeds
+	  // paused), NOT a live read -- that would be inflated by the charge I*R.
+	  const batt_cells_t *cells = Balancer_CleanCells();
+	  if (cells != NULL) {
+		printf("TAB=%u/%u/%u mV  CELL=%u/%u/%u mV (clean)\n",
+			   cells->tab_mV[0], cells->tab_mV[1], cells->tab_mV[2],
+			   cells->cell_mV[0], cells->cell_mV[1], cells->cell_mV[2]);
+	  }
+
+	  // Which balance bleeds are currently on (silent when none).
+	  uint8_t bleed = Balancer_BleedMask();
+	  if (bleed != 0u) {
+		printf("BLEED: cell1=%s cell2=%s cell3=%s\n",
+			   (bleed & 1u) ? "ON" : "off",
+			   (bleed & 2u) ? "ON" : "off",
+			   (bleed & 4u) ? "ON" : "off");
+	  }
+#endif
 	  (void)vbus_present;
 	}
   }

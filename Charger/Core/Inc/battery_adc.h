@@ -10,12 +10,17 @@ extern "C" {
 #include <stdint.h>
 
 // tap_mV = raw * TABn_SCALER (calibrate per board)
-#define TAB1_SCALER   2.5885151747665f
-#define TAB2_SCALER   4.3410000163599f
-#define TAB3_SCALER   6.7269370327148f
+#define TAB1_SCALER   1.6214971967605f
+#define TAB2_SCALER   3.3202432870043f
+#define TAB3_SCALER   6.3087186081308f
 
-// Settling time (ms) after raising the analog-enable before sampling.
-#define BATT_ADC_SETTLE_MS   2u
+// Settling time (ms) after raising the analog-enable before sampling. The
+// divider low-pass caps must charge through the taps first (slowest node
+// tau ~2 ms); the scalers above assume FULLY settled nodes.
+#define BATT_ADC_SETTLE_MS   20u
+
+// Samples averaged per tap, taken back-to-back once settled.
+#define BATT_ADC_AVG_SAMPLES 8u
 
 typedef struct {
 	uint16_t tab_mV[3];    // tab1, tab2, tab3 (cumulative)

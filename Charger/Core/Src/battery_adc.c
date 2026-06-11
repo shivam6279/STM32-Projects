@@ -68,12 +68,17 @@ static uint16_t read_channel(uint32_t channel) {
 void BatteryADC_Read(batt_cells_t *out) {
 	static const float scaler[3] = { TAB1_SCALER, TAB2_SCALER, TAB3_SCALER };
 
-	// Enable the analog network and let it settle.
+	// Enable the analog network and let the divider low-pass caps charge.
 	HAL_GPIO_WritePin(BATT_EN_PORT, BATT_EN_PIN, GPIO_PIN_SET);
 	HAL_Delay(BATT_ADC_SETTLE_MS);
 
 	for (int i = 0; i < 3; i++) {
-		out->raw[i]    = read_channel(s_tap_channel[i]);
+		uint32_t acc = 0u;
+		for (uint32_t n = 0u; n < BATT_ADC_AVG_SAMPLES; n++) {
+			acc += read_channel(s_tap_channel[i]);
+		}
+		out->raw[i]    = (uint16_t)((acc + BATT_ADC_AVG_SAMPLES / 2u)
+								  / BATT_ADC_AVG_SAMPLES);
 		out->tab_mV[i] = (uint16_t)((float)out->raw[i] * scaler[i] + 0.5f);
 	}
 

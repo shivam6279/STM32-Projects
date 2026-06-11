@@ -69,7 +69,13 @@ static void enter_standby(void) {
 							   PWR_GPIO_BIT_12 | PWR_GPIO_BIT_13 | PWR_GPIO_BIT_14);
 	// PA2 (touch, WKUP4) pulled low in standby so a floating line can't
 	// instantly re-wake us. A real touch still drives it high to wake.
-	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, PWR_GPIO_BIT_2);
+	// PA11 (cell-tap analog enable) pulled low too: in Standby the output
+	// driver is off, and a floating enable could leave the dividers bleeding.
+	// PA3 + PC14/PC15 (cell-balance FET gates) likewise: a floating gate
+	// could leave a ~50R bleed across a cell for the whole sleep.
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, PWR_GPIO_BIT_2 | PWR_GPIO_BIT_3
+											| PWR_GPIO_BIT_11);
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_C, PWR_GPIO_BIT_14 | PWR_GPIO_BIT_15);
 	HAL_PWREx_EnablePullUpPullDownConfig();
 
 	/* Arm wake-on-high for both lines, clear any pending wake flags, sleep.
