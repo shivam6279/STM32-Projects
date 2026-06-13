@@ -32,11 +32,10 @@ extern "C" {
 #define BAL_CHECK_PERIOD_MS   30000u  // pause-measure-decide interval
 #define BAL_SETTLE_MS         300u    // relaxation before sampling
 #define BAL_MIN_CELL_MV       3900u   // never bleed below this (flat OCV region)
-#define BAL_START_DELTA_MV    20u     // start bleeding this far above the lowest
+#define BAL_START_DELTA_MV    12u     // start bleeding this far above the lowest
 #define BAL_STOP_DELTA_MV     8u      // stop once back within this of the lowest
 #define BAL_CELL_OV_MV        4250u   // suspend charging when any cell above
 #define BAL_CELL_OV_CLEAR_MV  4180u   // resume once the highest cell is below
-#define BAL_BALANCED_SPREAD_MV  12u   // spread at/below this counts as balanced
 
 // Per-cell CV clamp: the pack VREG is trimmed down so the highest cell never
 // charges above this; restored toward BAL_PACK_VREG_MV as the balance closes.

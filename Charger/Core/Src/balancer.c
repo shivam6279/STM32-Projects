@@ -11,7 +11,7 @@ static const uint16_t      s_bal_pin[3]  = { GPIO_PIN_3, GPIO_PIN_14, GPIO_PIN_1
 
 static uint8_t  s_bleed_mask;     // bit n = cell n+1 bleeding
 static uint8_t  s_ov_suspended;   // charging held off: a cell went over BAL_CELL_OV_MV
-static uint8_t  s_balanced;       // last clean check: spread <= BAL_BALANCED_SPREAD_MV
+static uint8_t  s_balanced;       // last clean check: no bleed active or wanted
 static uint8_t  s_bled_at_full;   // bled after termination -> pack needs a top-up
 static uint32_t s_last_check_ms;
 static batt_cells_t s_clean_cells;  // last clean measurement (charge+bleeds paused)
@@ -116,7 +116,10 @@ void Balancer_Task(bq_chg_state_t chg_state) {
 		s_ov_suspended = 0u;
 	}
 
-	s_balanced = (uint8_t)((uint16_t)(max_mV - min_mV) <= BAL_BALANCED_SPREAD_MV);
+	// balanced = nothing left to bleed: no bleed active and no cell far enough
+	// above the lowest to start one
+	s_balanced = (uint8_t)(mask == 0u &&
+						   (uint16_t)(max_mV - min_mV) < BAL_START_DELTA_MV);
 
 	/* Top-balance loop: bleeding after termination drains the high cells, so
 	 * once the spread has closed, restart one charge cycle to refill what was

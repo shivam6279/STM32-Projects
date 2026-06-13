@@ -393,9 +393,12 @@ int main(void) {
 			led_mode = CHG_LED_CHARGING;
 		  }
 
-		  // show the LED once current flows (or full/fault); anchor the breath
+		  // show the LED once current flows, the charger reports done/topoff
+		  // (covers a full-on-plug-in pack that goes straight to the post-full
+		  // top-balance with IBAT=0), or full/fault; anchor the breath
 		  if (!led_started &&
 			  (m.ibat_mA >= BATT_CHG_START_MA ||
+			   cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF ||
 			   led_mode == CHG_LED_FULL || led_mode == CHG_LED_FAULT)) {
 			led_started = 1u;
 			breath_base = HAL_GetTick();
