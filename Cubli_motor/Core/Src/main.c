@@ -725,7 +725,7 @@ static void MX_ICACHE_Init(void) {
 		Error_Handler();
 	}
 
-	if (HAL_ICACHE_ConfigAssociativityMode(ICACHE_1WAY) != HAL_OK) {
+	if (HAL_ICACHE_ConfigAssociativityMode(ICACHE_2WAYS) != HAL_OK) {
 		Error_Handler();
 	}
 	if (HAL_ICACHE_Enable() != HAL_OK) {

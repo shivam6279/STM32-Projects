@@ -6,7 +6,7 @@
 
 extern volatile uint16_t spi_angle;
 
-extern void SPI1_init(float);
-extern void SPI1_write16(uint16_t);
+void SPI1_init(float);
+void SPI1_write16(uint16_t);
 
 #endif

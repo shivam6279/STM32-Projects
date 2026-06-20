@@ -40,8 +40,8 @@ _Static_assert(sizeof(eeprom_data_t) <= 8192, "Struct is too large for a single 
 
 extern eeprom_data_t eeprom_data;
 
-extern void ee_read();
-extern void ee_write();
+void ee_read();
+void ee_write();
 
 
 #endif

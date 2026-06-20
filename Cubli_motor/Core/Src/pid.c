@@ -1,9 +1,8 @@
 #include "PID.h"
 #include <inttypes.h>
 
-static inline float clamp(float val, float min, float max) {
-    return val > max ? max : val < min ? min : val;
-}
+// PID_clamp / PID_integrate / PID_differentiate / PID_compute are defined
+// static inline in PID.h so they inline into the control ISRs.
 
 void PID_init(PID *pid) {
 	pid->kp = 0;
@@ -43,59 +42,6 @@ void PID_setGain(PID *pid, float kp, float ki, float kd) {
 	pid->kp = kp;
 	pid->ki = ki;
 	pid->kd = kd;
-}
-
-void PID_integrate(PID *pid, float deltat) {
-	float error = pid->error;
-	if(pid->constrain_error) {
-		error = clamp(pid->error, pid->error_min, pid->error_max);
-	}
-	pid->integral += pid->ki * error * deltat;
-	if(pid->constrain_integral) {
-		pid->integral = clamp(pid->integral, pid->integral_min, pid->integral_max);
-	}
-}
-
-void PID_differentiate(PID *pid, float deltat) {
-	pid->derivative += pid->lpf_der * ((pid->input - pid->p_input) / deltat - pid->derivative);
-	pid->p_input = pid->input;
-}
-
-float PID_compute(PID *pid, float input, float deltat) {
-	float temp_output;
-	uint8_t is_saturated;
-
-	pid->input = input;
-	pid->error = pid->setpoint - pid->input;
-
-	is_saturated = pid->constrain_output && (pid->output <= pid->output_min || pid->output >= pid->output_max);
-
-	// P
-	temp_output = pid->kp * pid->error;
-
-	// I
-	if(pid->ki) {
-		if(pid->compute_integral) {
-			if(!is_saturated || (pid->error * pid->output) < 0) {
-				PID_integrate(pid, deltat);
-			}
-		}
-		temp_output += pid->integral;
-	}
-	// D
-	if(pid->kd) {
-		if(pid->compute_derivative) {
-			PID_differentiate(pid, deltat);
-		}
-		temp_output += pid->kd * pid->derivative;
-	}
-
-	pid->output = temp_output;
-	
-	if(pid->constrain_output) {
-		pid->output = clamp(pid->output, pid->output_min, pid->output_max);
-	}
-	return pid->output;
 }
 
 // Choose to or not to compute integral/derivative

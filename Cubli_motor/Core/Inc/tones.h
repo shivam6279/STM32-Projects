@@ -137,11 +137,11 @@ extern tone_square_phase_type tone_square_phase;
 
 extern float tone_power, tone_amplitude;
 
-extern void MetroidSaveTheme(unsigned char);
-extern void PlayTone(float);
-extern void StopTone();
-extern void PlayNote(const char*);
-extern void PlayWav();
-extern uint8_t PlayRTTLL(const char*);
+void MetroidSaveTheme(unsigned char);
+void PlayTone(float);
+void StopTone();
+void PlayNote(const char*);
+void PlayWav();
+uint8_t PlayRTTLL(const char*);
 
 #endif

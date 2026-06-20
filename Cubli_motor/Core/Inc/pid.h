@@ -25,29 +25,85 @@ typedef struct {
 	bool compute_derivative;
 } PID;
 
-extern void PID_init(PID*);
-extern void PID_reset(PID*);
-extern void PID_setGain(PID*, float, float, float);
-extern void PID_integrate(PID *pid, float);
-extern void PID_differentiate(PID*, float);
-extern float PID_compute(PID*, float, float);
+void PID_init(PID*);
+void PID_reset(PID*);
+void PID_setGain(PID*, float, float, float);
 
-extern void PID_enableComputeIntegral(PID*);
-extern void PID_disableComputeIntegral(PID*);
-extern void PID_enableComputeDerivative(PID*);
-extern void PID_disableComputeDerivative(PID*);
+// Hot-path control math: defined inline here so the 50 kHz current loop and
+// 10 kHz outer loops inline them at the call site (no cross-TU call / no LTO).
+static inline float PID_clamp(float val, float min, float max) {
+	return val > max ? max : val < min ? min : val;
+}
 
-extern void PID_enableErrorConstrain(PID*);
-extern void PID_disableErrorConstrain(PID*);
-extern void PID_setErrorLimits(PID*, float, float);
+static inline void PID_integrate(PID *pid, float deltat) {
+	float error = pid->error;
+	if(pid->constrain_error) {
+		error = PID_clamp(pid->error, pid->error_min, pid->error_max);
+	}
+	pid->integral += pid->ki * error * deltat;
+	if(pid->constrain_integral) {
+		pid->integral = PID_clamp(pid->integral, pid->integral_min, pid->integral_max);
+	}
+}
 
-extern void PID_enableIntegralConstrain(PID*);
-extern void PID_disableIntegralConstrain(PID*);
-extern void PID_setIntegralLimits(PID*, float, float);
+static inline void PID_differentiate(PID *pid, float deltat) {
+	pid->derivative += pid->lpf_der * ((pid->input - pid->p_input) / deltat - pid->derivative);
+	pid->p_input = pid->input;
+}
 
-extern void PID_enableOutputConstrain(PID*);
-extern void PID_disableOutputConstrain(PID*);
-extern void PID_setOutputLimits(PID*, float, float);
-extern void PID_setDerivativeLPF(PID*, float);
+static inline float PID_compute(PID *pid, float input, float deltat) {
+	float temp_output;
+	uint8_t is_saturated;
+
+	pid->input = input;
+	pid->error = pid->setpoint - pid->input;
+
+	is_saturated = pid->constrain_output && (pid->output <= pid->output_min || pid->output >= pid->output_max);
+
+	// P
+	temp_output = pid->kp * pid->error;
+
+	// I
+	if(pid->ki) {
+		if(pid->compute_integral) {
+			if(!is_saturated || (pid->error * pid->output) < 0) {
+				PID_integrate(pid, deltat);
+			}
+		}
+		temp_output += pid->integral;
+	}
+	// D
+	if(pid->kd) {
+		if(pid->compute_derivative) {
+			PID_differentiate(pid, deltat);
+		}
+		temp_output += pid->kd * pid->derivative;
+	}
+
+	pid->output = temp_output;
+
+	if(pid->constrain_output) {
+		pid->output = PID_clamp(pid->output, pid->output_min, pid->output_max);
+	}
+	return pid->output;
+}
+
+void PID_enableComputeIntegral(PID*);
+void PID_disableComputeIntegral(PID*);
+void PID_enableComputeDerivative(PID*);
+void PID_disableComputeDerivative(PID*);
+
+void PID_enableErrorConstrain(PID*);
+void PID_disableErrorConstrain(PID*);
+void PID_setErrorLimits(PID*, float, float);
+
+void PID_enableIntegralConstrain(PID*);
+void PID_disableIntegralConstrain(PID*);
+void PID_setIntegralLimits(PID*, float, float);
+
+void PID_enableOutputConstrain(PID*);
+void PID_disableOutputConstrain(PID*);
+void PID_setOutputLimits(PID*, float, float);
+void PID_setDerivativeLPF(PID*, float);
 
 #endif

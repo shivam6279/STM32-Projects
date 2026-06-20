@@ -121,6 +121,11 @@ float i_alpha = 0.0f, i_beta = 0.0f;
 float Vq_setpoint = 0;
 float torque_setpoint = 0;
 
+// Friction feedforward (torque mode). Recomputed in TIM5 at the velocity-update
+// rate (rpm only changes there) and just added in the current loop.
+#define rpm_deadband 20.0f
+static float friction_ff = 0.0f;
+
 // Sensorless
 float phase_delay = 0;
 uint8_t current_phase = 0;
@@ -185,18 +190,11 @@ void ADC1_IRQHandler(void) {
 			// position = ((float)(4095 - spi_angle) * 360.0 / 4095.0) - motor_zero_angle;
 
 			// Wrap angle back to [0, 360]
-			position -= 360.0f * (int)(position * 0.002777778f);
-			if(position < 0.0f) {
-				position += 360.0f;
-			} else if(position > 360.0f) {
-				position -= 360.0f;
-			}
+			position = WrapAngle360(position);
 
-			angle_el = position*motor_pole_pairs;
-			angle_el -= 360.0f * (int)(angle_el * 0.002777778f);
+			angle_el = WrapAngle360(position * motor_pole_pairs);
 
-			angle_el_compensated = angle_el + rpm * 6.0f * motor_pole_pairs * 0.000015f;
-			angle_el_compensated -= 360.0f * (int)(angle_el_compensated * 0.002777778f);
+			angle_el_compensated = WrapAngle360(angle_el + rpm * 6.0f * motor_pole_pairs * 0.000015f);
 
 			foc_current_calc(angle_el);
 
@@ -221,29 +219,9 @@ void ADC1_IRQHandler(void) {
 				pid_focIq.setpoint = torque_setpoint;
 
 				if(waveform_mode == MOTOR_FOC_TORQUE) {
-				// if(waveform_mode == MOTOR_FOC_TORQUE) {
-					// Apply friction_ff compensations
 					// pid_focIq.setpoint = 0.06981317008f * motor_kv * torque_setpoint / motor_pole_pairs;
-
-					float friction_ff;
-					float cogging_ff;
-
-					#define rpm_deadband 20.0f
-
-					if(fabsf(rpm) < rpm_deadband && fabsf(torque_setpoint) > 0.001f) {
-						float blend = fabsf(rpm) / rpm_deadband;
-						float stiction_component = motor_active->stiction * (1.0f - blend);
-						float coulomb_component  = motor_active->coulomb * tanhf(0.13f * rpm);
-						friction_ff = (stiction_component + coulomb_component) * fsignf(torque_setpoint);
-					} else {
-						friction_ff = motor_active->coulomb * tanhf(0.13f * rpm);
-					}
-
-					friction_ff += motor_active->viscous * rpm;
-
-					uint16_t cogging_index = (uint16_t)(position/360.0f * COGGING_LUT_SIZE) % COGGING_LUT_SIZE;
-					cogging_ff = 0;//((float)cogging_lut[cogging_index] / 32767.0f) * COGGING_LUT_SCALE;
-					pid_focIq.setpoint += cogging_ff + friction_ff;
+					// friction_ff is computed in TIM5 (velocity rate); just add it here.
+					pid_focIq.setpoint += friction_ff;
 				}
 
 				if(waveform_mode >= MOTOR_FOC_TORQUE && waveform_mode <= MOTOR_FOC_VQ_ID) {
@@ -270,7 +248,14 @@ void ADC1_IRQHandler(void) {
 
 					// Clamp to SVPWM circle
 					// Keep Ud, and clamp Uq
-					Uq_limit = sqrtf(vsns_vbat*vsns_vbat/3.0f - Ud*Ud);
+					// Guard the radicand: if Vd already consumes the whole voltage
+					// budget (Ud^2 > Vbat^2/3) there is no Vq headroom -> limit 0,
+					// not NaN (sqrtf of a negative under -ffast-math is undefined).
+					float uq_headroom_sq = vsns_vbat*vsns_vbat/3.0f - Ud*Ud;
+					if(uq_headroom_sq < 0.0f) {
+						uq_headroom_sq = 0.0f;
+					}
+					Uq_limit = sqrtf(uq_headroom_sq);
 					Uq_limit = Uq < -Uq_limit ? -Uq_limit : Uq > Uq_limit ? Uq_limit : Uq;
 
 					// De-integrate if Uq is saturated
@@ -317,7 +302,26 @@ void TIM5_IRQHandler(void) {
 		// LED1_ON();
 
 		vel_kf_update((int16_t)ENC_TIM->CNT, 0.0001f);
-			
+
+		// Friction feedforward (torque mode): depends only on rpm/torque_setpoint,
+		// so compute it here at the velocity rate instead of recomputing tanhf
+		// every current-loop cycle (was ~50 kHz). The current loop just adds it.
+		if(waveform_mode == MOTOR_FOC_TORQUE) {
+			float ff;
+			if(fabsf(rpm) < rpm_deadband && fabsf(torque_setpoint) > 0.001f) {
+				float blend = fabsf(rpm) / rpm_deadband;
+				float stiction_component = motor_active->stiction * (1.0f - blend);
+				float coulomb_component  = motor_active->coulomb * tanhf(0.13f * rpm);
+				ff = (stiction_component + coulomb_component) * fsignf(torque_setpoint);
+			} else {
+				ff = motor_active->coulomb * tanhf(0.13f * rpm);
+			}
+			ff += motor_active->viscous * rpm;
+			friction_ff = ff;
+		} else {
+			friction_ff = 0.0f;
+		}
+
 		// Angle PID control
 		if (mode == MODE_POS) { 
 			pid_angle.derivative = -rpm;
@@ -471,12 +475,7 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 	
 	// angle_el_in += motor_polarity;
 
-	angle_el_in -= 360.0f * (int)(angle_el * 0.002777778f);
-	if(angle_el_in < 0.0f) {
-		angle_el_in += 360.0f;
-	} else if(angle_el_in > 360.0f) {
-		angle_el_in -= 360.0f;
-	}
+	angle_el_in = WrapAngle360(angle_el_in);
 
 	int32_t theta_q31;
 
@@ -530,7 +529,7 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el_in) {
 			Uq = -Uq;
 		}
 		
-		angle_el_in = roundf(normalizeAngle(angle_el_in-90.0f) / 60.0f);
+		angle_el_in = roundf(WrapAngle360(angle_el_in-90.0f) / 60.0f);
 		if(vsns_vbat > motor_ov) {
 			pwm_u = 0.0f;
 			pwm_v = 0.0f;
@@ -1086,11 +1085,7 @@ inline float GetAcc() {
 }
 
 inline float normalizeAngle(float angle) {
-	angle = fmodf(angle, 360.0f);
-	if(angle < 0) {
-		angle += 360;
-	}
-	return angle;
+	return WrapAngle360(angle);
 }
 
 void init_encoder_lut() {
@@ -1136,7 +1131,7 @@ void interpolate_encoder_lut(float in[], uint16_t len) {
 // return [-1, 1]
 static inline float wave_lut(uint16_t lut[], float angle) {
 	float temp;
-	angle = normalizeAngle(angle);
+	angle = WrapAngle360(angle);
 	uint16_t index;
 	
 	index = (uint16_t)(angle * 8.0f);

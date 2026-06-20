@@ -16,6 +16,19 @@
 // #define FOC_TIMER_ON() (TIM3->CR1 |= 1)
 // #define FOC_TIMER_OFF() (TIM3->CR1 &= ~1)
 
+// Wrap an angle in degrees to [0, 360). The integer-multiple subtraction
+// handles any finite magnitude in one shot (no fmodf); the conditionals then
+// fold the remaining (-360, 360) range into [0, 360).
+static inline float WrapAngle360(float angle) {
+	angle -= 360.0f * (int)(angle * 0.002777778f);
+	if(angle < 0.0f) {
+		angle += 360.0f;
+	} else if(angle > 360.0f) {
+		angle -= 360.0f;
+	}
+	return angle;
+}
+
 typedef enum motor_waveform_type {
 	MOTOR_FOC_TORQUE,	// Iq/Id closed loop current control, with torque input and friction compensation
 	MOTOR_FOC_IQ_ID,	// Default Iq/Id closed loop current control
@@ -80,33 +93,33 @@ extern float sin_el, cos_el;
 extern float thermal_energy;
 
 extern volatile uint8_t fault_latched, temp_fault;
-extern void ClearFault();
-extern void UpdateFaultLED();
+void ClearFault();
+void UpdateFaultLED();
 
-extern void MotorPhase(int8_t, float);
-extern void MotorPhasePWM(float, float, float);
-extern void MotorOff();
-extern void MotorShort(float);
+void MotorPhase(int8_t, float);
+void MotorPhasePWM(float, float, float);
+void MotorOff();
+void MotorShort(float);
 
-extern void init_encoder_lut();
-extern void interpolate_encoder_lut(float[], uint16_t);
-extern uint8_t MotorPIDInit(motor_t*);
+void init_encoder_lut();
+void interpolate_encoder_lut(float[], uint16_t);
+uint8_t MotorPIDInit(motor_t*);
 
-extern bool bemf_phase(unsigned char);
-extern void SensorlessStart(float);
+bool bemf_phase(unsigned char);
+void SensorlessStart(float);
 
-extern void setPhaseVoltage(float, float, float);
-extern float normalizeAngle(float);
-extern void ResetMotorPID();
+void setPhaseVoltage(float, float, float);
+float normalizeAngle(float);
+void ResetMotorPID();
 
-extern void reset_motion_observer();
-extern void SetRPM(float);
-extern void SetPosition(float);
-extern float GetPositionRaw();
-extern float GetPosition();
-extern void ResetPosition();
-extern float GetRPM();
-extern float GetAcc();
+void reset_motion_observer();
+void SetRPM(float);
+void SetPosition(float);
+float GetPositionRaw();
+float GetPosition();
+void ResetPosition();
+float GetRPM();
+float GetAcc();
 //extern float wave_lut(uint16_t*, float);
 
 #endif

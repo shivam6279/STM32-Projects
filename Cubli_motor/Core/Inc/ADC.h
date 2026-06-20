@@ -37,8 +37,8 @@ extern volatile float isns_v_offset, isns_w_offset;
 extern volatile float isns_vbat, vsns_vbat;
 extern volatile float vsns_u, vsns_v, vsns_w, vsns_x;
 
-extern void ADCCalib();
-extern void ADCInit();
-extern void adc_readAll();
+void ADCCalib();
+void ADCInit();
+void adc_readAll();
 
 #endif

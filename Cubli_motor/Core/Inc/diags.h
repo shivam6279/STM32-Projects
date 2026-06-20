@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-extern void diagsMenu();
+void diagsMenu();
 
 extern float diags_power;
 

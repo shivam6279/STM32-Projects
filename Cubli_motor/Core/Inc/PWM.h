@@ -4,11 +4,11 @@
 #include "main.h"
 #include <inttypes.h>
 
-extern void MX_TIM1_Init(float freq);
-extern void MX_TIM3_Init(void);
-extern void MX_TIM15_Init(void);
-extern void setServo_us(float);
-extern void servoOff();
+void MX_TIM1_Init(float freq);
+void MX_TIM3_Init(void);
+void MX_TIM15_Init(void);
+void setServo_us(float);
+void servoOff();
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim3;
