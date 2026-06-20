@@ -252,7 +252,7 @@ spin : Slowly spin the motor in 6 step commutation\n\
 -v [x] : Set motor voltage to x (-vbat, vbat)\n\
 -e [x] : Move motor to electrical degree x\n\
 -s [x] : Move motor to six step phase x\n\
--model [x]: Display motor models, then optionally set motor model to number x\n\
+model : Display motor models (active motor is selected in code)\n\
 zero [x] : Move to zero (space vector: 100) x\n\
 wave [s] : Display waveform type. Set waveform type to \"foc\", \"svpwm\", \"sin\", \"saddle\", or \"trapezoid\"\n\
 polepairs [p] : Display pole pairs. Optionally set to p.\n\
@@ -327,49 +327,24 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		mode = MODE_OFF;
 		MotorOff();
 
-	// Set motor pole pairs
+	// Display motor models. The active motor is selected in code at boot
+	// (see MotorPIDInit in main); it is not switchable at runtime, since the
+	// FOC gains and flux linkage are derived from it only at init time.
 	} else if(str_getArgValue(cmd, "model", arg_val)) {
-		if(str_isInt(arg_val)) {
-			uint8_t motor_model = str_toInt(arg_val);
-			if(motor_model >= 1 && motor_model <= 3) {
-				motor_active = &motor_list[motor_model-1];
-				snprintf(serial_buffer, sizeof(serial_buffer), "Motor model set to: %s\n", motor_active->name);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Polepairs: %d\n", motor_active->polepairs);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %d\n", (uint16_t)motor_active->kv);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", (double)motor_active->r_p2p);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", (double)motor_active->l_p2p);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "\n");
-				send_serial(serial_buffer);
-
-			} else {
-				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect option");
-				send_serial(serial_buffer);
-				return false;
-			}
-		} else {
-			for(i = 0; i < sizeof(motor_list)/sizeof(motor_list[0]); i++) {
-				if(motor_active == &motor_list[i]) {
-					snprintf(serial_buffer, sizeof(serial_buffer), "Active motor:\n");
-					send_serial(serial_buffer);
-				}
-				snprintf(serial_buffer, sizeof(serial_buffer), "Current Motor model: %s\n", motor_list[i].name);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Polepairs: %d\n", motor_list[i].polepairs);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %.0f\n", (double)motor_list[i].kv);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", (double)motor_list[i].r_p2p);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", (double)motor_list[i].l_p2p);
-				send_serial(serial_buffer);
-				snprintf(serial_buffer, sizeof(serial_buffer), " \n");
-				send_serial(serial_buffer);
-			}
+		for(i = 0; i < sizeof(motor_list)/sizeof(motor_list[0]); i++) {
+			snprintf(serial_buffer, sizeof(serial_buffer), "%s Motor model: %s\n",
+				(motor_active == &motor_list[i]) ? "[active]" : "        ", motor_list[i].name);
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Polepairs: %d\n", motor_list[i].polepairs);
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Kv: %.0f\n", (double)motor_list[i].kv);
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Resistance (phase-phase): %.3f\n", (double)motor_list[i].r_p2p);
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Inductance (phase-phase): %.3f\n", (double)motor_list[i].l_p2p);
+			send_serial(serial_buffer);
+			snprintf(serial_buffer, sizeof(serial_buffer), " \n");
+			send_serial(serial_buffer);
 		}
 
 	// Set power

@@ -56,14 +56,25 @@ typedef struct motor_t {
 	float viscous;
 } motor_t;
 
-#define MOTOR_LIST_SIZE 6
+// Motor preset table — single source of truth for the built-in motors.
+// To add a motor, add ONE X() row below: the index enum (MOTOR_LIST_*),
+// MOTOR_LIST_SIZE, and the motor_list[] array entry are all generated from it.
+//
+//       id            name       pp   kv       r_p2p     l_p2p     stic   coul   visc
+#define MOTOR_TABLE \
+	X(MAD3506,     "mad3506",      7,  400.0f,  240E-3f,  180E-6f,  0.25f, 0.0f,  0.0f)     \
+	X(MAD4006,     "mad4006",     12,  740.0f,   51E-3f,   25E-6f,  0.5f,  0.26f, 0.0f)     \
+	X(FLYSKY,      "flysky",       7,  750.0f,   92E-3f,   35E-6f,  0.0f,  0.0f,  0.0f)     \
+	X(TMOTOR_2806, "tmotor_2806",  7,  400.0f,   1.8f,    190E-6f,  0.0f,  0.0f,  0.0f)     \
+	X(TMOTOR_4004, "tmotor_4004", 12,  400.0f,   0.4f,    190E-6f,  0.0f,  0.0f,  0.0f)     \
+	X(MT2204,      "mt2204",       7, 2300.0f,  200E-3f, 18.5E-6f,  0.2f,  0.05f, 0.00005f)
 
-#define MOTOR_LIST_MAD3506		0
-#define MOTOR_LIST_MAD4006		1
-#define MOTOR_LIST_FLYSKY		2
-#define MOTOR_LIST_TMOTOR_2806	3
-#define MOTOR_LIST_TMOTOR_4004	4
-#define MOTOR_LIST_MT2204		5
+typedef enum motor_index {
+#define X(id, ...) MOTOR_LIST_##id,
+	MOTOR_TABLE
+#undef X
+	MOTOR_LIST_SIZE
+} motor_index;
 
 extern motor_waveform_type waveform_mode;
 extern motor_mode mode;

@@ -51,67 +51,13 @@ float motor_r = 0;
 static float motor_flux_linkage = 0.0f;
 static float w_e_factor = 0.0f; // 0.10472f * motor_pole_pairs
 
+// Generated from MOTOR_TABLE in BLDC.h. Edit the table there to add a motor.
 motor_t motor_list[MOTOR_LIST_SIZE] = {
-(struct motor_t){
-	.name = "mad3506",
-	.polepairs = 7,
-	.kv = 400.0f,
-	.r_p2p = 240E-3f,
-	.l_p2p = 180E-6f,
-	.stiction = 0.25f,
-	.coulomb = 0.0f,
-	.viscous = 0.0f,
-},
-(struct motor_t){
-	.name = "mad4006",
-	.polepairs = 12,
-	.kv = 740.0f,
-	.r_p2p = 51E-3f,
-	.l_p2p = 25E-6f,
-	.stiction = 0.5f,
-	.coulomb = 0.26f,
-	.viscous = 0.0f,
-},
-(struct motor_t){
-	.name = "flysky",
-	.polepairs = 7,
-	.kv = 750.0f,
-	.r_p2p = 92E-3f,
-	.l_p2p = 35E-6f,
-	.stiction = 0.00f,
-	.coulomb = 0.0f,
-	.viscous = 0.0f,
-},
-(struct motor_t){
-	.name = "tmotor_2806",
-	.polepairs = 7,
-	.kv = 400.0f,
-	.r_p2p = 1.8f,
-	.l_p2p = 190E-6f,
-	.stiction = 0.00f,
-	.coulomb = 0.0f,
-	.viscous = 0.0f,
-},
-(struct motor_t){
-	.name = "tmotor_4004",
-	.polepairs = 12,
-	.kv = 400.0f,
-	.r_p2p = 0.4f,//1.8f,
-	.l_p2p = 190E-6f,
-	.stiction = 0.00f,
-	.coulomb = 0.0f,
-	.viscous = 0.0f,
-},
-(struct motor_t){
-	.name = "mt2204",
-	.polepairs = 7,
-	.kv = 2300.0f,
-	.r_p2p = 200E-3f,
-	.l_p2p = 18.5E-6f,
-	.stiction = 0.2f,
-	.coulomb = 0.05f,
-	.viscous = 0.00005f,
-}
+#define X(id, nm, pp, kvv, r, l, st, co, vi) \
+	[MOTOR_LIST_##id] = { .name = nm, .polepairs = pp, .kv = kvv, .r_p2p = r, \
+	                      .l_p2p = l, .stiction = st, .coulomb = co, .viscous = vi },
+	MOTOR_TABLE
+#undef X
 };
 
 // FOC
