@@ -164,7 +164,7 @@ bool str_isFloat(char *str) {
 	return true;
 }
 
-bool str_getArgValue(char *str, char *arg, char *val) {
+bool str_getArgValueN(char *str, char *arg, char *val, unsigned int max_len) {
 	unsigned int i, j;
 	bool flag = false;
 	unsigned int strlen_str = str_len(str);
@@ -198,11 +198,11 @@ bool str_getArgValue(char *str, char *arg, char *val) {
 	
 	i++;
 	
-	for(j = 0; str[i+j] != ' ' && str[i+j] != '\0'; j++) {
+	for(j = 0; str[i+j] != ' ' && str[i+j] != '\0' && j < max_len - 1; j++) {
 		val[j] = str[i+j];
 	}
 	val[j] = '\0';
-	
+
 	return true;
 }
 

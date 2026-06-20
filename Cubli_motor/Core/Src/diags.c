@@ -14,6 +14,9 @@
 #include "EEPROM.h"
 #include "tones.h"
 
+// Max size for argument value buffers handed to str_getArgValue().
+#define ARG_VAL_LEN 128
+
 void printDiagsMenu();
 char read_rx_char();
 
@@ -122,7 +125,9 @@ void diagsMenu() {
 				flag = false;
 				for(i = 0; i < diags_list_len; i++) {
 					if(str_beginsWith(input, diags_list[i].cmd)) {
-						input_len = str_len(input);
+						// Match only on a whole-word command: the char right after
+						// the command token must end the token (space or NUL).
+						input_len = str_len(diags_list[i].cmd);
 						if(input[input_len] == ' ' || input[input_len] == '\0') {
 							if(diags_list[i].func(input)) {
 								snprintf(serial_buffer, sizeof(serial_buffer), "OK\n");
@@ -132,6 +137,7 @@ void diagsMenu() {
 								send_serial(serial_buffer);
 							}
 							flag = true;
+							break;
 						}
 					}
 				}
@@ -166,7 +172,7 @@ void printDiagsMenu() {
 }
 
 uint8_t diags_id(char *cmd) {
-	char arg_val[20];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 Commands to set/display id:\n\
@@ -186,6 +192,8 @@ id [x] : Display board id. Optionally set to x.\n";
 			board_id = str_toInt(arg_val);
 			snprintf(serial_buffer, sizeof(serial_buffer), "Board id set to: %d\n", board_id);
 			send_serial(serial_buffer);
+		} else if(arg_val[0] != '\0') {
+			return false;
 		}
 	}
 	
@@ -193,7 +201,7 @@ id [x] : Display board id. Optionally set to x.\n";
 }
 
 uint8_t diags_comms(char *cmd) {
-	char arg_val[20];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 Commands to set/display id:\n\
@@ -222,7 +230,9 @@ comms [\"UART\", \"CAN\", \"BOTH\"] : Set communication mode.\n";
 			snprintf(serial_buffer, sizeof(serial_buffer), "Comms set to: BOTH\n");
 			send_serial(serial_buffer);
 		} else {
-			printf("Incorrect mode. Must be \"UART\", \"CAN\", \"BOTH\"\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect mode. Must be \"UART\", \"CAN\", \"BOTH\"\n");
+			send_serial(serial_buffer);
+			return false;
 		}
 	}
 	
@@ -233,7 +243,7 @@ uint8_t diags_motor(char *cmd) {
 	unsigned char ch;
 	uint8_t i;
 	static float set_power, power, acceleration;
-	char arg_val[20];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 Commands to control the BLDC motor with the parameters:\n\
@@ -339,7 +349,8 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 			} else {
 				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect option");
 				send_serial(serial_buffer);
-			}			
+				return false;
+			}
 		} else {
 			for(i = 0; i < sizeof(motor_list)/sizeof(motor_list[0]); i++) {
 				if(motor_active == &motor_list[i]) {
@@ -440,8 +451,9 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 			send_serial(serial_buffer);
 			snprintf(serial_buffer, sizeof(serial_buffer), "trapezoid\n");
 			send_serial(serial_buffer);
+			return false;
 		}
-		
+
 	// Set motor direction
 	} else if(str_getArgValue(cmd, "dir", arg_val)) {
 		if(arg_val[0] == '0' || arg_val[0] == '1') {
@@ -451,7 +463,8 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		} else {
 			if(arg_val[0] != '\0') {
 				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect option. Use \"0\" or \"1\" \n");
-			send_serial(serial_buffer);
+				send_serial(serial_buffer);
+				return false;
 			}
 			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor direction: %d\n", motor_direction);
 			send_serial(serial_buffer);
@@ -469,7 +482,7 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 uint8_t diags_encoder(char *cmd) {
 	char ch;
 	int16_t pos_cnt;
-	char arg_val[5];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 Read rotary encoder data:\n\
@@ -520,7 +533,8 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 		} else {
 			if(arg_val[0] != '\0') {
 				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect option. Use \"0\" or \"1\" \n");
-			send_serial(serial_buffer);
+				send_serial(serial_buffer);
+				return false;
 			}
 			snprintf(serial_buffer, sizeof(serial_buffer), "Current encoder direction: %d\n", enc_direction);
 			send_serial(serial_buffer);
@@ -536,6 +550,8 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 			init_encoder_lut();
 			snprintf(serial_buffer, sizeof(serial_buffer), "Encoder calibration correction disabled\n");
 			send_serial(serial_buffer);
+		} else {
+			return false;
 		}
 
 	// Display calibrated encoder data
@@ -658,7 +674,7 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 uint8_t diags_readTemperature(char *cmd) {
 	float t = 0;
 	int16_t t_raw = 0;
-	char arg_val[5];
+	char arg_val[ARG_VAL_LEN];
 	static unsigned int delay = 100;
 	float f;
 	char ch;
@@ -680,6 +696,7 @@ Read temp sensor TMP1075 (FETs):\n\
 		if(f < 1.0f || f > 10000.0f) {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
 			send_serial(serial_buffer);
+			return false;
 		} else {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
 			send_serial(serial_buffer);
@@ -722,7 +739,7 @@ uint8_t diags_readADC(char *cmd) {
 	char ch;
 	float f;
 	static uint16_t delay = 10;
-	char arg_val[5];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 Read ADC data\n\
@@ -739,6 +756,7 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 		if(f < 1.0f || f > 1000.0f) {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
 			send_serial(serial_buffer);
+			return false;
 		} else {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
 			send_serial(serial_buffer);
@@ -824,9 +842,9 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 		
 		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS U: %.2f V\n", (double)vsns_u);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS V: %.2f V\n", (double)vsns_w);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS V: %.2f V\n", (double)vsns_v);
 		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS W: %.2f V\n", (double)vsns_v);
+		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS W: %.2f V\n", (double)vsns_w);
 		send_serial(serial_buffer);
 		snprintf(serial_buffer, sizeof(serial_buffer), "VSNS X: %.2f V\n", (double)vsns_x);
 		send_serial(serial_buffer);
@@ -847,7 +865,7 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 
 uint8_t diags_i2c(char *cmd) {
 	unsigned int i;
-	char arg_val[25];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 I2C commands\n\
@@ -876,7 +894,7 @@ scan : Scan bus and report addresses found\n";
 }
 
 uint8_t diags_tone(char *cmd) {
-	char arg_val[50];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 Plays audio through the motor:\n\
@@ -922,7 +940,8 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 		send_serial(serial_buffer);
 		if(!PlayRTTLL(arg_val)) {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect rttll string\n");
-		send_serial(serial_buffer);
+			send_serial(serial_buffer);
+			return false;
 		}
 		StopTone();
 		
@@ -959,6 +978,7 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 		} else {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect wave type. Should be \"square\" or \"sin\"\n");
 			send_serial(serial_buffer);
+			return false;
 		}
 
 	} else {
@@ -971,7 +991,7 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 }
 
 uint8_t diags_LED(char *cmd) {
-	char arg_val[5];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 led <led no> <state>:\n\
@@ -1000,6 +1020,7 @@ led <led no> <state>:\n\
 		} else {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect LED state selected\n");
 			send_serial(serial_buffer);
+			return false;
 		}
 
 	} else if(cmd[4] == '1') {
@@ -1018,19 +1039,21 @@ led <led no> <state>:\n\
 		} else {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect LED state selected\n");
 			send_serial(serial_buffer);
+			return false;
 		}
 	} else {
 		snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect LED number selected\n");
 		send_serial(serial_buffer);
 		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
 		send_serial(serial_buffer);
+		return false;
 	}
 	
 	return true;
 }
 
 uint8_t diags_servo(char *cmd) {
-	char arg_val[50];
+	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
 Control servo:\n\
@@ -1069,8 +1092,97 @@ off : Set servo pin to LOW\n";
 	return true;	
 }
 
+// ---------------------------- Table-driven EEPROM field map ----------------------------
+// Single source of truth for the persisted settings. Add a field here once and
+// save/restore/disp/diff all pick it up automatically. PID gains are mapped via
+// &pid.kp since kp/ki/kd are the first three contiguous floats in the PID struct.
+
+typedef enum {
+	EE_U8,			// live uint8_t  <-> stored uint8_t
+	EE_FLOAT,		// live float    <-> stored float
+	EE_FLOAT_U8		// live float    <-> stored uint8_t
+} ee_kind;
+
+typedef struct {
+	const char *name;
+	ee_kind kind;
+	void *live;			// pointer to first live element
+	void *stored;		// pointer to first stored element (inside eeprom_data)
+	uint8_t count;		// number of contiguous elements
+	uint8_t precision;	// decimal places when printed as a float
+} ee_field_t;
+
+static const ee_field_t ee_fields[] = {
+	{ "Board ID",			EE_U8,			&board_id,			&eeprom_data.board_id,			1,	0 },
+	{ "Zero offset",		EE_FLOAT,		&motor_zero_angle,	&eeprom_data.zero_offset,		1,	4 },
+	{ "Pole pairs",			EE_FLOAT_U8,	&motor_pole_pairs,	&eeprom_data.pole_pairs,		1,	0 },
+	{ "Encoder direction",	EE_U8,			&enc_direction,		&eeprom_data.enc_direction,		1,	0 },
+	{ "Motor direction",	EE_U8,			&motor_direction,	&eeprom_data.motor_direction,	1,	0 },
+	{ "Angle PID",			EE_FLOAT,		&pid_angle.kp,		eeprom_data.pid_angle,			3,	4 },
+	{ "RPM PID",			EE_FLOAT,		&pid_rpm.kp,		eeprom_data.pid_rpm,			3,	5 },
+	{ "FOC Iq PID",			EE_FLOAT,		&pid_focIq.kp,		eeprom_data.pid_foc_iq,			3,	4 },
+	{ "FOC Id PID",			EE_FLOAT,		&pid_focId.kp,		eeprom_data.pid_foc_id,			3,	4 },
+	{ "Encoder calib",		EE_FLOAT,		encoder_calib_data,	eeprom_data.enc_calib,			32,	4 },
+	{ "Diags power",		EE_FLOAT,		&diags_power,		&eeprom_data.diags_power,		1,	4 },
+	{ "Tone power",			EE_FLOAT,		&tone_power,		&eeprom_data.tone_power,		1,	3 },
+	{ "Tone amplitude",		EE_FLOAT,		&tone_amplitude,	&eeprom_data.tone_amplitude,	1,	2 }
+};
+
+static const uint16_t ee_fields_len = sizeof(ee_fields) / sizeof(ee_fields[0]);
+
+// Read element i of a field as a double, from the live or stored side.
+static double ee_field_get(const ee_field_t *f, uint8_t i, bool stored) {
+	switch(f->kind) {
+		case EE_U8:
+			return (double)((uint8_t*)(stored ? f->stored : f->live))[i];
+		case EE_FLOAT_U8:
+			return stored ? (double)((uint8_t*)f->stored)[i] : (double)((float*)f->live)[i];
+		case EE_FLOAT:
+		default:
+			return (double)((float*)(stored ? f->stored : f->live))[i];
+	}
+}
+
+// Copy live -> stored, applying any type conversion.
+static void ee_field_save(const ee_field_t *f) {
+	for(uint8_t i = 0; i < f->count; i++) {
+		switch(f->kind) {
+			case EE_U8:			((uint8_t*)f->stored)[i] = ((uint8_t*)f->live)[i];			break;
+			case EE_FLOAT_U8:	((uint8_t*)f->stored)[i] = (uint8_t)((float*)f->live)[i];	break;
+			case EE_FLOAT:		((float*)f->stored)[i]   = ((float*)f->live)[i];			break;
+		}
+	}
+}
+
+// Copy stored -> live, applying any type conversion.
+static void ee_field_restore(const ee_field_t *f) {
+	for(uint8_t i = 0; i < f->count; i++) {
+		switch(f->kind) {
+			case EE_U8:			((uint8_t*)f->live)[i] = ((uint8_t*)f->stored)[i];			break;
+			case EE_FLOAT_U8:	((float*)f->live)[i]   = (float)((uint8_t*)f->stored)[i];	break;
+			case EE_FLOAT:		((float*)f->live)[i]   = ((float*)f->stored)[i];			break;
+		}
+	}
+}
+
+// Print all elements of a field (comma separated), from the live or stored side.
+static void ee_field_print(const ee_field_t *f, bool stored) {
+	for(uint8_t i = 0; i < f->count; i++) {
+		if(i > 0) {
+			snprintf(serial_buffer, sizeof(serial_buffer), ", ");
+			send_serial(serial_buffer);
+		}
+		if(f->kind == EE_U8) {
+			snprintf(serial_buffer, sizeof(serial_buffer), "%d", (int)ee_field_get(f, i, stored));
+		} else {
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.*f", f->precision, ee_field_get(f, i, stored));
+		}
+		send_serial(serial_buffer);
+	}
+}
+
 uint8_t diags_eeprom(char *cmd) {
-	char arg_val[50];
+	char arg_val[ARG_VAL_LEN];
 	uint16_t i;
 	
 	const char help_str[] = "\
@@ -1098,95 +1210,26 @@ diff : Display current vs eeprom diffn";
 	
 	} else if(str_getArgValue(cmd, "save", arg_val)) {
 		disp_eeprom_diff();
-
-		eeprom_data.board_id = board_id;
-		eeprom_data.zero_offset = motor_zero_angle;
-		eeprom_data.enc_direction = enc_direction;
-		eeprom_data.pole_pairs = (uint8_t)motor_pole_pairs;
-		eeprom_data.motor_direction = motor_direction;
-		for(i = 0; i < 32; i++) {
-			eeprom_data.enc_calib[i] = encoder_calib_data[i];
+		for(i = 0; i < ee_fields_len; i++) {
+			ee_field_save(&ee_fields[i]);
 		}
-		eeprom_data.pid_angle[0] = pid_angle.kp;
-		eeprom_data.pid_angle[1] = pid_angle.ki;
-		eeprom_data.pid_angle[2] = pid_angle.kd;
-
-		eeprom_data.pid_rpm[0] = pid_rpm.kp;
-		eeprom_data.pid_rpm[1] = pid_rpm.ki;
-		eeprom_data.pid_rpm[2] = pid_rpm.kd;
-
-		eeprom_data.pid_foc_iq[0] = pid_focIq.kp;
-		eeprom_data.pid_foc_iq[1] = pid_focIq.ki;
-		eeprom_data.pid_foc_iq[2] = pid_focIq.kd;
-
-		eeprom_data.pid_foc_id[0] = pid_focId.kp;
-		eeprom_data.pid_foc_id[1] = pid_focId.ki;
-		eeprom_data.pid_foc_id[2] = pid_focId.kd;
-
-		eeprom_data.diags_power = diags_power;
-		eeprom_data.tone_power = tone_power;
-		eeprom_data.tone_amplitude = tone_amplitude;
-
 		ee_write();
 
 	} else if(str_getArgValue(cmd, "restore", arg_val)) {
 		disp_eeprom_diff();
-
-		board_id = eeprom_data.board_id;
-		motor_zero_angle = eeprom_data.zero_offset;
-		enc_direction = eeprom_data.enc_direction;
-		motor_pole_pairs = eeprom_data.pole_pairs;
-		motor_direction = eeprom_data.motor_direction;
-		for(i = 0; i < 32; i++) {
-			encoder_calib_data[i] = eeprom_data.enc_calib[i];
+		for(i = 0; i < ee_fields_len; i++) {
+			ee_field_restore(&ee_fields[i]);
 		}
-		pid_angle.kp = eeprom_data.pid_angle[0];
-		pid_angle.ki = eeprom_data.pid_angle[1];
-		pid_angle.kd = eeprom_data.pid_angle[2];
-
-		pid_rpm.kp = eeprom_data.pid_rpm[0];
-		pid_rpm.ki = eeprom_data.pid_rpm[1];
-		pid_rpm.kd = eeprom_data.pid_rpm[2];
-
-		pid_focIq.kp = eeprom_data.pid_foc_iq[0];
-		pid_focIq.ki = eeprom_data.pid_foc_iq[1];
-		pid_focIq.kd = eeprom_data.pid_foc_iq[2];
-
-		pid_focId.kp = eeprom_data.pid_foc_id[0];
-		pid_focId.ki = eeprom_data.pid_foc_id[1];
-		pid_focId.kd = eeprom_data.pid_foc_id[2];
-
-		diags_power = eeprom_data.diags_power;
-		tone_power = eeprom_data.tone_power;
-		tone_amplitude = eeprom_data.tone_amplitude;
 
 	} else if(str_getArgValue(cmd, "disp", arg_val)) {
 		ee_read();
-
-		snprintf(serial_buffer, sizeof(serial_buffer), "Board ID: %d\n", eeprom_data.board_id);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.2f\n", (double)eeprom_data.zero_offset);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Pole pairs: %d\n", eeprom_data.pole_pairs);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Encoder direction: %d\n", eeprom_data.enc_direction);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Motor direction: %d\n", eeprom_data.motor_direction);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle pid gains: %.4f, %.4f, %.4f\n", (double)eeprom_data.pid_angle[0],(double) eeprom_data.pid_angle[1], (double)eeprom_data.pid_angle[2]);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM pid gains: %.5f, %.5f, %.5f\n", (double)eeprom_data.pid_rpm[0], (double)eeprom_data.pid_rpm[1], (double)eeprom_data.pid_rpm[2]);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq pid gains: %.4f, %.4f, %.4f\n", (double)eeprom_data.pid_foc_iq[0], (double)eeprom_data.pid_foc_iq[1], (double)eeprom_data.pid_foc_iq[2]);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id pid gains: %.4f, %.4f, %.4f\n", (double)eeprom_data.pid_foc_id[0], (double)eeprom_data.pid_foc_id[1], (double)eeprom_data.pid_foc_id[2]);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.2f\n", (double)eeprom_data.diags_power);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.3f\n", (double)eeprom_data.tone_power);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.2f\n", (double)eeprom_data.tone_amplitude);
-		send_serial(serial_buffer);
+		for(i = 0; i < ee_fields_len; i++) {
+			snprintf(serial_buffer, sizeof(serial_buffer), "%s: ", ee_fields[i].name);
+			send_serial(serial_buffer);
+			ee_field_print(&ee_fields[i], true);
+			snprintf(serial_buffer, sizeof(serial_buffer), "\n");
+			send_serial(serial_buffer);
+		}
 
 	} else if(str_getArgValue(cmd, "diff", arg_val)) {
 		disp_eeprom_diff();
@@ -1200,97 +1243,41 @@ diff : Display current vs eeprom diffn";
 }
 
 void disp_eeprom_diff() {
+	uint16_t k;
+	uint8_t i, differs;
+	const ee_field_t *f;
+
 	ee_read();
 	snprintf(serial_buffer, sizeof(serial_buffer), "Deltas\n");
 	send_serial(serial_buffer);
-	snprintf(serial_buffer, sizeof(serial_buffer), "Keyname: current, EEPROM\n");
+	snprintf(serial_buffer, sizeof(serial_buffer), "Keyname: current | EEPROM\n");
 	send_serial(serial_buffer);
 
-	if(board_id != eeprom_data.board_id) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Board ID: %d, %d\n", board_id, eeprom_data.board_id);
-		send_serial(serial_buffer);
-	}
-	if(motor_zero_angle != eeprom_data.zero_offset) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Zero offset: %.4f, %.4f\n", (double)motor_zero_angle, (double)eeprom_data.zero_offset);
-		send_serial(serial_buffer);
-	}
-	if(motor_pole_pairs != eeprom_data.pole_pairs) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Pole pairs: %.0f, %d\n", (double)motor_pole_pairs, eeprom_data.pole_pairs);
-		send_serial(serial_buffer);
-	}
-	if(enc_direction != eeprom_data.enc_direction) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Encoder direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);
-		send_serial(serial_buffer);
-	}
-	if(motor_direction != eeprom_data.motor_direction) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Motor direction: %d, %d\n", motor_direction, eeprom_data.motor_direction);
-		send_serial(serial_buffer);
-	}
-	if(pid_angle.kp != eeprom_data.pid_angle[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kp: %.4f, %.4f\n", (double)pid_angle.kp, (double)eeprom_data.pid_angle[0]);
-		send_serial(serial_buffer);
-	}
-	if(pid_angle.ki != eeprom_data.pid_angle[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID ki: %.4f, %.4f\n", (double)pid_angle.ki, (double)eeprom_data.pid_angle[1]);
-		send_serial(serial_buffer);
-	}
-	if(pid_angle.kd != eeprom_data.pid_angle[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Angle PID kd: %.4f, %.4f\n", (double)pid_angle.kd, (double)eeprom_data.pid_angle[2]);
-		send_serial(serial_buffer);
-	}
-	if(pid_rpm.kp != eeprom_data.pid_rpm[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kp: %.4f, %.4f\n", (double)pid_rpm.kp, (double)eeprom_data.pid_rpm[0]);
-		send_serial(serial_buffer);
-	}
-	if(pid_rpm.ki != eeprom_data.pid_rpm[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID ki: %.4f, %.4f\n", (double)pid_rpm.ki, (double)eeprom_data.pid_rpm[1]);
-		send_serial(serial_buffer);
-	}
-	if(pid_rpm.kd != eeprom_data.pid_rpm[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "RPM PID kd: %.4f, %.4f\n", (double)pid_rpm.kd, (double)eeprom_data.pid_rpm[2]);
-		send_serial(serial_buffer);
-	}
-	if(pid_focIq.kp != eeprom_data.pid_foc_iq[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", (double)pid_focIq.kp, (double)eeprom_data.pid_foc_iq[0]);
-		send_serial(serial_buffer);
-	}
-	if(pid_focIq.ki != eeprom_data.pid_foc_iq[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID ki: %.4f, %.4f\n", (double)pid_focIq.ki, (double)eeprom_data.pid_foc_iq[1]);
-		send_serial(serial_buffer);
-	}
-	if(pid_focIq.kd != eeprom_data.pid_foc_iq[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Iq PID kp: %.4f, %.4f\n", (double)pid_focIq.kd, (double)eeprom_data.pid_foc_iq[2]);
-		send_serial(serial_buffer);
-	}
-	if(pid_focId.kp != eeprom_data.pid_foc_id[0]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kp: %.4f, %.4f\n", (double)pid_focId.kp, (double)eeprom_data.pid_foc_id[0]);
-		send_serial(serial_buffer);
-	}
-	if(pid_focId.ki != eeprom_data.pid_foc_id[1]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID ki: %.4f, %.4f\n", (double)pid_focId.ki, (double)eeprom_data.pid_foc_id[1]);
-		send_serial(serial_buffer);
-	}
-	if(pid_focId.kd != eeprom_data.pid_foc_id[2]) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "FOC Id PID kd: %.4f, %.4f\n", (double)pid_focId.kd, (double)eeprom_data.pid_foc_id[2]);
-		send_serial(serial_buffer);
-	}
-	if(diags_power != eeprom_data.diags_power) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Diags power: %.4f, %.4f\n", (double)diags_power, (double)eeprom_data.diags_power);
-		send_serial(serial_buffer);
-	}
-	if(tone_power != eeprom_data.tone_power) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone power: %.4f, %.4f\n", (double)tone_power, (double)eeprom_data.tone_power);
-		send_serial(serial_buffer);
-	}
-	if(tone_amplitude != eeprom_data.tone_amplitude) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "Tone amplitude: %.4f, %.4f\n", (double)tone_amplitude, (double)eeprom_data.tone_amplitude);
-		send_serial(serial_buffer);
+	for(k = 0; k < ee_fields_len; k++) {
+		f = &ee_fields[k];
+		differs = 0;
+		for(i = 0; i < f->count; i++) {
+			if(ee_field_get(f, i, false) != ee_field_get(f, i, true)) {
+				differs = 1;
+				break;
+			}
+		}
+		if(differs) {
+			snprintf(serial_buffer, sizeof(serial_buffer), "%s: ", f->name);
+			send_serial(serial_buffer);
+			ee_field_print(f, false);
+			snprintf(serial_buffer, sizeof(serial_buffer), " | ");
+			send_serial(serial_buffer);
+			ee_field_print(f, true);
+			snprintf(serial_buffer, sizeof(serial_buffer), "\n");
+			send_serial(serial_buffer);
+		}
 	}
 }
 
 uint8_t diags_comp(char *cmd) {
 	uint8_t comp, ch;
-	char arg_val[5];
+	char arg_val[ARG_VAL_LEN];
 
 	float f;
 	static uint32_t delay = 100;
@@ -1311,6 +1298,7 @@ Comparator output\n\
 		if(f < 1.0f || f > 10000.0f) {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Invalid frequency\n");
 		send_serial(serial_buffer);
+			return false;
 		} else {
 			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
 		send_serial(serial_buffer);
@@ -1352,7 +1340,7 @@ Comparator output\n\
 }
 
 uint8_t diags_fault(char *cmd) {
-	char arg_val[10];
+	char arg_val[ARG_VAL_LEN];
 
 	const char help_str[] = "\
 Show or clear faults:\n\
@@ -1381,4 +1369,5 @@ clear : Clear the latched overcurrent fault\n";
 uint8_t diags_reset(char *cmd) {
 	HAL_Delay(500);
 	NVIC_SystemReset();
+	return true;
 }
