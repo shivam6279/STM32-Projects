@@ -7,9 +7,7 @@
 #include "string_utils.h"
 #include "USART.h"
 
-// #include "wav_metroid_save.h"
-// #include "wav_metroid_item.h"
-#include "wav_zelda_puzzle.h"
+#include "wavs.h"
 
 #define WAV_FILE_BIT_DEPTH 16
 
@@ -24,7 +22,7 @@ const float sin_table[SIN_TABLE_SIZE] = {0.0f, 0.00153398f, 0.003067957f, 0.0046
 
 TIM_HandleTypeDef htim12;
 
-const uint32_t wav_size = sizeof(wav) / sizeof(wav[0]);
+// wav / wav_size come from wavs.h (selected sound) + its wav_*.c
 uint32_t wav_index = 0;
 float wav_value;
 float wav_amplitude_correction = 1.0f;

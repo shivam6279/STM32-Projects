@@ -17,7 +17,7 @@ void ee_write() {
     HAL_StatusTypeDef status;
     FLASH_EraseInitTypeDef eraseInit;
     uint32_t sectorError;
-    uint32_t numQuadWords = sizeof(eeprom_data_t) / 16;
+    uint32_t num_quad_words = sizeof(eeprom_data_t) / 16;
 
     HAL_FLASH_Unlock();
 
@@ -34,7 +34,7 @@ void ee_write() {
     }
 
     // 3. Program in 128-bit chunks
-    for (uint32_t i = 0; i < numQuadWords; i++) {
+    for (uint32_t i = 0; i < num_quad_words; i++) {
         // H5 requires the source data address to be a uint32_t/pointer to a 128-bit block
         uint32_t targetAddr = EEPROM_START_ADDR + (i * 16);
         uint32_t sourceAddr = (uint32_t)&eeprom_data + (i * 16);

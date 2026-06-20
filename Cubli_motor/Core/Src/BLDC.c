@@ -732,6 +732,13 @@ bool bemf_phase(unsigned char phase) {
  |                            Motor PWM                               |
  ----------------------------------------------------------------------*/
 
+// Drive state of a single phase for a given commutation step.
+typedef enum {
+	PH_DRIVE,	// driven with PWM (CCR = val, CCNP cleared)
+	PH_GND,		// tied low      (CCR = 0,   CCNP cleared)
+	PH_NC,		// high-Z / NC   (CCR = 0,   CCNP set)
+} phase_drive_t;
+
 void MotorPhase(int8_t num, float val) {
 	if(fault_latched || temp_fault) {
 		MotorOff();
@@ -745,98 +752,27 @@ void MotorPhase(int8_t num, float val) {
 	if(motor_direction) {
 		num = 5 - num;
 	}
-	switch(num) {
-		case 0:
-			// U - V+
-			MOTOR_TIM->CCER &= ~CCNP_U;
-			MOTOR_TIM->CCR_U = (uint32_t)val;
 
-			// V - GND
-			MOTOR_TIM->CCER &= ~CCNP_V;
-			MOTOR_TIM->CCR_V = 0;
+	volatile uint32_t * const ccr[3] = { &MOTOR_TIM->CCR_U, &MOTOR_TIM->CCR_V, &MOTOR_TIM->CCR_W };
+	const uint32_t            ccnp[3] = { CCNP_U, CCNP_V, CCNP_W };
 
-			// W - NC
-			MOTOR_TIM->CCER |= CCNP_W;
-			MOTOR_TIM->CCR_W = 0;
+	// Per step (0-5): drive state of each phase {U, V, W}.
+	static const uint8_t phase_table[6][3] = {
+		{ PH_DRIVE, PH_GND,   PH_NC    }, // 0: U+ V-
+		{ PH_DRIVE, PH_NC,    PH_GND   }, // 1: U+ W-
+		{ PH_NC,    PH_DRIVE, PH_GND   }, // 2: V+ W-
+		{ PH_GND,   PH_DRIVE, PH_NC    }, // 3: V+ U-
+		{ PH_GND,   PH_NC,    PH_DRIVE }, // 4: W+ U-
+		{ PH_NC,    PH_GND,   PH_DRIVE }, // 5: W+ V-
+	};
 
-			break;
-
-		case 1:
-			// U - V+
-			MOTOR_TIM->CCER &= ~CCNP_U;
-			MOTOR_TIM->CCR_U = (uint32_t)val;
-
-			// V - NC
-			MOTOR_TIM->CCER |= CCNP_V;
-			MOTOR_TIM->CCR_V = 0;
-
-			// W - GND
-			MOTOR_TIM->CCER &= ~CCNP_W;
-			MOTOR_TIM->CCR_W = 0;
-
-			break;
-
-		case 2:
-			// U - NC
-			MOTOR_TIM->CCER |= CCNP_U;
-			MOTOR_TIM->CCR_U = 0;
-
-			// V - V+
-			MOTOR_TIM->CCER &= ~CCNP_V;
-			MOTOR_TIM->CCR_V = (uint32_t)val;
-
-			// W - GND
-			MOTOR_TIM->CCER &= ~CCNP_W;
-			MOTOR_TIM->CCR_W = 0;
-
-			break;
-
-		case 3:
-			// U - GND
-			MOTOR_TIM->CCER &= ~CCNP_U;
-			MOTOR_TIM->CCR_U = 0;
-
-			// V - V+
-			MOTOR_TIM->CCER &= ~CCNP_V;
-			MOTOR_TIM->CCR_V = (uint32_t)val;
-
-			// W - NC
-			MOTOR_TIM->CCER |= CCNP_W;
-			MOTOR_TIM->CCR_W = 0;
-
-			break;
-
-		case 4:
-			// U - GND
-			MOTOR_TIM->CCER &= ~CCNP_U;
-			MOTOR_TIM->CCR_U = 0;
-
-			// V - NC
-			MOTOR_TIM->CCER |= CCNP_V;
-			MOTOR_TIM->CCR_V = 0;
-
-			// W - V+
-			MOTOR_TIM->CCER &= ~CCNP_W;
-			MOTOR_TIM->CCR_W = (uint32_t)val;
-
-			break;
-
-		case 5:
-			// U - NC
-			MOTOR_TIM->CCER |= CCNP_U;
-			MOTOR_TIM->CCR_U = 0;
-
-			// V - GND
-			MOTOR_TIM->CCER &= ~CCNP_V;
-			MOTOR_TIM->CCR_V = 0;
-
-			// W - V+
-			MOTOR_TIM->CCER &= ~CCNP_W;
-			MOTOR_TIM->CCR_W = (uint32_t)val;
-
-			break;
-
-		MOTOR_TIM->CCER |= (CCE_U | CCE_V | CCE_W); // Enable all high channels
+	for(uint8_t i = 0; i < 3; i++) {
+		if(phase_table[num][i] == PH_NC) {
+			MOTOR_TIM->CCER |= ccnp[i];
+		} else {
+			MOTOR_TIM->CCER &= ~ccnp[i];
+		}
+		*ccr[i] = (phase_table[num][i] == PH_DRIVE) ? (uint32_t)val : 0u;
 	}
 }
 
@@ -893,7 +829,7 @@ void MotorShort(float p) {
 }
 
 void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
-	// Inputs shoule be within [0, 1.0]
+	// Inputs should be within [0, 1.0]
 
 	static float temp;
 

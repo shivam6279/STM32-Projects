@@ -88,3 +88,29 @@ Make the SW protection as strong as possible (in order):
 1. POS-mode clobber fix (#1) + current-offset freeze (#2) — small, high-impact, directly fix Cubli balancing.
 2. SW safety layer — instantaneous phase-current trip + latch + sensor-sanity (Safety items 1-5).
 3. Encoder calibration + observer — smoothness.
+
+---
+
+## Refactoring / cleanliness
+
+Pure-cleanup pass — no behavior change. From the 2026-06-20 audit. Remaining items
+(the implemented ones have been removed).
+
+### Top priority (structural)
+1. **`main()` superloop carries app logic that belongs in modules.** CAN/UART RX handling + setpoint mapping + debug-capture in one ~200-line loop; the mode→setpoint mapping is duplicated in the CAN and UART branches. Extract `ApplySetpoint(mode, value)`; split `Process_CanRx()` / `Process_UartRx()`.
+2. **FDCAN IRQ disable/enable guard duplicated 5×** (main.c several sites, USART.c:62). Two `static inline` helpers (`FdcanIrqDisable/Enable`) or a critical-section wrapper.
+
+### Medium priority
+3. **Magic `0.577350269f` / `1/√3` unnamed, in multiple files** (main.c setpoint mapping, BLDC voltage scaling). Name once (`#define INV_SQRT3`) in a shared header.
+4. **`tones.h` note table inconsistent** — `NOTE_C0` has 34 decimals, `NOTE_C1+` have 2. Standardize precision or compute via `NoteFreq(semitone)`.
+5. **Timer-init functions in `main.c` are near-identical register sequences** (`TIM4/5/6_init`). One parameterized `InitBasicTimer(...)`.
+
+### Low priority (hygiene)
+- **Dead stubs:** `SPI.c` (`SPI1_init`/`SPI1_write16` empty), `TMP1075Init()` empty, `adc_readAll()` declared but undefined (ADC.h:42), commented-out `MX_SPI1_Init()`/`TIM4_init()` in main.
+- **Header hygiene:** `diags.h` reserved guard `_DIAGS_H`; `string_utils.h` `str_toIntHex()` declared with empty params; `str_contains()` missing from header.
+- **Naming drift:** `static uint8_t i;` loop counter in `CAN_send_serial` (USART.c:43) shouldn't be `static`.
+- **`BLDC.h` exposes lots of internal state** (`sin_el`, `cos_el`, `foc_id/iq`, `thermal_energy`, …) as extern globals — narrow what's truly public.
+
+### Flagged but out of scope (look like *bugs*, not cleanliness — verify separately)
+- `str_isHex` boolean logic in `string_utils.c` (`str[1] != 'x' || str[1] != 'X'` is always true).
+- `ADCCalib` may assign the wrong phase offsets (`isns_u`→`isns_v_offset`).

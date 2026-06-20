@@ -66,6 +66,68 @@ const diags_menu_item diags_list[] = {
 unsigned char diags_list_len = sizeof(diags_list) / sizeof(diags_list[0]);
 float diags_power = 0.1f;
 
+// ---- Streaming command helpers ----
+
+// Returns true when the user presses 'x' to stop a streaming command.
+static bool stream_exit_requested(void) {
+	if(rx_rdy) {
+		if(read_rx_char() == 'x') {
+			return true;
+		}
+	}
+	return false;
+}
+
+// ADC quantities that can be streamed by `adc stream`.
+typedef enum {
+	ADC_STREAM_CURRENTS,	// -i: phase currents isns_u/v/w
+	ADC_STREAM_DQ,			// -f: quadrature currents foc_iq/id
+	ADC_STREAM_VOLTAGES,	// -v: phase voltages vsns_u/v/w/x
+	ADC_STREAM_ALL,			// default: voltages + currents
+} adc_stream_t;
+
+// Continuously stream the selected ADC quantities until the user stops it.
+static void StreamADC(adc_stream_t which) {
+	while(1) {
+		switch(which) {
+			case ADC_STREAM_CURRENTS:
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.3f, %.3f, %.3f\n", (double)isns_u, (double)isns_v, (double)isns_w);
+				break;
+			case ADC_STREAM_DQ:
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", (double)foc_iq, (double)foc_id);
+				break;
+			case ADC_STREAM_VOLTAGES:
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f\n", (double)vsns_u, (double)vsns_v, (double)vsns_w, (double)vsns_x);
+				break;
+			case ADC_STREAM_ALL:
+			default:
+				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f\n", (double)vsns_u, (double)vsns_v, (double)vsns_w, (double)vsns_x, (double)isns_u, (double)isns_v, (double)isns_w);
+				break;
+		}
+		send_serial(serial_buffer);
+		if(stream_exit_requested()) {
+			return;
+		}
+	}
+}
+
+// Continuously stream encoder data until the user stops it. raw = true prints
+// the raw timer count; otherwise calibrated position and RPM.
+static void StreamEncoder(bool raw) {
+	while(1) {
+		if(raw) {
+			snprintf(serial_buffer, sizeof(serial_buffer), "%d\n", (int)(int16_t)ENC_TIM->CNT);
+		} else {
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.4f\n", (double)GetPositionRaw(), (double)GetRPM());
+		}
+		send_serial(serial_buffer);
+		HAL_Delay(50);
+		if(stream_exit_requested()) {
+			return;
+		}
+	}
+}
+
 void diagsMenu() {
 	char input[RX_BUFFER_SIZE];
 	char ch = 0;
@@ -371,62 +433,54 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 
 	// Set waveform
 	} else if(str_getArgValue(cmd, "wave", arg_val)) {
-		
+		static const struct {
+			char *name;					// command token
+			motor_waveform_type mode;
+			char *label;				// shown on display + set confirmation
+		} waveform_table[] = {
+			{ "foc_torque", MOTOR_FOC_TORQUE, "FOC_TORQUE" },
+			{ "foc_iq_id",  MOTOR_FOC_IQ_ID,  "FOC_IQ_ID" },
+			{ "foc_vq_id",  MOTOR_FOC_VQ_ID,  "FOC_VQ_ID" },
+			{ "svpwm",      MOTOR_SVPWM,      "SVPWM" },
+			{ "trapezoid",  MOTOR_TRAPEZOID,  "Trapezoid (6 step)" },
+		};
+		const size_t waveform_count = sizeof(waveform_table) / sizeof(waveform_table[0]);
+
 		if(str_isEqual(arg_val, "")) {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor waveform type: ");
-				send_serial(serial_buffer);
-			if(waveform_mode == MOTOR_FOC_TORQUE) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "FOC_TORQUE\n");
-				send_serial(serial_buffer);
-			} else if(waveform_mode == MOTOR_FOC_IQ_ID) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "FOC_IQ_ID\n");
-				send_serial(serial_buffer);
-			} else if(waveform_mode == MOTOR_FOC_VQ_ID) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "FOC_VQ_ID\n");
-				send_serial(serial_buffer);
-			} else if(waveform_mode == MOTOR_SVPWM) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "SVPWM\n");
-				send_serial(serial_buffer);
-			} else if(waveform_mode == MOTOR_TRAPEZOID) {
-				snprintf(serial_buffer, sizeof(serial_buffer), "TRAPEZOID\n");
-				send_serial(serial_buffer);
+			// Display current waveform
+			char *label = "UNKNOWN";
+			for(size_t i = 0; i < waveform_count; i++) {
+				if(waveform_mode == waveform_table[i].mode) {
+					label = waveform_table[i].label;
+					break;
+				}
 			}
-
-		} else if(str_isEqual(arg_val, "foc_torque")) {
-			waveform_mode = MOTOR_FOC_TORQUE;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC_TORQUE\n");
+			snprintf(serial_buffer, sizeof(serial_buffer), "Current motor waveform type: %s\n", label);
 			send_serial(serial_buffer);
-			
-		} else if(str_isEqual(arg_val, "foc_iq_id")) {
-			waveform_mode = MOTOR_FOC_IQ_ID;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC_IQ_ID\n");
-			send_serial(serial_buffer);
-
-		} else if(str_isEqual(arg_val, "foc_vq_id")) {
-			waveform_mode = MOTOR_FOC_VQ_ID;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: FOC_VQ_ID\n");
-			send_serial(serial_buffer);
-
-		} else if(str_isEqual(arg_val, "svpwm")) {
-			waveform_mode = MOTOR_SVPWM;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: SVPWM\n");
-			send_serial(serial_buffer);
-
-		} else if(str_isEqual(arg_val, "trapezoid")) {
-			waveform_mode = MOTOR_TRAPEZOID;
-			snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: Trapezoid (6 step)\n");
-			send_serial(serial_buffer);
-
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect arg for wave. Requires:\n");
-			send_serial(serial_buffer);
-			snprintf(serial_buffer, sizeof(serial_buffer), "foc\n");
-			send_serial(serial_buffer);
-			snprintf(serial_buffer, sizeof(serial_buffer), "svpwm\n");
-			send_serial(serial_buffer);
-			snprintf(serial_buffer, sizeof(serial_buffer), "trapezoid\n");
-			send_serial(serial_buffer);
-			return false;
+			// Set waveform by name
+			int match = -1;
+			for(size_t i = 0; i < waveform_count; i++) {
+				if(str_isEqual(arg_val, waveform_table[i].name)) {
+					match = (int)i;
+					break;
+				}
+			}
+			if(match >= 0) {
+				waveform_mode = waveform_table[match].mode;
+				snprintf(serial_buffer, sizeof(serial_buffer), "Waveform type set to: %s\n", waveform_table[match].label);
+				send_serial(serial_buffer);
+			} else {
+				snprintf(serial_buffer, sizeof(serial_buffer), "Incorrect arg for wave. Requires:\n");
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "foc\n");
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "svpwm\n");
+				send_serial(serial_buffer);
+				snprintf(serial_buffer, sizeof(serial_buffer), "trapezoid\n");
+				send_serial(serial_buffer);
+				return false;
+			}
 		}
 
 	// Set motor direction
@@ -455,8 +509,6 @@ power [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 }
 
 uint8_t diags_encoder(char *cmd) {
-	char ch;
-	int16_t pos_cnt;
 	char arg_val[ARG_VAL_LEN];
 	
 	const char help_str[] = "\
@@ -474,20 +526,7 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 	
 	// Display raw
 	if(str_getArgValue(cmd, "-r", arg_val)) {
-		while(1) {
-			pos_cnt = ENC_TIM->CNT;
-			
-			snprintf(serial_buffer, sizeof(serial_buffer), "%d\n", pos_cnt);
-			send_serial(serial_buffer);
-			HAL_Delay(50);
-
-			if(rx_rdy) {
-				ch = read_rx_char();
-				if(ch == 'x') {
-					return true;
-				}
-			}
-		}
+		StreamEncoder(true);
 
 	// Set zero angle
 	} else if(str_getArgValue(cmd, "zero", arg_val)) {
@@ -531,18 +570,7 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 
 	// Display calibrated encoder data
 	} else {
-		while(1) {
-			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.4f\n", (double)GetPositionRaw(), (double)GetRPM());
-			send_serial(serial_buffer);
-			HAL_Delay(50);
-
-			if(rx_rdy) {
-				ch = read_rx_char();
-				if(ch == 'x') {
-					return true;
-				}
-			}
-		}
+		StreamEncoder(false);
 	}
 	
 	return true;
@@ -575,14 +603,8 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 		pre_pos = pos;
 		
 		pos_cnt = ENC_TIM->CNT;
-		pos = pos_cnt * 360.0f / ENCODER_RES;
-		while(pos < 0.0f) {
-			pos += 360.0f;
-		}
-		while(pos > 360.0f) {
-			pos -= 360.0f;
-		}
-		
+		pos = WrapAngle360(pos_cnt * 360.0f / ENCODER_RES);
+
 		if((pre_pos - pos) > 180.0f) {
 			break;
 		}
@@ -597,13 +619,7 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 			HAL_Delay(500);
 
 			pos_cnt = ENC_TIM->CNT;
-			pos = pos_cnt * 360.0f / ENCODER_RES;
-			while(pos < 0.0f) {
-				pos += 360.0f;
-			}
-			while(pos > 360.0f) {
-				pos -= 360.0f;
-			}
+			pos = WrapAngle360(pos_cnt * 360.0f / ENCODER_RES);
 
 			output[arr_indx][0] = (360.0f * (float)j + (float)i) / (float)motor_pole_pairs;
 			output[arr_indx][1] = pos;
@@ -623,13 +639,7 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 	float zero_offset = output[0][1];
 	
 	for(arr_indx = 0; arr_indx < (motor_pole_pairs*6); arr_indx++) {
-		output[arr_indx][1] -= zero_offset;
-		while(output[arr_indx][1] < 0.0f) {
-			output[arr_indx][1] += 360.0f;
-		}
-		while(output[arr_indx][1] > 360.0f) {
-			output[arr_indx][1] -= 360.0f;
-		}
+		output[arr_indx][1] = WrapAngle360(output[arr_indx][1] - zero_offset);
 	}
 	
 	snprintf(serial_buffer, sizeof(serial_buffer), "%.4f\n", (double)zero_offset);
@@ -673,7 +683,7 @@ Read temp sensor TMP1075 (FETs):\n\
 			send_serial(serial_buffer);
 			return false;
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming frequency to %.4f Hz\n", (double)f);
 			send_serial(serial_buffer);
 			delay = (uint16_t)(1000.0f / f);
 		}
@@ -711,7 +721,6 @@ Read temp sensor TMP1075 (FETs):\n\
 }
 
 uint8_t diags_readADC(char *cmd) {
-	char ch;
 	float f;
 	static uint16_t delay = 10;
 	char arg_val[ARG_VAL_LEN];
@@ -733,85 +742,22 @@ stream -[i/f/v] -f: Stream all adc data. -i: motor phase currents, -f: quadratur
 			send_serial(serial_buffer);
 			return false;
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming frequency to %.4f Hz\n", (double)f);
 			send_serial(serial_buffer);
 			delay = (uint16_t)(1000000.0f / f);
 		}
 	}
 
 	if(str_getArgValue(cmd, "stream", arg_val)) {
+		// TODO: pace the stream with a us counter (delay = 1e6 / f)
 		if(str_getArgValue(cmd, "-i", arg_val)) {
-			while(1) {
-				// TODO: us counter
-//				StartDelayusCounter();
-
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.3f, %.3f, %.3f\n", (double)isns_u, (double)isns_v, (double)isns_w);
-				send_serial(serial_buffer);
-
-				//TODO: us counter
-//				while(us_counter() < delay);
-
-				if(rx_rdy) {
-					ch = read_rx_char();
-					if(ch == 'x') {
-						return true;
-					}
-				}
-			}
+			StreamADC(ADC_STREAM_CURRENTS);
 		} else if(str_getArgValue(cmd, "-f", arg_val)) {
-			while(1) {
-				//TODO: us counter
-//				StartDelayusCounter();
-
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", (double)foc_iq, (double)foc_id);
-				send_serial(serial_buffer);
-
-				//TODO: us counter
-//				while(us_counter() < delay);
-
-				if(rx_rdy) {
-					ch = read_rx_char();
-					if(ch == 'x') {
-						return true;
-					}
-				}
-			}
+			StreamADC(ADC_STREAM_DQ);
 		} else if(str_getArgValue(cmd, "-v", arg_val)) {
-			while(1) {
-				//TODO: us counter
-//				StartDelayusCounter();
-
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f\n", (double)vsns_u, (double)vsns_v, (double)vsns_w, (double)vsns_x);
-				send_serial(serial_buffer);
-
-				//TODO: us counter
-//				while(us_counter() < delay);
-
-				if(rx_rdy) {
-					ch = read_rx_char();
-					if(ch == 'x') {
-						return true;
-					}
-				}
-			}
+			StreamADC(ADC_STREAM_VOLTAGES);
 		} else {
-			while(1) {
-				//TODO: us counter
-//				StartDelayusCounter();
-
-				snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f, %.2f, %.2f, %.3f, %.3f, %.3f\n", (double)vsns_u, (double)vsns_v, (double)vsns_w, (double)vsns_x, (double)isns_u, (double)isns_v, (double)isns_w);
-				send_serial(serial_buffer);
-
-				//TODO: us counter
-//				while(us_counter() < delay);
-
-				if(rx_rdy) {
-					ch = read_rx_char();
-					if(ch == 'x') {
-						return true;
-					}
-				}
-			}
+			StreamADC(ADC_STREAM_ALL);
 		}
 	} else {
 		
@@ -1275,7 +1221,7 @@ Comparator output\n\
 		send_serial(serial_buffer);
 			return false;
 		} else {
-			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming fequency to %.4f Hz\n", (double)f);
+			snprintf(serial_buffer, sizeof(serial_buffer), "Set streaming frequency to %.4f Hz\n", (double)f);
 		send_serial(serial_buffer);
 			delay = (uint32_t)(100000.0f / f);
 		}
