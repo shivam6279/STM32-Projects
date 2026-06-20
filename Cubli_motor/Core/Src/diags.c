@@ -31,6 +31,7 @@ uint8_t diags_reset(char*);
 uint8_t diags_LED(char *cmd);
 uint8_t diags_servo(char *cmd);
 uint8_t diags_eeprom(char *cmd);
+uint8_t diags_fault(char *cmd);
 void disp_eeprom_diff();
 
 typedef uint8_t (*diags_function)(char*);
@@ -55,6 +56,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Turn LEDs on or off",			.cmd = "led",	.func = diags_LED				},
 	{ .name = "Servo controls",					.cmd = "servo",	.func = diags_servo				},
 	{ .name = "Save/read from eeprom",			.cmd = "eep",	.func = diags_eeprom			},
+	{ .name = "Show/clear faults",				.cmd = "fault",	.func = diags_fault				},
 	{ .name = "Perform a software reset",		.cmd = "reset",	.func = diags_reset				}
 };
 
@@ -654,26 +656,25 @@ uint8_t diags_calibrateEncoder(char *cmd) {
 }
 
 uint8_t diags_readTemperature(char *cmd) {
-	float t1 = 0, t2 = 0;
-	int16_t t1_raw = 0, t2_raw = 0;
+	float t = 0;
+	int16_t t_raw = 0;
 	char arg_val[5];
 	static unsigned int delay = 100;
 	float f;
 	char ch;
-	
+
 	const char help_str[] = "\
-Read temp sensor TMP1075:\n\
-2 sensors on device near: MCU and FETs\n\
+Read temp sensor TMP1075 (FETs):\n\
 -s : Stream data\n\
 -f [x]: Set streaming frequency to f [1, 10000] (Hz).\n\
 -r : Output raw data\n";
-	
+
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
 		send_serial(serial_buffer);
 		return true;
 	}
-	
+
 	if(str_getArgValue(cmd, "-f", arg_val)) {
 		f = str_toFloat(arg_val);
 		if(f < 1.0f || f > 10000.0f) {
@@ -685,15 +686,14 @@ Read temp sensor TMP1075:\n\
 			delay = (uint16_t)(1000.0f / f);
 		}
 	}
-	
+
 	if(str_getArgValue(cmd, "-s", arg_val)) {
-		snprintf(serial_buffer, sizeof(serial_buffer), "MCU, FETs\n");
+		snprintf(serial_buffer, sizeof(serial_buffer), "FETs\n");
 		send_serial(serial_buffer);
 		while(1) {
 			uint32_t current_tick = HAL_GetTick();
-			TMP1075_getTemp(0, &t1);
-			TMP1075_getTemp(1, &t2);
-			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f, %.2f\n", (double)t2, (double)t1);
+			TMP1075_getTemp(&t);
+			snprintf(serial_buffer, sizeof(serial_buffer), "%.2f\n", (double)t);
 			send_serial(serial_buffer);
 			while((HAL_GetTick() - current_tick) < delay);
 
@@ -705,24 +705,16 @@ Read temp sensor TMP1075:\n\
 			}
 		}
 	} else if(str_getArgValue(cmd, "-r", arg_val)) {
-		TMP1075_getRawTemp(0, &t1_raw);
-		TMP1075_getRawTemp(1, &t2_raw);
-
-		snprintf(serial_buffer, sizeof(serial_buffer), "0: %d\n", t1_raw);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "1: %d\n", t2_raw);
+		TMP1075_getRawTemp(&t_raw);
+		snprintf(serial_buffer, sizeof(serial_buffer), "%d\n", t_raw);
 		send_serial(serial_buffer);
 
 	} else {
-		TMP1075_getTemp(0, &t1);
-		TMP1075_getTemp(1, &t2);
-
-		snprintf(serial_buffer, sizeof(serial_buffer), "MCU: %.2f C\n", (double)t2);
-		send_serial(serial_buffer);
-		snprintf(serial_buffer, sizeof(serial_buffer), "FETs: %.2f C\n", (double)t1);
+		TMP1075_getTemp(&t);
+		snprintf(serial_buffer, sizeof(serial_buffer), "FETs: %.2f C\n", (double)t);
 		send_serial(serial_buffer);
 	}
-	
+
 	return true;
 }
 
@@ -1356,6 +1348,33 @@ Comparator output\n\
 		send_serial(serial_buffer);
 	}
 	
+	return true;
+}
+
+uint8_t diags_fault(char *cmd) {
+	char arg_val[10];
+
+	const char help_str[] = "\
+Show or clear faults:\n\
+clear : Clear the latched overcurrent fault\n";
+
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		snprintf(serial_buffer, sizeof(serial_buffer), help_str);
+		send_serial(serial_buffer);
+		return true;
+	}
+
+	if(str_getArgValue(cmd, "clear", arg_val)) {
+		ClearFault();
+		snprintf(serial_buffer, sizeof(serial_buffer), "Latched fault cleared\n");
+		send_serial(serial_buffer);
+	}
+
+	snprintf(serial_buffer, sizeof(serial_buffer), "Latched (overcurrent): %d\n", fault_latched);
+	send_serial(serial_buffer);
+	snprintf(serial_buffer, sizeof(serial_buffer), "Over-temperature: %d\n", temp_fault);
+	send_serial(serial_buffer);
+
 	return true;
 }
 

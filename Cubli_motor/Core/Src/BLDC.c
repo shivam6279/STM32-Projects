@@ -7,6 +7,7 @@
 #include <math.h>
 #include "PID.h"
 #include "cogging.h"
+#include "TMP1075.h"
 
 #define MOTOR_OV_INITIAL 20.0f // volts
 
@@ -20,6 +21,7 @@ static inline void adc_read_other();
 static inline void foc_current_calc(float);
 static inline float wave_lut(uint16_t*, float);
 static inline float fsignf(float x);
+static void TriggerFault();
 
 #define DEAD_TIME 25
 
@@ -134,6 +136,10 @@ float thermal_limit = 10000.0f;
 uint8_t thermal_fault = 0;
 float vbat_ilim = 7.0f;
 
+// fault_latched: hard fault (instantaneous overcurrent), stays off until ClearFault()
+// temp_fault: over-temperature, non-latched, auto-clears on cooldown
+volatile uint8_t fault_latched = 0, temp_fault = 0;
+
 // Motor modes
 motor_mode mode = MODE_OFF;
 motor_waveform_type waveform_mode = MOTOR_SVPWM;
@@ -203,7 +209,7 @@ void ADC1_IRQHandler(void) {
 			last_mode = mode;
 
 			// pid_focId.setpoint = 0;
-			if(mode != MODE_OFF) {
+			if(mode != MODE_OFF && !fault_latched && !temp_fault) {
 				if(fabsf(pid_focIq.setpoint) < 0.01f && fabsf(rpm) < 10.0f) {
 					pid_focId.integral *= 0.95f;
 					pid_focIq.integral *= 0.95f;
@@ -342,6 +348,13 @@ void TIM5_IRQHandler(void) {
 			mode = MODE_OFF;
 			MotorOff();
 			thermal_fault = 1;
+		}
+
+		// TMP1075 poll + thermal check at 10 Hz (10 kHz / 1000)
+		static uint16_t temp_div = 0;
+		if(++temp_div >= TEMP_POLL_DIV) {
+			temp_div = 0;
+			TMP1075_Service();
 		}
 
 		// LED1_OFF();
@@ -559,18 +572,27 @@ static inline void adc_read_motor_isns() {
 	static float amp_gain = ISNS_AMP_GAIN * ISNS_UVW_R;
 
 	// Read injected ADC channels
+	uint16_t raw_adc1 = (uint16_t)ADC1->JDR1;
+	uint16_t raw_adc2 = (uint16_t)ADC2->JDR1;
+
+#if OCP_ENABLE
+	if(raw_adc1 <= OCP_RAW_LOW || raw_adc1 >= OCP_RAW_HIGH ||
+	   raw_adc2 <= OCP_RAW_LOW || raw_adc2 >= OCP_RAW_HIGH) {
+		TriggerFault();
+	}
+#endif
 
 	if(!motor_direction) {
 		// Default case
-		temp_isns_w = (float)ADC1->JDR1 * ADC_CONV_FACTOR;
-		temp_isns_v = (float)ADC2->JDR1 * ADC_CONV_FACTOR;
+		temp_isns_w = (float)raw_adc1 * ADC_CONV_FACTOR;
+		temp_isns_v = (float)raw_adc2 * ADC_CONV_FACTOR;
 		isns_v_err = ISNS_V_GAIN_ERR;
 		isns_w_err = ISNS_W_GAIN_ERR;
-		
+
 	} else {
-		// swap V and W 
-		temp_isns_v = (float)ADC1->JDR1 * ADC_CONV_FACTOR;
-		temp_isns_w = (float)ADC2->JDR1 * ADC_CONV_FACTOR;
+		// swap V and W
+		temp_isns_v = (float)raw_adc1 * ADC_CONV_FACTOR;
+		temp_isns_w = (float)raw_adc2 * ADC_CONV_FACTOR;
 		isns_v_err = ISNS_W_GAIN_ERR;
 		isns_w_err = ISNS_V_GAIN_ERR;
 	}
@@ -766,6 +788,10 @@ bool bemf_phase(unsigned char phase) {
  ----------------------------------------------------------------------*/
 
 void MotorPhase(int8_t num, float val) {
+	if(fault_latched || temp_fault) {
+		MotorOff();
+		return;
+	}
 	val = val * (float)PWM_MAX;
 	num = num % 6;
 	if(num < 0) {
@@ -883,6 +909,26 @@ void MotorOff() {
 	MOTOR_TIM->CCR_W = 0;
 }
 
+void UpdateFaultLED() {
+	if(fault_latched || temp_fault) {
+		FAULT_LED_ON();
+	} else {
+		FAULT_LED_OFF();
+	}
+}
+
+static void TriggerFault() {
+	fault_latched = 1;
+	mode = MODE_OFF;
+	MotorOff();
+	UpdateFaultLED();
+}
+
+void ClearFault() {
+	fault_latched = 0;
+	UpdateFaultLED();
+}
+
 void MotorShort(float p) {
 	// p = 0:       float all phases
 	// p = 1.0:     short all phases to ground
@@ -903,8 +949,13 @@ void MotorShort(float p) {
 
 void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
 	// Inputs shoule be within [0, 1.0]
-	
+
 	static float temp;
+
+	if(fault_latched || temp_fault) {
+		MotorOff();
+		return;
+	}
 
 	pwm_u = pwm_u > 1.0f ? 1.0f: pwm_u < 0.0f ? 0.0f: pwm_u;
 	pwm_v = pwm_v > 1.0f ? 1.0f: pwm_v < 0.0f ? 0.0f: pwm_v;

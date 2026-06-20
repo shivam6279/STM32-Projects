@@ -32,6 +32,9 @@ extern "C" {
 #define LED1_OFF() (GPIOC->ODR &= ~(1U<<15U))
 #define LED1_TOG() (GPIOC->ODR ^= 1U<<15U)
 
+#define FAULT_LED_ON() LED1_ON()
+#define FAULT_LED_OFF() LED1_OFF()
+
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 

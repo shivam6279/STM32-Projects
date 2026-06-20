@@ -79,6 +79,10 @@ extern float sin_el, cos_el;
 
 extern float thermal_energy;
 
+extern volatile uint8_t fault_latched, temp_fault;
+extern void ClearFault();
+extern void UpdateFaultLED();
+
 extern void MotorPhase(int8_t, float);
 extern void MotorPhasePWM(float, float, float);
 extern void MotorOff();

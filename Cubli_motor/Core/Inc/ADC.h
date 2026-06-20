@@ -19,6 +19,13 @@
 #define ISNS_V_GAIN_ERR 1.0f
 #define ISNS_W_GAIN_ERR 1.0f
 
+// Instantaneous overcurrent trip: raw injected ADC (12-bit, bidirectional
+// around mid-rail) railed into the outer OCP_TRIP_PCT band -> over-range -> fault
+#define OCP_ENABLE 1
+#define OCP_TRIP_PCT 1.0f
+#define OCP_RAW_LOW  ((uint16_t)(4095.0f * OCP_TRIP_PCT / 100.0f))
+#define OCP_RAW_HIGH ((uint16_t)(4095.0f * (1.0f - OCP_TRIP_PCT / 100.0f)))
+
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 
