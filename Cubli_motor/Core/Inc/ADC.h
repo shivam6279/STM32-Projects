@@ -19,10 +19,14 @@
 #define ISNS_V_GAIN_ERR 1.0f
 #define ISNS_W_GAIN_ERR 1.0f
 
-// Instantaneous overcurrent trip: raw injected ADC (12-bit, bidirectional
-// around mid-rail) railed into the outer OCP_TRIP_PCT band -> over-range -> fault
-#define OCP_ENABLE 1
+// Over-range trip: raw injected ADC (12-bit, bidirectional around mid-rail)
+// railed into the outer OCP_TRIP_PCT band -> phase shunt saturated (dead/stuck
+// sensor or gross overcurrent). Debounced over OCP_DEBOUNCE_N consecutive railed
+// samples to reject single-sample switching noise (the phase shunt rails ~±16 A,
+// so this is a sensor-sanity / gross-fault backstop, not a precise magnitude trip).
+#define OCP_ENABLE 0
 #define OCP_TRIP_PCT 1.0f
+#define OCP_DEBOUNCE_N 10
 #define OCP_RAW_LOW  ((uint16_t)(4095.0f * OCP_TRIP_PCT / 100.0f))
 #define OCP_RAW_HIGH ((uint16_t)(4095.0f * (1.0f - OCP_TRIP_PCT / 100.0f)))
 

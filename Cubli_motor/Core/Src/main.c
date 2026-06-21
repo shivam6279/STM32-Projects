@@ -214,7 +214,7 @@ int main(void) {
 	MX_TIM2_Init(enc_direction); // Encoder timer
 //	MX_SPI1_Init();
 
-	if(MotorPIDInit(&motor_list[MOTOR_LIST_MT2204]) == 0) {
+	if(MotorPIDInit(&motor_list[MOTOR_LIST_MAD4006]) == 0) {
 		printf("Bad motor parameters\n");
 		while(1);
 	}

@@ -85,7 +85,7 @@ float thermal_energy = 0;
 float thermal_ilim_2 = MAX_PHASE_CURRENT * MAX_PHASE_CURRENT;
 float thermal_limit = 10000.0f;
 uint8_t thermal_fault = 0;
-float vbat_ilim = 7.0f;
+float vbat_ilim = 5.0f; // DC bus overcurrent trip threshold (A), on LPF'd isns_vbat
 
 // fault_latched: hard fault (instantaneous overcurrent), stays off until ClearFault()
 // temp_fault: over-temperature, non-latched, auto-clears on cooldown
@@ -93,7 +93,7 @@ volatile uint8_t fault_latched = 0, temp_fault = 0;
 
 // Motor modes
 motor_mode mode = MODE_OFF;
-motor_waveform_type waveform_mode = MOTOR_SVPWM;
+motor_waveform_type waveform_mode = MOTOR_FOC_TORQUE;
 
 static float position = 0.0, pos_filt = 0.0, rpm = 0.0, acc = 0.0;
 volatile float angle_el = 0.0;
@@ -122,8 +122,6 @@ void ADC1_IRQHandler(void) {
 
 		sample_cnt = (sample_cnt + 1) & 0b1;
 		if(!sample_cnt) {
-			LED0_ON();
-
 			// Read ADCs
 			adc_read_motor_isns();
 			adc_read_other();
@@ -193,10 +191,6 @@ void ADC1_IRQHandler(void) {
 					Uq += 0.9f *  w_e * motor_l * foc_id;
 
 					// Clamp to SVPWM circle
-					// Keep Ud, and clamp Uq
-					// Guard the radicand: if Vd already consumes the whole voltage
-					// budget (Ud^2 > Vbat^2/3) there is no Vq headroom -> limit 0,
-					// not NaN (sqrtf of a negative under -ffast-math is undefined).
 					float uq_headroom_sq = vsns_vbat*vsns_vbat/3.0f - Ud*Ud;
 					if(uq_headroom_sq < 0.0f) {
 						uq_headroom_sq = 0.0f;
@@ -231,11 +225,14 @@ void ADC1_IRQHandler(void) {
 				PID_reset(&pid_focId);
 			}
 
-			LED0_OFF();
+			// LED0 (blue): on whenever the motor is armed (mode != MODE_OFF)
+			if(mode == MODE_OFF) {
+				LED0_OFF();
+			} else {
+				LED0_ON();
+			}
 		} else {
-			// LED0_ON();
 			adc_read_motor_isns();
-			// LED0_OFF();
 		}   
 	}
 }
@@ -249,9 +246,6 @@ void TIM5_IRQHandler(void) {
 
 		vel_kf_update((int16_t)ENC_TIM->CNT, 0.0001f);
 
-		// Friction feedforward (torque mode): depends only on rpm/torque_setpoint,
-		// so compute it here at the velocity rate instead of recomputing tanhf
-		// every current-loop cycle (was ~50 kHz). The current loop just adds it.
 		if(waveform_mode == MOTOR_FOC_TORQUE) {
 			float ff;
 			if(fabsf(rpm) < rpm_deadband && fabsf(torque_setpoint) > 0.001f) {
@@ -294,10 +288,15 @@ void TIM5_IRQHandler(void) {
 		thermal_energy += (foc_iq*foc_iq + foc_id*foc_id - thermal_ilim_2) * 0.0001f;
 		if(thermal_energy < 0) thermal_energy = 0;
 
-		if(thermal_energy > thermal_limit || isns_vbat > vbat_ilim) {
+		if(thermal_energy > thermal_limit) {
 			mode = MODE_OFF;
 			MotorOff();
 			thermal_fault = 1;
+		}
+
+		// DC bus overcurrent trip (latched)
+		if(isns_vbat > vbat_ilim) {
+			TriggerFault();
 		}
 
 		// TMP1075 poll + thermal check at 10 Hz (10 kHz / 1000)
@@ -521,9 +520,16 @@ static inline void adc_read_motor_isns() {
 	uint16_t raw_adc2 = (uint16_t)ADC2->JDR1;
 
 #if OCP_ENABLE
+	// Trip only after OCP_DEBOUNCE_N consecutive railed samples; a single
+	// railed sample (PWM-edge noise / transient) resets the count.
+	static uint16_t ocp_count = 0;
 	if(raw_adc1 <= OCP_RAW_LOW || raw_adc1 >= OCP_RAW_HIGH ||
 	   raw_adc2 <= OCP_RAW_LOW || raw_adc2 >= OCP_RAW_HIGH) {
-		TriggerFault();
+		if(++ocp_count >= OCP_DEBOUNCE_N) {
+			TriggerFault();
+		}
+	} else {
+		ocp_count = 0;
 	}
 #endif
 
