@@ -103,7 +103,7 @@ extern float sin_el, cos_el;
 
 extern float thermal_energy;
 
-extern volatile uint8_t fault_latched, temp_fault;
+extern volatile uint8_t fault_latched, temp_fault, thermal_fault;
 void ClearFault();
 void UpdateFaultLED();
 

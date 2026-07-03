@@ -84,7 +84,7 @@ unsigned char comp_u, comp_v, comp_w, comparator = 0;
 float thermal_energy = 0;
 float thermal_ilim_2 = MAX_PHASE_CURRENT * MAX_PHASE_CURRENT;
 float thermal_limit = 10000.0f;
-uint8_t thermal_fault = 0;
+volatile uint8_t thermal_fault = 0;
 float vbat_ilim = 5.0f; // DC bus overcurrent trip threshold (A), on LPF'd isns_vbat
 
 // fault_latched: hard fault (instantaneous overcurrent), stays off until ClearFault()

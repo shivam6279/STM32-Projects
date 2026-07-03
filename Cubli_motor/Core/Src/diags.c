@@ -1283,6 +1283,8 @@ clear : Clear the latched overcurrent fault\n";
 	send_serial(serial_buffer);
 	snprintf(serial_buffer, sizeof(serial_buffer), "Over-temperature: %d\n", temp_fault);
 	send_serial(serial_buffer);
+	snprintf(serial_buffer, sizeof(serial_buffer), "Thermal (I2t): %d\n", thermal_fault);
+	send_serial(serial_buffer);
 
 	return true;
 }
