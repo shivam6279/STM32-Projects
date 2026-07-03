@@ -20,6 +20,8 @@ char read_rx_char();
 uint8_t diags_escConnect(char*);
 uint8_t diags_euler(char*);
 uint8_t diags_rpm(char*);
+uint8_t diags_pose(char*);
+uint8_t diags_lqr(char*);
 uint8_t diags_readTemperature(char*);
 uint8_t diags_readADC(char*);
 uint8_t diags_i2c(char*);
@@ -38,8 +40,10 @@ typedef struct diags_menu_item {
 
 const diags_menu_item diags_list[] = {
 	{ .name = "Connect to ESCs",			.cmd = "esc",	.func = diags_escConnect		},
-	{ .name = "Display euler angles",		.cmd = "euler",	.func = diags_euler				},
+	{ .name = "Stream euler angles + gyro",	.cmd = "euler",	.func = diags_euler				},
 	{ .name = "Display motor rpms",			.cmd = "rpm",	.func = diags_rpm				},
+	{ .name = "Detect face/edge/corner",	.cmd = "pose",	.func = diags_pose				},
+	{ .name = "LQR bench tools (no motors)",.cmd = "lqr",	.func = diags_lqr				},
 	{ .name = "Read Temperature sensors",	.cmd = "temp",	.func = diags_readTemperature	},
 	{ .name = "Read ADCs",					.cmd = "adc",	.func = diags_readADC			},
 	{ .name = "I2C commands",				.cmd = "i2c",	.func = diags_i2c				},
@@ -179,47 +183,26 @@ con [x] : x = ESC node ID\n";
 uint8_t diags_euler(char *cmd) {
 	char ch;
 	char arg_val[10];
-	
+
+	// Streams the fused attitude + body rates that the I2C RX ISR maintains in
+	// the background (globals roll/pitch/yaw, gyro_x/y/z). The fusion keeps
+	// running while we sit here, so this command just prints -- it does NOT run
+	// its own filter. Columns: roll pitch yaw (deg)  gx gy gz (deg/s).
 	const char help_str[] = "\
-Display euler angles\n";
+Stream fused euler angles + gyro rates (deg, deg/s). Press 'x' to stop.\n";
 
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		printf(help_str);
 		return true;
 	}
 
-	MPU6050_Data_t imu_data;
-	LIS3MDL_Data_t mag_data;
-	float roll, pitch, yaw;
 	uint32_t tick = 0;
-	float dt;
-	TIM12->CNT = 0;
-	TIM12->CR1 |= 1;
+	printf("roll\tpitch\tyaw\tgx\tgy\tgz\n");
 	while(1) {
-		if(g_imu.state == MPU6050_STATE_DATA_READY) {
-			MPU6050_GetData(&g_imu, &imu_data);
-			imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
-			imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
-			imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
-
-			dt = (float)TIM12->CNT * 0.000001f;
-
-			if(g_mag.state == LIS3MDL_STATE_DATA_READY) {
-				LIS3MDL_GetData(&g_mag, &mag_data);
-				// TODO: Calibrate compass
-				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
-				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
-			} else {
-				MadgwickQuaternionUpdateGyro(g_q, imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z, dt);
-				MadgwickQuaternionUpdateAcc(g_q, imu_data.accel_x, imu_data.accel_y, imu_data.accel_z, dt);
-			}
-			TIM12->CNT = 0;
-		}
-
 		if(HAL_GetTick() - tick > 10) {
 			tick = HAL_GetTick();
-			QuaternionToEuler(g_q, &roll, &pitch, &yaw);
-			printf("%.3f\t%.3f\t%.3f\n", roll, pitch, yaw);
+			printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n",
+				roll, pitch, yaw, gyro_x, gyro_y, gyro_z);
 		}
 
 		if(rx_rdy) {
@@ -257,6 +240,192 @@ Display motor rpms\n";
 			}
 		}
 	}
+}
+
+uint8_t diags_pose(char *cmd) {
+	char ch;
+	char arg_val[10];
+
+	const char help_str[] = "\
+Detect which face / edge / corner the cube rests on, from the body-frame\n\
+gravity vector with a 20 deg window. Hold the cube roughly still.\n\
+Prints e.g. \"Face 4\", \"Edge 5\", \"Corner 7\" (our numbering). 'x' to stop.\n";
+
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		printf(help_str);
+		return true;
+	}
+
+	// A body axis lies in the ground plane (perpendicular to gravity) when its
+	// down-vector component is within 20 deg of horizontal: |component| < sin20.
+	const float FLAT = 0.342f;   // sin(20 deg)
+	uint32_t tick = 0;
+
+	while(1) {
+		if(HAL_GetTick() - tick > 200) {
+			tick = HAL_GetTick();
+
+			// Down direction in the body frame = -accel (accel reads +up at rest).
+			float dx = -acc_x, dy = -acc_y, dz = -acc_z;
+			float n = sqrtf(dx*dx + dy*dy + dz*dz);
+			if(n < 0.1f) {
+				printf("(no gravity signal -- is the cube static?)\n");
+			} else {
+				dx /= n; dy /= n; dz /= n;
+
+				// side bit per axis: 1 if the down vector points toward +axis
+				int bx = (dx > 0.0f) ? 1 : 0;
+				int by = (dy > 0.0f) ? 1 : 0;
+				int bz = (dz > 0.0f) ? 1 : 0;
+
+				int flat_x = (dx < FLAT && dx > -FLAT);
+				int flat_y = (dy < FLAT && dy > -FLAT);
+				int flat_z = (dz < FLAT && dz > -FLAT);
+				int nflat = flat_x + flat_y + flat_z;
+
+				if(nflat == 2) {
+					// FACE: the single non-flat axis is the down face's normal
+					int axis = (!flat_x) ? 0 : ((!flat_y) ? 1 : 2);
+					int side = (axis == 0) ? bx : (axis == 1) ? by : bz;
+					printf("Face   %d", 2*axis + side);
+				} else if(nflat == 1) {
+					// EDGE: the flat axis is the one the edge runs parallel to
+					int group = flat_x ? 0 : (flat_y ? 1 : 2);
+					int loax  = (group == 0) ? 1 : 0;   // lower constrained axis
+					int hiax  = (group == 2) ? 1 : 2;   // higher constrained axis
+					int loS = (loax == 0) ? bx : (loax == 1) ? by : bz;
+					int hiS = (hiax == 0) ? bx : (hiax == 1) ? by : bz;
+					printf("Edge   %d", 4*group + loS + 2*hiS);
+				} else {
+					// CORNER: all three axes tilted (nflat == 0)
+					printf("Corner %d", bx + 2*by + 4*bz);
+				}
+
+				printf("\td = (%+.2f, %+.2f, %+.2f)\n", (double)dx, (double)dy, (double)dz);
+			}
+		}
+
+		if(rx_rdy) {
+			ch = read_rx_char();
+			if(ch == 'x') {
+				return true;
+			}
+		}
+	}
+}
+
+uint8_t diags_lqr(char *cmd) {
+	char ch;
+	char arg_val[20];
+
+	const char help_str[] = "\
+LQR bench tools -- motors are NEVER driven, this only prints:\n\
+  lqr gains : compute gains from the physical params and print them\n\
+  lqr sign  : for the edge the cube is on, print which motor should spin and\n\
+              which way (CW/CCW from outside its face) to restore balance.\n\
+              Tilt the cube by hand; the printed direction should OPPOSE the\n\
+              tilt. Uses gravity-vector detection + the real edge gains.\n";
+
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		printf(help_str);
+		return true;
+	}
+
+	if(str_getArgValue(cmd, "gains", arg_val)) {
+		cubli_init();
+		printf("Edge gains  K = [angle  rate  wheel]\n");
+		printf("  axis X (roll,  wheel B): [%.3f  %.3f  %.4f]\n",
+			(double)g_ctrl.edge_gains[0].K[0], (double)g_ctrl.edge_gains[0].K[1], (double)g_ctrl.edge_gains[0].K[2]);
+		printf("  axis Y (pitch, wheel A): [%.3f  %.3f  %.4f]\n",
+			(double)g_ctrl.edge_gains[1].K[0], (double)g_ctrl.edge_gains[1].K[1], (double)g_ctrl.edge_gains[1].K[2]);
+		printf("  axis Z (yaw,   wheel C): [%.3f  %.3f  %.4f]\n",
+			(double)g_ctrl.edge_gains[2].K[0], (double)g_ctrl.edge_gains[2].K[1], (double)g_ctrl.edge_gains[2].K[2]);
+		printf("initialized: %s\n", g_ctrl.initialized ? "yes" : "no (DARE failed)");
+		return true;
+	}
+
+	if(str_getArgValue(cmd, "sign", arg_val)) {
+		cubli_init();
+		if(!g_ctrl.initialized) {
+			printf("cubli_init failed -- check physical params\n");
+			return true;
+		}
+
+		const float FLAT    = 0.342f;        // sin(20 deg): axis "horizontal" cutoff
+		const float D2R     = 0.01745329f;   // deg -> rad
+		const float RPM2RAD = 0.10471976f;   // rpm -> rad/s
+		uint32_t tick = 0;
+
+		printf("Tilt the cube on an edge; the printed spin should oppose the tilt.\n");
+		while(1) {
+			if(HAL_GetTick() - tick > 200) {
+				tick = HAL_GetTick();
+
+				float dx = -acc_x, dy = -acc_y, dz = -acc_z;   // down vector, body frame
+				float n = sqrtf(dx*dx + dy*dy + dz*dz);
+				if(n < 0.1f) { printf("(no gravity signal)\n"); }
+				else {
+					dx /= n; dy /= n; dz /= n;
+
+					int flat_x = (dx < FLAT && dx > -FLAT);
+					int flat_y = (dy < FLAT && dy > -FLAT);
+					int flat_z = (dz < FLAT && dz > -FLAT);
+					if(flat_x + flat_y + flat_z != 1) {
+						printf("not on an edge (need exactly one axis horizontal)\n");
+					} else {
+						int group = flat_x ? 0 : (flat_y ? 1 : 2);
+
+						// Signed tilt about the group axis, from the gravity vector.
+						// a_cur = current up angle in the plane perpendicular to the
+						// group axis; a_ide = ideal (balance) angle from the edge's
+						// two down-face signs. Rotation order per axis: X:Y->Z,
+						// Y:Z->X, Z:X->Y.
+						float a_cur, a_ide, rate, omega;
+						const char *motor; int face;
+						if(group == 0) {            // parallel X, wheel B
+							a_cur = atan2f(-dz, -dy);
+							a_ide = atan2f((dz > 0 ? -1.0f : 1.0f), (dy > 0 ? -1.0f : 1.0f));
+							rate  = gyro_x * D2R;
+							omega = rpm_b * RPM2RAD;
+							motor = "B"; face = 0;
+						} else if(group == 1) {     // parallel Y, wheel A
+							a_cur = atan2f(-dx, -dz);
+							a_ide = atan2f((dx > 0 ? -1.0f : 1.0f), (dz > 0 ? -1.0f : 1.0f));
+							rate  = gyro_y * D2R;
+							omega = rpm_a * RPM2RAD;
+							motor = "A"; face = 2;
+						} else {                    // parallel Z, wheel C
+							a_cur = atan2f(-dy, -dx);
+							a_ide = atan2f((dy > 0 ? -1.0f : 1.0f), (dx > 0 ? -1.0f : 1.0f));
+							rate  = gyro_z * D2R;
+							omega = rpm_c * RPM2RAD;
+							motor = "C"; face = 4;
+						}
+
+						float err = a_cur - a_ide;
+						while(err >  3.14159265f) err -= 6.28318531f;
+						while(err < -3.14159265f) err += 6.28318531f;
+
+						float K0 = g_ctrl.edge_gains[group].K[0];
+						float K1 = g_ctrl.edge_gains[group].K[1];
+						float K2 = g_ctrl.edge_gains[group].K[2];
+						float tau = -(K0 * err + K1 * rate + K2 * omega);
+
+						printf("Motor %s  %-3s (outside face %d)   tilt=%+.1f deg   tau=%+.3f\n",
+							motor, (tau > 0.0f) ? "CW" : "CCW", face,
+							(double)(err / D2R), (double)tau);
+					}
+				}
+			}
+			if(rx_rdy) {
+				ch = read_rx_char();
+				if(ch == 'x') { return true; }
+			}
+		}
+	}
+
+	printf(help_str);
+	return true;
 }
 
 uint8_t diags_readTemperature(char *cmd) {

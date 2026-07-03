@@ -8,6 +8,7 @@ extern "C" {
 #include "stm32h5xx_hal.h"
 #include "MPU6050.h"
 #include "LIS3MDL.h"
+#include "cubli_lqr.h"
 
 extern FDCAN_HandleTypeDef hfdcan1;
 
@@ -35,6 +36,9 @@ extern float g_q[4];
 extern float roll, pitch, yaw;
 
 extern volatile float rpm_a, rpm_b, rpm_c;
+
+extern CubliLQR g_ctrl;
+void cubli_init(void);
 
 void Error_Handler(void);
 

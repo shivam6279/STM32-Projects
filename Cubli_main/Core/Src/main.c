@@ -35,7 +35,7 @@ volatile float mag_x, mag_y, mag_z;
 float g_q[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
 float roll, pitch, yaw;
 
-static CubliLQR g_ctrl;
+CubliLQR g_ctrl;
 
 void SystemClock_Config(void);
 static void MPU_Config(void);
@@ -137,6 +137,32 @@ volatile float acc_x, acc_y, acc_z;
 volatile float gyro_x, gyro_y, gyro_z;
 volatile float mag_x, mag_y, mag_z;
 
+// IMU mounting transform: rotates raw sensor axes into the cube body frame
+// (X=roll, Y=pitch, Z=yaw). From the bench frame test the IMU sits rotated
+// 180 deg about body Y, so sensor X and Z are negated. Rows are body axes,
+// columns are sensor axes -- edit this matrix if the IMU is ever remounted.
+static const float imu_mount[3][3] = {
+	{ -1.0f,  0.0f,  0.0f },   // body X = -sensor X
+	{  0.0f,  1.0f,  0.0f },   // body Y = +sensor Y
+	{  0.0f,  0.0f, -1.0f },   // body Z = -sensor Z
+};
+
+// Apply imu_mount to the accel and gyro vectors in place. Call once right after
+// MPU6050_GetData(), before offset removal / fusion, so everything downstream
+// (offsets, quaternion, euler) lives in the body frame.
+static void ApplyImuMount(MPU6050_Data_t *d) {
+	float ax = d->accel_x, ay = d->accel_y, az = d->accel_z;
+	float gx = d->gyro_x,  gy = d->gyro_y,  gz = d->gyro_z;
+
+	d->accel_x = imu_mount[0][0]*ax + imu_mount[0][1]*ay + imu_mount[0][2]*az;
+	d->accel_y = imu_mount[1][0]*ax + imu_mount[1][1]*ay + imu_mount[1][2]*az;
+	d->accel_z = imu_mount[2][0]*ax + imu_mount[2][1]*ay + imu_mount[2][2]*az;
+
+	d->gyro_x  = imu_mount[0][0]*gx + imu_mount[0][1]*gy + imu_mount[0][2]*gz;
+	d->gyro_y  = imu_mount[1][0]*gx + imu_mount[1][1]*gy + imu_mount[1][2]*gz;
+	d->gyro_z  = imu_mount[2][0]*gx + imu_mount[2][1]*gy + imu_mount[2][2]*gz;
+}
+
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef * hi2c) {
 	static uint32_t last_tick;
 	float dt;
@@ -150,6 +176,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef * hi2c) {
 	if(imu_cal_flag) {
 		if(g_imu.state == MPU6050_STATE_DATA_READY) {
 			MPU6050_GetData(&g_imu, &imu_data);
+			ApplyImuMount(&imu_data);
 			imu_data.gyro_x = (imu_data.gyro_x - g_imu.gyro_offset_x);
 			imu_data.gyro_y = (imu_data.gyro_y - g_imu.gyro_offset_y);
 			imu_data.gyro_z = (imu_data.gyro_z - g_imu.gyro_offset_z);
@@ -256,23 +283,31 @@ void cubli_init(void) {
 
 	CubliParams p = {
 
+		// Physical constants from CAD (SolidWorks) + measured mass. s = 0.105 m
+		// outer edge. Inertias are the CAD CoM tensor shifted to the pivot by
+		// parallel axis (m*l_edge^2, l_edge = (s/2)*sqrt(2) = half face diagonal).
+		// NOTE: axis labels (X/Y/Z <-> roll/pitch/yaw) are pending bench
+		// confirmation of the IMU frame; CAD was Y-up so I_y/I_z are swapped to
+		// Z-up here. The three values are within ~1% so the labeling is not
+		// critical, but re-check after the frame test.
 		.physical = {
-			.m        = 0.780f,
+			.m        = 0.8664f,    // measured (CAD 858.18 g + cables/PCB)
 			.g        = 9.81f,
-			.l_edge   = 0.0525f,    // half side length (m)
-			.l_corner = 0.0455f,    // side * sqrt(3)/2 / 2
+			.l_edge   = 0.074246f,  // (s/2)*sqrt(2), CoM->edge distance (m)
+			.l_corner = 0.090933f,  // (s/2)*sqrt(3), CoM->vertex distance (m)
 
-			// Measure with swing test per axis
-			.I_edge_x = 0.00143f,
-			.I_edge_y = 0.00143f,
-			.I_edge_z = 0.00143f,
+			// Assembly inertia about the pivot edge (kg*m^2)
+			.I_edge_x = 0.006058f,
+			.I_edge_y = 0.006206f,
+			.I_edge_z = 0.006152f,
 
-			// Measure with trifilar pendulum or CAD
-			.Ix = 0.00035f,
-			.Iy = 0.00035f,
-			.Iz = 0.00035f,
+			// Assembly inertia about the corner vertex, body axes (kg*m^2).
+			// Code subtracts Iw internally: Ia = Iy-Iw, Ib = Ix-Iw.
+			.Ix = 0.006058f,
+			.Iy = 0.006206f,
+			.Iz = 0.006152f,
 
-			.Iw = 0.00125f,
+			.Iw = 8.979e-5f,        // flywheel about spin axis (CAD)
 		},
 
 		.weights = {
@@ -412,6 +447,7 @@ int main(void) {
 		MPU6050_RequestData(&g_imu);
 		while(g_imu.state != MPU6050_STATE_DATA_READY);
 		MPU6050_GetData(&g_imu, &imu_data);
+		ApplyImuMount(&imu_data);
 		g_avg_x += imu_data.gyro_x * 0.001f;
 		g_avg_y += imu_data.gyro_y * 0.001f;
 		g_avg_z += imu_data.gyro_z * 0.001f;
