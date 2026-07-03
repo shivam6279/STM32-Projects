@@ -27,6 +27,11 @@ void RGB_SetRGB(uint8_t r, uint8_t g, uint8_t b);   // per-channel duty 0..255
 void RGB_SetHSV(uint16_t h, uint8_t s, uint8_t v);  // h 0..359, s/v 0..255
 void RGB_HueCycle(uint16_t step_ms);                // non-blocking rainbow
 
+// Register a callback fired once per PWM frame (RGB_PWM_REFRESH_HZ, from the
+// TIM14 ISR). Used to drive animations independently of the main loop. Pass
+// NULL to disable.
+void RGB_SetFrameCallback(void (*cb)(void));
+
 #ifdef __cplusplus
 }
 #endif

@@ -25,10 +25,12 @@ void LowPower_Init(void) {
 	__HAL_RCC_PWR_CLK_ENABLE();
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 
-	/* PA2 (touch): pull-down so a released line reads low (idle). */
+	/* PA2 (touch): no pull. The AT42QT1010 OUT is push-pull and actively
+	 * drives the line low when un-touched, so an internal pull is redundant
+	 * (and the spec wants this pin left floating). */
 	in.Pin  = WAKE_A_PIN;
 	in.Mode = GPIO_MODE_INPUT;
-	in.Pull = GPIO_PULLDOWN;
+	in.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(WAKE_PORT, &in);
 
 	/* PA4 (REGN 3V3 rail): NO pull -- it's driven by the rail through a series
@@ -67,14 +69,13 @@ static void enter_standby(void) {
 	 * nBOOT_SEL=1 makes the BOOT0 pin irrelevant (boot taken from nBOOT0). */
 	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A,
 							   PWR_GPIO_BIT_12 | PWR_GPIO_BIT_13 | PWR_GPIO_BIT_14);
-	// PA2 (touch, WKUP4) pulled low in standby so a floating line can't
-	// instantly re-wake us. A real touch still drives it high to wake.
-	// PA11 (cell-tap analog enable) pulled low too: in Standby the output
+	// PA2 (touch, WKUP4) left floating: the AT42QT1010 OUT is push-pull and
+	// holds the line low until a real touch, so no standby pull is needed.
+	// PA11 (cell-tap analog enable) pulled low: in Standby the output
 	// driver is off, and a floating enable could leave the dividers bleeding.
 	// PA3 + PC14/PC15 (cell-balance FET gates) likewise: a floating gate
 	// could leave a ~50R bleed across a cell for the whole sleep.
-	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, PWR_GPIO_BIT_2 | PWR_GPIO_BIT_3
-											| PWR_GPIO_BIT_11);
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, PWR_GPIO_BIT_3 | PWR_GPIO_BIT_11);
 	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_C, PWR_GPIO_BIT_14 | PWR_GPIO_BIT_15);
 	HAL_PWREx_EnablePullUpPullDownConfig();
 

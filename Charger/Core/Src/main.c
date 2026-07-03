@@ -1,6 +1,7 @@
 #include "main.h"
 
 #include "rgb_pwm.h"
+#include "led_anim.h"
 #include "lowpower.h"
 #include "bq25798.h"
 #include "debug_uart.h"
@@ -13,19 +14,21 @@
 #define BATT_GREEN_MV        4100u
 #define BATT_RED_MV          3800u
 #define BATT_DISPLAY_MS      3000u   // touch-display duration
-#define BATT_BREATH_MS       2400u   // breath period
-#define BATT_BREATH_MIN_V    24u     // breath trough brightness
-#define BATT_FADE_MS         700u    // breath-out duration on unplug
 #define BATT_CHG_START_MA    64      // IBAT to consider charging started
 // Charging-progress hue: CC ramps red->yellow (capped below green), CV ramps
 // yellow->green as IBAT tapers ICHG->ITERM. Keep these in sync with cfg.
 #define BATT_ICHG_MA         1200    // fast-charge current (cfg.charge_mA)
 #define BATT_ITERM_MA        120     // termination current (cfg.iterm_mA)
-#define BATT_BREATH_HUE_DROP 25u     // hue shifted toward red at the breath trough
-#define BATT_FULL_MORPH_MS   800u    // morph from current colour -> solid green on full
+// Breath / morph / fade timing now live in led_anim.h (the animation engine).
 // Debug: hold charging off and print LIVE cell readings every second
 // (balancer disabled). Set to 0 to restore normal operation.
 #define DEBUG_NO_CHARGE      0
+// Current-floor test: when 1, force EVERY GPIO to analog (true Hi-Z, input
+// buffer off), drop all pulls, kill the debug-clock keep-alive, then enter
+// Standby forever with NO wake source armed. Isolates the bare MCU + LDO draw
+// from any firmware/pin load. Recover by reflashing under reset. Set back to 0
+// for normal operation.
+#define LOWPOWER_FLOOR_TEST  0
 /* USER CODE END PD */
 
 // Private macro -------------------------------------------------------------
@@ -50,6 +53,41 @@ static void MX_ADC1_Init(void);
 
 // Private user code ---------------------------------------------------------
 /* USER CODE BEGIN 0 */
+#if LOWPOWER_FLOOR_TEST
+// Force every pin to analog Hi-Z, then Standby forever -- bare MCU + LDO floor.
+static void LowPowerFloorTest(void) {
+  // DBGMCU keeps the clocks alive through Standby (mA-level drain) -- clear it.
+  __HAL_RCC_DBGMCU_CLK_ENABLE();
+  DBG->CR = 0u;
+  __HAL_RCC_DBGMCU_CLK_DISABLE();
+
+  // Clock every GPIO bank, then set ALL pins analog (MODER all 1s) with no pull
+  // (PUPDR = 0). Analog mode disconnects the Schmitt input, so a mid-rail
+  // floating pin can't burn crossbar current. This is the truest Hi-Z state.
+  RCC->IOPENR |= RCC_IOPENR_GPIOAEN | RCC_IOPENR_GPIOBEN
+               | RCC_IOPENR_GPIOCEN | RCC_IOPENR_GPIOFEN;
+  (void)RCC->IOPENR;
+  GPIO_TypeDef *const banks[] = { GPIOA, GPIOB, GPIOC, GPIOF };
+  for (unsigned i = 0; i < sizeof(banks) / sizeof(banks[0]); i++) {
+    banks[i]->MODER = 0xFFFFFFFFu;   // all analog
+    banks[i]->PUPDR = 0x00000000u;   // no pull-up / pull-down
+  }
+
+  // Arm no wake source and clear stale flags so Standby is actually entered
+  // (a pending wake flag would bounce us straight back out).
+  __HAL_RCC_PWR_CLK_ENABLE();
+  HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
+  HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN4);
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF2);
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF4);
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+
+  // No GPIO pull-through-standby config enabled => every pin stays true Hi-Z.
+  HAL_PWR_EnterSTANDBYMode();         // wake = reset; never returns
+  while (1) { }                       // belt-and-suspenders
+}
+#endif // LOWPOWER_FLOOR_TEST
+
 static const char *bq_chg_state_name(bq_chg_state_t s) {
   switch (s) {
 	case BQ_CHG_NOT_CHARGING: return "idle";
@@ -72,9 +110,10 @@ static uint16_t soc_hue(uint16_t avg_cell_mV) {
 					/ (int32_t)(BATT_GREEN_MV - BATT_RED_MV));
 }
 
-// Touch-display: a static SoC colour snapshot.
+// Touch-display: a static SoC colour snapshot (driven through the LED engine so
+// it stays the sole owner of the LED).
 static void show_battery_color(uint16_t avg_cell_mV) {
-  RGB_SetHSV(soc_hue(avg_cell_mV), 255u, 255u);   // 0=red .. 120=green
+  LED_ShowStatic(soc_hue(avg_cell_mV), 255u);     // 0=red .. 120=green
 }
 
 // Charge-progress hue (0=red .. 120=green) from the charger's phase + current,
@@ -104,84 +143,6 @@ static uint16_t charge_progress_hue(bq_chg_state_t cs, uint16_t vbat_mV, int16_t
   }
 }
 
-typedef enum { CHG_LED_CHARGING, CHG_LED_FULL, CHG_LED_FAULT } chg_led_mode_t;
-
-// last colour actually pushed to the LED (so a transition can morph from it)
-static uint16_t s_led_hue_shown = 0u;
-static uint8_t  s_led_v_shown   = 0u;
-
-// breath fraction at tick t: 0 at trough, half at peak (triangle wave)
-static uint32_t breath_tri(uint32_t t, uint32_t breath_base, uint32_t *half_out) {
-  uint32_t phase = (uint32_t)(t - breath_base) % BATT_BREATH_MS;
-  uint32_t half  = BATT_BREATH_MS / 2u;
-  *half_out = half;
-  return (phase < half) ? phase : (BATT_BREATH_MS - phase);
-}
-
-// hue dips ~BATT_BREATH_HUE_DROP toward red on the way out (full hue at peak)
-static uint16_t breath_hue(uint16_t hue, uint32_t tri, uint32_t half) {
-  uint16_t drop = (uint16_t)(BATT_BREATH_HUE_DROP * (half - tri) / half);
-  return (hue > drop) ? (uint16_t)(hue - drop) : 0u;
-}
-
-// charging = breath that dims AND warms toward red on exhale; full = solid
-// green; fault = red blink.
-static void charging_led_update(chg_led_mode_t mode, uint16_t hue, uint32_t breath_base) {
-  uint32_t t = HAL_GetTick();
-
-  if (mode == CHG_LED_FAULT) {
-	uint8_t on = (uint8_t)((t / 250u) & 1u);
-	s_led_hue_shown = 0u;
-	s_led_v_shown   = on ? 255u : 0u;
-	RGB_SetHSV(0u, 255u, s_led_v_shown);
-	return;
-  }
-  if (mode == CHG_LED_FULL) {
-	s_led_hue_shown = 120u;
-	s_led_v_shown   = 255u;
-	RGB_SetHSV(120u, 255u, 255u);
-	return;
-  }
-
-  uint32_t half;
-  uint32_t tri = breath_tri(t, breath_base, &half);
-  s_led_v_shown   = (uint8_t)(BATT_BREATH_MIN_V + (255u - BATT_BREATH_MIN_V) * tri / half);
-  s_led_hue_shown = breath_hue(hue, tri, half);
-  RGB_SetHSV(s_led_hue_shown, 255u, s_led_v_shown);
-}
-
-// morph from the colour currently on the LED to solid green (on charge complete)
-static void charging_led_morph_to_full(void) {
-  int32_t h0 = (int32_t)s_led_hue_shown;
-  int32_t v0 = (int32_t)s_led_v_shown;
-
-  const int32_t steps = 64;
-  for (int32_t i = 0; i <= steps; i++) {
-	uint16_t h = (uint16_t)(h0 + (120 - h0) * i / steps);
-	uint8_t  v = (uint8_t)(v0 + (255 - v0) * i / steps);
-	RGB_SetHSV(h, 255u, v);
-	HAL_Delay(BATT_FULL_MORPH_MS / steps);
-  }
-  s_led_hue_shown = 120u;
-  s_led_v_shown   = 255u;
-  RGB_SetHSV(120u, 255u, 255u);
-}
-
-// breathe out from the current level to off, then return (used before sleep)
-static void charging_led_fade_out(uint16_t hue, uint32_t breath_base) {
-  uint32_t half;
-  uint32_t tri = breath_tri(HAL_GetTick(), breath_base, &half);
-  int32_t  v0  = (int32_t)(BATT_BREATH_MIN_V + (255u - BATT_BREATH_MIN_V) * tri / half);
-  uint16_t h   = breath_hue(hue, tri, half);
-
-  const int32_t steps = 64;
-  for (int32_t i = steps; i >= 0; i--) {
-	RGB_SetHSV(h, 255u, (uint8_t)(v0 * i / steps));
-	HAL_Delay(BATT_FADE_MS / steps);
-  }
-  RGB_SetRGB(0u, 0u, 0u);
-}
-
 int main(void) {
   // RGB LED (PA12/13/14, active-low): drive high (off) at boot before any init
   // so there's no glow on wake. Claims PA13/14 (SWD) immediately.
@@ -201,6 +162,10 @@ int main(void) {
   DBG->CR = 0u;
   __HAL_RCC_DBGMCU_CLK_DISABLE();
 
+#if LOWPOWER_FLOOR_TEST
+  LowPowerFloorTest();   // all pins analog Hi-Z + Standby forever; does not return
+#endif
+
   // Configure the system clock
   SystemClock_Config();
 
@@ -217,6 +182,7 @@ int main(void) {
 	HAL_Delay(1000);
   }
   RGB_PWM_Init();
+  LED_Init();                  // start the interrupt-driven LED animation engine
   LowPower_Init();
 
   // Debug console on PA0/PA1 @ 115200 8N1 (printf retargeted here).
@@ -299,30 +265,13 @@ int main(void) {
 #endif
   }
 
-  chg_led_mode_t led_mode    = CHG_LED_CHARGING;
-  uint16_t       led_hue     = 0u;            // progress hue (set from charger phase)
-  uint8_t        led_started = 0u;            // LED stays off until charging starts
-  uint8_t        full_morphed = 0u;           // morphed-to-solid-green once on full
-  uint32_t       breath_base = HAL_GetTick(); // anchors the breath to charge-start
+  uint16_t led_hue     = 0u;   // progress hue (set from charger phase)
+  uint8_t  led_started = 0u;   // LED stays off until charging starts
 
   while (1) {
-	// LED off until charging starts, then breathe
-	if (led_started) {
-	  // on entering FULL, morph from the current colour to solid green once
-	  if (led_mode == CHG_LED_FULL) {
-		if (!full_morphed) {
-		  charging_led_morph_to_full();
-		  full_morphed = 1u;
-		}
-	  }
-	  else {
-		full_morphed = 0u;
-	  }
-	  charging_led_update(led_mode, led_hue, breath_base);
-	}
-	else {
-	  RGB_SetRGB(0u, 0u, 0u);
-	}
+	// The LED is driven entirely by the interrupt-driven animation engine
+	// (led_anim): the main loop only posts targets via the setters below, so
+	// the breath keeps running smoothly even while this loop blocks.
 
 	// Sleep only when PA4 (REGN 3V3 rail) is low CONTINUOUSLY for ~200 ms.
 	// A real unplug holds it low; switching-noise glitches don't survive this.
@@ -341,7 +290,12 @@ int main(void) {
 		printf("PA4 low 200ms: charger r=%d REG1B=%02X FAULT=%02X %02X\n",
 			   (int)r, s0, fl[0], fl[1]);
 		if (led_started) {
-		  charging_led_fade_out(led_hue, breath_base);
+		  // breathe out to dark, then sleep; the engine animates it from the
+		  // TIM14 ISR while we wait (bounded so a stuck flag can't hang here).
+		  LED_FadeOut();
+		  uint32_t t0 = HAL_GetTick();
+		  while (LED_Busy() && (uint32_t)(HAL_GetTick() - t0) < BATT_FADE_MS + 100u) {
+		  }
 		}
 		/* ADC off so the BQ drops to its ~20 uA battery-only state; settings
 		 * persist on VBAT (watchdog disabled), so EN_ADC would stay set. */
@@ -380,28 +334,27 @@ int main(void) {
 
 		  // Update the charging LED: hue from charge phase + current (not VBAT).
 		  led_hue = charge_progress_hue(cs, m.vbat_mV, m.ibat_mA);
-		  if (faults[0] != 0u || faults[1] != 0u) {
-			led_mode = CHG_LED_FAULT;
-		  }
+		  uint8_t fault = (uint8_t)(faults[0] != 0u || faults[1] != 0u);
 		  // FULL only once balancing is done too: keep breathing (green) while
 		  // the post-charge top-balance runs, so unplugging early is visibly
 		  // "not finished yet".
-		  else if ((cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF) && Balancer_Balanced()) {
-			led_mode = CHG_LED_FULL;
-		  }
-		  else {
-			led_mode = CHG_LED_CHARGING;
-		  }
+		  uint8_t full  = (uint8_t)((cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF)
+								  && Balancer_Balanced());
 
 		  // show the LED once current flows, the charger reports done/topoff
 		  // (covers a full-on-plug-in pack that goes straight to the post-full
-		  // top-balance with IBAT=0), or full/fault; anchor the breath
+		  // top-balance with IBAT=0), or full/fault. The first LED_Breathe after
+		  // this anchors the breath at its trough (OFF->breathe entry).
 		  if (!led_started &&
 			  (m.ibat_mA >= BATT_CHG_START_MA ||
-			   cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF ||
-			   led_mode == CHG_LED_FULL || led_mode == CHG_LED_FAULT)) {
+			   cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF || full || fault)) {
 			led_started = 1u;
-			breath_base = HAL_GetTick();
+		  }
+
+		  if (led_started) {
+			if (fault)     { LED_Fault(); }
+			else if (full) { LED_Full(); }
+			else           { LED_Breathe(led_hue); }
 		  }
 		}
 	  }

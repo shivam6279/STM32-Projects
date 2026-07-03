@@ -21,6 +21,9 @@
 static volatile uint8_t s_duty[3];   // R, G, B target duty (0..255)
 static volatile uint8_t s_tick;      // free-running PWM step (0..255)
 
+// Optional per-frame animation hook, fired once per 256-step frame (125 Hz).
+static void (*volatile s_frame_cb)(void);
+
 /* ---------------------------------------------------------------------------
  * Software-PWM tick. Fires at RGB_PWM_STEPS * RGB_PWM_REFRESH_HZ (= 32 kHz).
  * Kept short: one compare + one atomic BSRR write per channel.
@@ -40,6 +43,15 @@ void TIM14_IRQHandler(void) {
 	RGB_PORT->BSRR = bsrr;
 
 	s_tick = (uint8_t)(c + 1u);                 // wraps 255 -> 0
+
+	// One frame elapsed when the step wraps back to 0: tick the animation.
+	if (s_tick == 0u && s_frame_cb != 0) {
+		s_frame_cb();
+	}
+}
+
+void RGB_SetFrameCallback(void (*cb)(void)) {
+	s_frame_cb = cb;
 }
 
 void RGB_PWM_Init(void) {
