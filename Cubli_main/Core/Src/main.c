@@ -8,6 +8,7 @@
 #include "EEPROM.h"
 #include "ahrs.h"
 #include "cubli_lqr.h"
+#include "cubli_config.h"
 #include "MPU6050.h"
 #include "LIS3MDL.h"
 #include "pid.h"
@@ -137,15 +138,9 @@ volatile float acc_x, acc_y, acc_z;
 volatile float gyro_x, gyro_y, gyro_z;
 volatile float mag_x, mag_y, mag_z;
 
-// IMU mounting transform: rotates raw sensor axes into the cube body frame
-// (X=roll, Y=pitch, Z=yaw). From the bench frame test the IMU sits rotated
-// 180 deg about body Y, so sensor X and Z are negated. Rows are body axes,
-// columns are sensor axes -- edit this matrix if the IMU is ever remounted.
-static const float imu_mount[3][3] = {
-	{ -1.0f,  0.0f,  0.0f },   // body X = -sensor X
-	{  0.0f,  1.0f,  0.0f },   // body Y = +sensor Y
-	{  0.0f,  0.0f, -1.0f },   // body Z = -sensor Z
-};
+// IMU mounting transform: rotates raw sensor axes into the cube body frame.
+// Defined in cubli_config.h (the single 3D-config source of truth).
+static const float imu_mount[3][3] = CUBLI_IMU_MOUNT_INIT;
 
 // Apply imu_mount to the accel and gyro vectors in place. Call once right after
 // MPU6050_GetData(), before offset removal / fusion, so everything downstream
@@ -268,15 +263,19 @@ void cubli_control_update(void) {
     CubliMode mode;
 
     if (cubli_lqr_update(&g_ctrl, angle_rad, rate_rad_s, wheel_rad_s, torque, &mode) != 0) {
-        CAN_send_motor(0x300,'P', 0.0f);
-        CAN_send_motor(0x310,'P', 0.0f);
-        CAN_send_motor(0x320,'P', 0.0f);
+        CAN_send_motor(CUBLI_CAN_WHEEL_A,'P', 0.0f);
+        CAN_send_motor(CUBLI_CAN_WHEEL_B,'P', 0.0f);
+        CAN_send_motor(CUBLI_CAN_WHEEL_C,'P', 0.0f);
         return;
     }
 
-    CAN_send_motor(0x300,'P', torque[0]);
-    CAN_send_motor(0x310,'P', torque[1]);
-    CAN_send_motor(0x320,'P', torque[2]);
+    // NOTE: torque[] is indexed by wheel_index; the LQR still uses its default
+    // index order. The X<->Y (wheel A/B) permutation gets applied in the
+    // input-conditioning layer when the controller is wired live -- see
+    // cubli_config.h for the true axis<->wheel map.
+    CAN_send_motor(CUBLI_CAN_WHEEL_A,'P', torque[0]);
+    CAN_send_motor(CUBLI_CAN_WHEEL_B,'P', torque[1]);
+    CAN_send_motor(CUBLI_CAN_WHEEL_C,'P', torque[2]);
 }
 
 void cubli_init(void) {
