@@ -1,0 +1,4 @@
+build*/
+test/host/test_stepgen_fill
+test/host/test_stepgen_fill.exe
+__pycache__/

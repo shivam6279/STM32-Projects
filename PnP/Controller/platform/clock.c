@@ -1,0 +1,99 @@
+#include "clock.h"
+#include "stm32h7xx.h"
+#include "irq_prio.h"
+
+// LDO supply is set up before this in ExitRun0Mode() (USE_PWR_LDO_SUPPLY)
+// TODO check LDO vs bypass against the schematic
+
+#define PLL1_M	5	// 25MHz / 5 = 5MHz
+#define PLL1_N	104	// 520MHz VCO
+#define PLL1_P	1	// 520MHz, P = 1 only allowed on H72x/H73x
+#define PLL1_Q	4	// 130MHz, unused
+#define PLL1_R	2	// 260MHz, unused
+
+#define PLL2_M	5	// 5MHz
+#define PLL2_N	64	// 320MHz VCO
+#define PLL2_Q	4	// 80MHz for FDCAN
+
+#define PLL3_M	5	// 5MHz
+#define PLL3_N	96	// 480MHz VCO
+#define PLL3_Q	10	// 48MHz for USB
+
+static volatile uint32_t ms_ticks;
+
+_Static_assert(25000000 / PLL1_M * PLL1_N / PLL1_P == CLOCK_SYSCLK_HZ, "PLL1 doesn't match CLOCK_SYSCLK_HZ");
+_Static_assert(25000000 / PLL3_M * PLL3_N / PLL3_Q == 48000000, "USB needs 48MHz");
+_Static_assert(25000000 / PLL2_M * PLL2_N / PLL2_Q == CLOCK_FDCAN_HZ, "PLL2 doesn't match CLOCK_FDCAN_HZ");
+
+void ClockInit() {
+	// VOS0 (D3CR.VOS = 0 on H72x)
+	PWR->D3CR &= ~PWR_D3CR_VOS;
+	while (!(PWR->D3CR & PWR_D3CR_VOSRDY));
+
+	RCC->CR |= RCC_CR_HSEON;
+	while (!(RCC->CR & RCC_CR_HSERDY));
+
+	// 3 wait states up to 275MHz HCLK at VOS0, TODO check RM0468 flash latency table
+	FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY_3WS;
+	while ((FLASH->ACR & FLASH_ACR_LATENCY) != FLASH_ACR_LATENCY_3WS);
+
+	RCC->PLLCKSELR = (RCC->PLLCKSELR & ~(RCC_PLLCKSELR_PLLSRC | RCC_PLLCKSELR_DIVM1)) | RCC_PLLCKSELR_PLLSRC_HSE | (PLL1_M << RCC_PLLCKSELR_DIVM1_Pos);
+	RCC->PLLCFGR = (RCC->PLLCFGR & ~(RCC_PLLCFGR_PLL1RGE | RCC_PLLCFGR_PLL1VCOSEL | RCC_PLLCFGR_PLL1FRACEN))
+		| (2 << RCC_PLLCFGR_PLL1RGE_Pos)	// 4-8MHz input
+		| RCC_PLLCFGR_DIVP1EN;				// wide VCO
+	RCC->PLL1DIVR = ((PLL1_N - 1) << RCC_PLL1DIVR_N1_Pos) | ((PLL1_P - 1) << RCC_PLL1DIVR_P1_Pos)
+		| ((PLL1_Q - 1) << RCC_PLL1DIVR_Q1_Pos) | ((PLL1_R - 1) << RCC_PLL1DIVR_R1_Pos);
+	RCC->CR |= RCC_CR_PLL1ON;
+	while (!(RCC->CR & RCC_CR_PLL1RDY));
+
+	// HCLK = SYSCLK / 2, all APBs = HCLK / 2
+	RCC->D1CFGR = RCC_D1CFGR_HPRE_DIV2 | RCC_D1CFGR_D1PPRE_DIV2;
+	RCC->D2CFGR = RCC_D2CFGR_D2PPRE1_DIV2 | RCC_D2CFGR_D2PPRE2_DIV2;
+	RCC->D3CFGR = RCC_D3CFGR_D3PPRE_DIV2;
+
+	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL1;
+	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL1);
+
+	SystemCoreClock = CLOCK_SYSCLK_HZ;
+	SystemD2Clock = CLOCK_HCLK_HZ;
+
+	// 1ms tick
+	SysTick_Config(CLOCK_SYSCLK_HZ / 1000);
+	NVIC_SetPriority(SysTick_IRQn, IRQ_PRIO_SYSTICK);
+}
+
+void ClockUsbInit() {
+	RCC->PLLCKSELR = (RCC->PLLCKSELR & ~RCC_PLLCKSELR_DIVM3) | (PLL3_M << RCC_PLLCKSELR_DIVM3_Pos);
+	RCC->PLLCFGR = (RCC->PLLCFGR & ~(RCC_PLLCFGR_PLL3RGE | RCC_PLLCFGR_PLL3VCOSEL | RCC_PLLCFGR_PLL3FRACEN))
+		| (2 << RCC_PLLCFGR_PLL3RGE_Pos)	// 4-8MHz input, wide VCO
+		| RCC_PLLCFGR_DIVQ3EN;
+	RCC->PLL3DIVR = ((PLL3_N - 1) << RCC_PLL3DIVR_N3_Pos) | (1 << RCC_PLL3DIVR_P3_Pos)
+		| ((PLL3_Q - 1) << RCC_PLL3DIVR_Q3_Pos) | (1 << RCC_PLL3DIVR_R3_Pos);
+	RCC->CR |= RCC_CR_PLL3ON;
+	while (!(RCC->CR & RCC_CR_PLL3RDY));
+
+	// USBSEL = PLL3Q (LL_RCC_USB_CLKSOURCE_PLL3Q)
+	RCC->D2CCIP2R = (RCC->D2CCIP2R & ~RCC_D2CCIP2R_USBSEL) | RCC_D2CCIP2R_USBSEL_1;
+}
+
+void ClockCanInit() {
+	RCC->PLLCKSELR = (RCC->PLLCKSELR & ~RCC_PLLCKSELR_DIVM2) | (PLL2_M << RCC_PLLCKSELR_DIVM2_Pos);
+	RCC->PLLCFGR = (RCC->PLLCFGR & ~(RCC_PLLCFGR_PLL2RGE | RCC_PLLCFGR_PLL2VCOSEL | RCC_PLLCFGR_PLL2FRACEN))
+		| (2 << RCC_PLLCFGR_PLL2RGE_Pos)	// 4-8MHz input, wide VCO
+		| RCC_PLLCFGR_DIVQ2EN;
+	RCC->PLL2DIVR = ((PLL2_N - 1) << RCC_PLL2DIVR_N2_Pos) | (1 << RCC_PLL2DIVR_P2_Pos)
+		| ((PLL2_Q - 1) << RCC_PLL2DIVR_Q2_Pos) | (1 << RCC_PLL2DIVR_R2_Pos);
+	RCC->CR |= RCC_CR_PLL2ON;
+	while (!(RCC->CR & RCC_CR_PLL2RDY));
+
+	// FDCANSEL = PLL2Q (LL_RCC_FDCAN_CLKSOURCE_PLL2Q)
+	RCC->D2CCIP1R = (RCC->D2CCIP1R & ~RCC_D2CCIP1R_FDCANSEL) | RCC_D2CCIP1R_FDCANSEL_1;
+}
+
+uint32_t Millis() {
+	return ms_ticks;
+}
+
+void SysTick_Handler() {
+	ms_ticks++;
+}

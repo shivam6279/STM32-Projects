@@ -1,0 +1,27 @@
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
+# Toolchain bin dir: -DARM_GCC_BIN=... or ARM_GCC_BIN env, else expect it on PATH.
+if(NOT ARM_GCC_BIN AND DEFINED ENV{ARM_GCC_BIN})
+	set(ARM_GCC_BIN $ENV{ARM_GCC_BIN})
+endif()
+if(ARM_GCC_BIN)
+	set(_p "${ARM_GCC_BIN}/")
+else()
+	set(_p "")
+endif()
+if(CMAKE_HOST_WIN32)
+	set(_x ".exe")
+else()
+	set(_x "")
+endif()
+
+set(CMAKE_C_COMPILER   "${_p}arm-none-eabi-gcc${_x}")
+set(CMAKE_ASM_COMPILER "${_p}arm-none-eabi-gcc${_x}")
+set(CMAKE_OBJCOPY      "${_p}arm-none-eabi-objcopy${_x}" CACHE FILEPATH "")
+set(CMAKE_SIZE         "${_p}arm-none-eabi-size${_x}" CACHE FILEPATH "")
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
