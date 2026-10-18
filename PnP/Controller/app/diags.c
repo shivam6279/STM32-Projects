@@ -1034,6 +1034,35 @@ bool espLevels(uint8_t *en, uint8_t *boot) {
 	return true;
 }
 
+// Command to the ESP32 app, print the reply up to its OK
+bool espQuery(const char *q, uint32_t timeout_ms) {
+	char line[128];
+	uint8_t len = 0;
+	uint32_t t = Millis();
+	int c;
+
+	EspFlushRx();
+	EspWrite(q, strlen(q));
+	EspWrite("\n", 1);
+	while (Millis() - t < timeout_ms) {
+		UsbTask();
+		while ((c = EspReadChar()) >= 0) {
+			if (c == '\r') continue;
+			if (c != '\n') {
+				if (len < sizeof(line) - 1) line[len++] = c;
+				continue;
+			}
+			line[len] = '\0';
+			len = 0;
+			if (strcmp(line, "OK") == 0) return true;
+			printf("%s\n", line);
+			if (strncmp(line, "ERR", 3) == 0) return false;
+		}
+	}
+	printf("No answer from the ESP32 (no app, or it's in the bootloader?)\n");
+	return false;
+}
+
 uint8_t diags_esp(char *cmd) {
 	EspStats st;
 	uint32_t period, t, v;
@@ -1049,7 +1078,10 @@ esp boot : reset into the ROM bootloader (BOOT low through the reset)\n\
 esp en <0|1> : 0 = hold EN low (in reset), 1 = let go\n\
 esp io9 <0|1> : BOOT pin (IO9), 0 = pull low, 1 = let go\n\
 esp baud <n> : UART6 baud. In the bridge the USB port sets it\n\
-esp bridge : this port <-> ESP32 UART0. 1s quiet, +++, 1s quiet to get back\n";
+esp bridge : this port <-> ESP32 UART0. 1s quiet, +++, 1s quiet to get back\n\
+esp scan : WiFi networks the ESP32 can see\n\
+esp wifi : WiFi state, IP, RSSI, last disconnect reason\n\
+esp wifi -s : stream connected, RSSI until 'x' is entered (-f as above)\n";
 
 	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
 		fputs(help_str, stdout);
@@ -1111,6 +1143,20 @@ esp bridge : this port <-> ESP32 UART0. 1s quiet, +++, 1s quiet to get back\n";
 		}
 		EspBaud(v);
 		printf("UART6 at %" PRIu32 " baud\n", EspGetBaud());
+	} else if (strncmp(p, "scan", 4) == 0) {
+		printf("Scanning...\n");
+		return espQuery("scan", 10000);
+	} else if (strncmp(p, "wifi", 4) == 0) {
+		if (argFlag(cmd, "-s")) {
+			if (!streamPeriod(cmd, &period)) return false;
+			printf("connected, RSSI\n");
+			while (1) {
+				t = Millis();
+				if (!espQuery("link", 500)) return false;
+				if (streamWait(t, period)) return true;
+			}
+		}
+		return espQuery("wifi", 1000);
 	} else if (strncmp(p, "bridge", 6) == 0) {
 		if (!ConsoleBridge()) {
 			printf("Already bridged on the other port\n");
