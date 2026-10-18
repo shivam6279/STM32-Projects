@@ -11,6 +11,8 @@
 #include "ioexp.h"
 #include "motion.h"
 #include "net.h"
+#include "jog.h"
+#include "pad.h"
 #include "scurve.h"
 #include "pwm.h"
 #include "stepgen.h"
@@ -42,6 +44,7 @@ uint8_t diags_press(char*);
 uint8_t diags_eth(char*);
 uint8_t diags_tmc(char*);
 uint8_t diags_esp(char*);
+uint8_t diags_pad(char*);
 void printDiagsMenu();
 
 typedef uint8_t (*diags_function)(char*);
@@ -67,6 +70,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Ethernet",				.cmd = "eth",	.func = diags_eth	},
 	{ .name = "Stepper drivers (TMC2209 UART)",	.cmd = "tmc",	.func = diags_tmc	},
 	{ .name = "ESP32: reset, bootloader, UART bridge",	.cmd = "esp",	.func = diags_esp	},
+	{ .name = "Xbox controller (through the ESP32)",	.cmd = "pad",	.func = diags_pad	},
 	{ .name = "Reboot to the USB bootloader",	.cmd = "boot",	.func = diags_boot	},
 };
 
@@ -201,6 +205,7 @@ isr : worst refill time since the last isr\n";
 		res = MotionSteps(drv, n, rate);
 		if (res == MOTION_BUSY) printf("Queue full, try again\n");
 		else if (res == MOTION_BAD) printf("Rate must be 1 - %d steps/s, and the run under ~71 min\n", MOTION_MAX_STEP_HZ);
+		else if (res == MOTION_JOG) printf("Jog mode has the axes, pad mode off first\n");
 		else if (res == MOTION_OK) {
 			printf("Driver %" PRIu32 " (%s): %" PRId32 " steps, DIR %s, %.0f steps/s, %.2f s%s\n", drv, MotionDriverName(drv),
 				n < 0 ? -n : n, n > 0 ? "high" : "low", (double)rate, (double)((n < 0 ? -n : n) / rate), StepDry() ? ", dry run" : "");
@@ -397,6 +402,7 @@ uint8_t diags_move(char *cmd) {
 	else if (res == MOTION_NOMOVE) printf("Already there\n");
 	else if (res == MOTION_BAD) printf("Bad move\n");
 	else if (res == MOTION_FAULT) printf("Stopped, step recover first\n");
+	else if (res == MOTION_JOG) printf("Jog mode has the axes, pad mode off first\n");
 	else {
 		MotionLastPlan(&sc);
 		printf("Queued: %.1f ms (jerk %.1f, accel %.1f, cruise %.1f ms)%s%s\n",
@@ -659,6 +665,7 @@ bool streamWait(uint32_t start, uint32_t period_ms) {
 	do {
 		UsbTask();
 		ButtonsTask();
+		PadTask(); // jog keeps following the sticks while streaming
 		// only the port that started the stream: the other one may be a G-code host
 		while ((c = ConsoleReadChar()) >= 0) {
 			if (c == 'x') return true;
@@ -1029,7 +1036,7 @@ static uint8_t esp_line_len = 0;
 void DiagsEspTask() {
 	int c;
 
-	while ((c = EspReadChar()) >= 0) {
+	while ((c = EspCtlReadChar()) >= 0) {
 		if (c != '\r' && c != '\n') {
 			if (esp_line_len < sizeof(esp_line) - 1) esp_line[esp_line_len++] = c;
 			continue;
@@ -1067,12 +1074,12 @@ bool espQuery(const char *q, uint32_t timeout_ms) {
 	uint32_t t = Millis();
 	int c;
 
-	EspFlushRx();
+	EspCtlFlush();
 	EspWrite(q, strlen(q));
 	EspWrite("\n", 1);
 	while (Millis() - t < timeout_ms) {
 		UsbTask();
-		while ((c = EspReadChar()) >= 0) {
+		while ((c = EspCtlReadChar()) >= 0) {
 			if (c == '\r') continue;
 			if (c != '\n') {
 				if (len < sizeof(line) - 1) line[len++] = c;
@@ -1096,7 +1103,7 @@ uint8_t diags_esp(char *cmd) {
 	char *p;
 
 	const char help_str[] = "\
-esp : EN / BOOT pin levels, UART6 baud and byte counts\n\
+esp : EN / BOOT pin levels, UART6 baud and byte counts, WiFi console client\n\
 -s : stream EN, BOOT until 'x' is entered\n\
 -f [x] : streaming frequency in Hz [1, 10000], default 10\n\
 esp reset : reset, runs the app\n\
@@ -1107,7 +1114,11 @@ esp baud <n> : UART6 baud. In the bridge the USB port sets it\n\
 esp bridge : this port <-> ESP32 UART0. 1s quiet, +++, 1s quiet to get back\n\
 esp scan : WiFi networks the ESP32 can see\n\
 esp wifi : WiFi state, IP, RSSI, last disconnect reason\n\
-esp wifi -s : stream connected, RSSI until 'x' is entered (-f as above)\n";
+esp wifi -s : stream connected, RSSI until 'x' is entered (-f as above)\n\
+esp pad : Xbox controller (BLE on the ESP32): connected, paired address, battery, state\n\
+esp pad pair : forget it, pair the next controller in pairing mode (hold its pair button)\n\
+esp pad log : BLE events + the paired controller's advertisements since the last log\n\
+(live state on the H7 side: pad -s)\n";
 
 	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
 		fputs(help_str, stdout);
@@ -1135,6 +1146,7 @@ esp wifi -s : stream connected, RSSI until 'x' is entered (-f as above)\n";
 		EspGetStats(&st);
 		printf("UART6: %" PRIu32 " baud, rx %" PRIu32 ", tx %" PRIu32 ", overrun %" PRIu32 ", framing %" PRIu32 ", dropped %" PRIu32 "\n",
 			EspGetBaud(), st.rx, st.tx, st.overrun, st.frame, st.rx_dropped);
+		printf("WiFi console: %s\n", EspConConnected() ? "client connected" : "no client");
 	} else if (strncmp(p, "reset", 5) == 0) {
 		if (!EspReset(false)) {
 			printf("IO expander not answering at 0x%02X\n", IOEXP_ADDR);
@@ -1183,15 +1195,141 @@ esp wifi -s : stream connected, RSSI until 'x' is entered (-f as above)\n";
 			}
 		}
 		return espQuery("wifi", 1000);
+	} else if (strncmp(p, "pad", 3) == 0) {
+		p += 3;
+		while (*p == ' ') p++;
+		if (strncmp(p, "pair", 4) == 0) return espQuery("pad pair", 1000);
+		if (strncmp(p, "log", 3) == 0) return espQuery("pad log", 1000);
+		return espQuery("pad", 1000);
 	} else if (strncmp(p, "bridge", 6) == 0) {
-		if (!ConsoleBridge()) {
-			printf("Already bridged on the other port\n");
-			return false;
-		}
+		if (!ConsoleBridge()) return false;
 	} else {
 		fputs(help_str, stdout);
 		return false;
 	}
+	return true;
+}
+
+// ---- Xbox controller ----
+
+static const char *pad_names[PAD_BUTTONS] = {
+	"A", "B", "X", "Y", "LB", "RB", "LS", "RS", "up", "down", "left", "right", "view", "menu", "share", "xbox",
+};
+
+static void padPrint(const EspPad *p, bool up) {
+	uint8_t i;
+	bool any = false;
+
+	printf("%d, %u, %u, %u, %u, %u, %u, ", up, p->lx, p->ly, p->rx, p->ry, p->lt, p->rt);
+	for (i = 0; i < PAD_BUTTONS; i++) {
+		if (!((p->buttons >> i) & 1)) continue;
+		printf("%s%s", any ? " " : "", pad_names[i]);
+		any = true;
+	}
+	printf("%s\n", any ? "" : "-");
+}
+
+// pad mode [name]
+static bool padMode(char *p) {
+	uint8_t m;
+
+	while (*p == ' ') p++;
+	if (*p == '\0') {
+		printf("Mode: %s\n", PadModeName(PadMode()));
+		return true;
+	}
+	for (m = 0; m < PAD_MODES; m++) {
+		if (strcmp(p, PadModeName(m)) == 0) break;
+	}
+	if (m == PAD_MODES) {
+		printf("Modes: off, jog\n");
+		return false;
+	}
+	if (!PadSetMode(m)) return false;
+	if (m == PAD_MODE_JOG) {
+		printf("Jog: left stick X / Y %.1f mm/s, RT / LT Z up / down %.1f mm/s%s\n",
+			(double)pad_speed_xy, (double)pad_speed_z, StepDry() ? ", dry run" : "");
+		printf("Centre the sticks and let go of the triggers to start. pad mode off to stop\n");
+	} else {
+		printf("Mode: off\n");
+	}
+	return true;
+}
+
+// pad speed [xy <mm/s>] [z <mm/s>]
+static bool padSpeed(char *cmd) {
+	float v;
+
+	if (argFloat(cmd, "xy", &v)) {
+		if (v <= 0 || v > 1000) {
+			printf("xy speed must be 0 - 1000 mm/s\n");
+			return false;
+		}
+		pad_speed_xy = v;
+	}
+	if (argFloat(cmd, "z", &v)) {
+		if (v <= 0 || v > 1000) {
+			printf("z speed must be 0 - 1000 mm/s\n");
+			return false;
+		}
+		pad_speed_z = v;
+	}
+	printf("Full stick: XY %.1f mm/s, Z %.1f mm/s (still capped at each axis' max feed, M203)\n",
+		(double)pad_speed_xy, (double)pad_speed_z);
+	return true;
+}
+
+uint8_t diags_pad(char *cmd) {
+	EspPad p;
+	EspPadStats st;
+	uint32_t period, t;
+	bool up;
+	char *a;
+
+	const char help_str[] = "\
+pad : Xbox controller state from the ESP32 pad packets, packet counts\n\
+-s : stream connected, sticks (0-65535), triggers (0-1023), buttons until 'x' is entered\n\
+-f [x] : streaming frequency in Hz [1, 10000], default 10\n\
+pad mode : what the controller does: off (default at boot) or jog\n\
+pad mode jog : left stick = X / Y, RT / LT = Z up / down. Centre the sticks to start\n\
+pad mode off : stop (ramps down), axes back to G-code\n\
+pad speed [xy <mm/s>] [z <mm/s>] : speed at full stick / trigger\n\
+Nothing for 150ms = treated as gone (sticks centred, all let go). Pairing: esp pad pair\n";
+
+	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
+		fputs(help_str, stdout);
+		return true;
+	}
+
+	a = cmd + 3;
+	while (*a == ' ') a++;
+	if (strncmp(a, "mode", 4) == 0 && (a[4] == ' ' || a[4] == '\0')) return padMode(a + 4);
+	if (strncmp(a, "speed", 5) == 0 && (a[5] == ' ' || a[5] == '\0')) return padSpeed(a);
+
+	if (argFlag(cmd, "-s")) {
+		if (!streamPeriod(cmd, &period)) return false;
+		printf("connected, LX, LY, RX, RY, LT, RT, buttons\n");
+		while (1) {
+			t = Millis();
+			up = EspPadGet(&p);
+			padPrint(&p, up);
+			if (streamWait(t, period)) return true;
+		}
+	}
+
+	up = EspPadGet(&p);
+	EspPadGetStats(&st);
+	printf("Pad: %s, battery %u%%\n", up ? "connected" : "not connected", p.battery);
+	printf("Mode: %s", PadModeName(PadMode()));
+	if (PadMode() == PAD_MODE_JOG) printf(", %s", PadArmed() ? "moving on input" : "waiting for centred sticks");
+	else if (JogFaulted()) printf(" (last jog stopped by a fault)");
+	if (JogLate()) printf(", queue ran dry %" PRIu32 " times", JogLate());
+	printf("\n");
+	printf("Packets: %" PRIu32 " ok, %" PRIu32 " bad, %" PRIu32 " missed, ", st.good, st.bad, st.missed);
+	if (st.age_ms == UINT32_MAX) printf("none yet\n");
+	else printf("last %" PRIu32 " ms ago\n", st.age_ms);
+	printf("connected, LX, LY, RX, RY, LT, RT, buttons\n");
+	padPrint(&p, up);
 	return true;
 }
 

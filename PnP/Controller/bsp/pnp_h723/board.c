@@ -30,6 +30,16 @@ static void PinConfig(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, uint32_t 
 	port->MODER = (port->MODER & ~(3 << (pin * 2))) | (moder << (pin * 2));
 }
 
+// STP_EN_L has no pull-up, so until this runs it floats and the TMC2209s can come up enabled at
+// their power on current. First thing in the bootloader and the app, before clocks or anything
+// slow. Backdriving the motors powers the board, and enabled drivers load them down until it
+// browns out again
+void BoardStepperSafe() {
+	RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN << PIN_STEPPER_EN_PORT_IDX;
+	(void)RCC->AHB4ENR;
+	PinConfig(PIN_STEPPER_EN_PORT, PIN_STEPPER_EN_NUM, PIN_MODE_OUT, 0, PIN_OT_PP, PIN_SPEED_MED, STEPPER_EN_ACTIVE_LOW);
+}
+
 void BoardIoInit() {
 	// Keep the debugger working while the core sleeps in WFI
 	DBGMCU->CR |= DBGMCU_CR_DBG_SLEEPD1 | DBGMCU_CR_DBG_STOPD1 | DBGMCU_CR_DBG_STANDBYD1 | DBGMCU_CR_DBG_CKD1EN | DBGMCU_CR_DBG_CKD3EN;

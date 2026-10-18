@@ -3,30 +3,68 @@
 #include <ESPmDNS.h>
 #include <WiFi.h>
 
+#include "pad.h"
 #include "secrets.h"
 
-// Serial = UART0 -> H7 UART6. Commands from the H7, one per line, reply ends with OK:
-//   scan, wifi, link ("<connected>, <RSSI>")
+// Serial = UART0 -> H7 UART6, two channels on it (H7 side: Controller/drivers/esp_link.c).
+// DLE (0x10) + a code: DLE C = console bytes follow, DLE E = our channel follows (the default),
+// DLE DLE = a 0x10 in the data. Us -> H7: DLE + / DLE - = console client on / gone,
+// DLE P = one pad packet follows (pad.cpp). H7 -> us: DLE S / DLE Q = stop / go on sending
+// console bytes, DLE ? = send + or -.
+// Console and pad frames always end with DLE E, after FRAME_MS of quiet we're back on our channel.
+//
+// Our channel: commands from the H7, one per line, reply ends with OK:
+//   scan, wifi, link ("<connected>, <RSSI>"), pad, pad pair, pad state (pad.cpp)
+// Log lines go out on it too, the H7 ignores them.
+//
+// TCP CON_PORT = the H7's G-code / diags console, raw bytes, same as its USB COM port.
+// One client, a new one replaces it.
 //
 // TCP H7_PORT = flash the H7 (flash_usb.py --wifi). Sends !boot to the H7 app, tells the
 // client OK / BUSY / NOANSWER, then pipes to the H7 bootloader at 921600
 
 #define HOSTNAME	"pnp-esp"	// pnp-esp.local, also the OTA name
-#define LED_WIFI	4			// ESP_LED0, on = connected
-#define LED_BEAT	5			// ESP_LED1, 1Hz blink = running, fast = OTA
+#define LED_WIFI	4			// ESP_LED0, on = connected, flickers with traffic
+#define LED_PAD		5			// ESP_LED1, on = Xbox controller connected, fast blink = pairing
+#define ACT_MS		100			// flicker this long after the last traffic
 #define CMD_LEN		64
 #define BAUD		115200		// H7 app
 #define BOOT_BAUD	921600		// H7 bootloader
 #define H7_PORT		3233
 #define H7_IDLE_MS	20000		// pipe gives up if nothing moves this long
+#define CON_PORT	3234
+#define CON_CHUNK	128			// console bytes per frame, the H7 stops us with 256 left
+#define DLE			0x10
+#define FRAME_MS	100
 
 WiFiServer h7_server(H7_PORT);
+WiFiServer con_server(CON_PORT);
+WiFiClient con;
+bool con_up = false;			// console client connected
+bool con_hold = false;			// H7 sent DLE S
 volatile bool h7_link = false;	// piping to the H7 bootloader, no log on Serial
 bool was_connected = false;
-uint32_t beat_ms = 0;
+uint32_t act_ms = 0;	// last WiFi traffic
+
+void WifiActivity() {
+	act_ms = millis();
+}
+
+// Also called from the loops that block (H7 flash pipe, OTA)
+void LedTask() {
+	uint32_t now = millis();
+	bool wifi = WiFi.status() == WL_CONNECTED;
+
+	if (now - act_ms < ACT_MS && (now / 25) & 1) wifi = !wifi;
+	digitalWrite(LED_WIFI, wifi);
+	digitalWrite(LED_PAD, PadPairing() ? (now / 100) & 1 : PadConnected());
+}
 volatile uint8_t last_reason = 0;
 char cmd[CMD_LEN];
 uint8_t cmd_len = 0;
+char h7_reply[8];				// last "!..." line from the H7
+bool rx_con = false, rx_dle = false;
+uint32_t rx_ms = 0;
 
 const char *ReasonName(uint8_t r) {
 	switch (r) {
@@ -91,6 +129,7 @@ void PrintWifi() {
 	}
 	Serial.printf("Last disconnect: %d, %s\n", last_reason, ReasonName(last_reason));
 	Serial.printf("MAC: %s\n", WiFi.macAddress().c_str());
+	Serial.printf("Console: port %d, %s\n", CON_PORT, con_up ? con.remoteIP().toString().c_str() : "no client");
 }
 
 void RunCmd(char *c) {
@@ -101,6 +140,7 @@ void RunCmd(char *c) {
 	} else if (strcmp(c, "link") == 0) {
 		bool up = WiFi.status() == WL_CONNECTED;
 		Serial.printf("%d, %d\n", up, up ? WiFi.RSSI() : 0);
+	} else if (PadCmd(c)) {
 	} else {
 		Serial.printf("ERR unknown command: %s\n", c);
 		return;
@@ -108,38 +148,111 @@ void RunCmd(char *c) {
 	Serial.println("OK");
 }
 
-void ReadCmds() {
-	while (Serial.available()) {
-		char c = Serial.read();
-		if (c == '\r' || c == '\n') {
-			if (cmd_len == 0) continue;
-			cmd[cmd_len] = '\0';
-			cmd_len = 0;
+void SendCode(char c) {
+	uint8_t b[2] = { DLE, (uint8_t)c };
+	Serial.write(b, 2);
+}
+
+// Our channel from the H7: "!..." lines are answers (h7_reply), the rest commands
+void CmdChar(char c) {
+	if (c == '\r' || c == '\n') {
+		if (cmd_len == 0) return;
+		cmd[cmd_len] = '\0';
+		cmd_len = 0;
+		if (cmd[0] == '!') {
+			strlcpy(h7_reply, cmd, sizeof(h7_reply));
+		} else {
 			RunCmd(cmd);
-		} else if (cmd_len < CMD_LEN - 1) {
-			cmd[cmd_len++] = c;
+		}
+	} else if (cmd_len < CMD_LEN - 1) {
+		cmd[cmd_len++] = c;
+	}
+}
+
+void ConWrite(const uint8_t *buf, int n) {
+	if (!con_up) return;
+	con.write(buf, n);
+	WifiActivity();
+}
+
+// Everything from the H7: console bytes -> the TCP client, the rest -> CmdChar
+void ReadH7() {
+	uint8_t out[256];
+	int n = 0;
+	uint32_t now = millis();
+
+	while (Serial.available()) {
+		uint8_t c = Serial.read();
+		if (now - rx_ms > FRAME_MS) rx_con = rx_dle = false;
+		rx_ms = now;
+		if (rx_dle) {
+			rx_dle = false;
+			switch (c) {
+				case DLE: if (rx_con) out[n++] = DLE; break;
+				case 'C': rx_con = true; break;
+				case 'E': rx_con = false; break;
+				case 'S': con_hold = true; break;
+				case 'Q': con_hold = false; break;
+				case '?': SendCode(con_up ? '+' : '-'); break;
+			}
+		} else if (c == DLE) {
+			rx_dle = true;
+		} else if (rx_con) {
+			out[n++] = c;
+		} else {
+			CmdChar(c);
+		}
+		if (n == sizeof(out)) {
+			ConWrite(out, n);
+			n = 0;
 		}
 	}
+	if (n) ConWrite(out, n);
+}
+
+// Console client <-> H7, one framed chunk per call
+void ConsoleTask() {
+	uint8_t buf[CON_CHUNK], frame[4 + 2 * CON_CHUNK];
+	WiFiClient c = con_server.available();
+	int i, n, len = 0;
+
+	if (c) {
+		// Newest wins, the old one may be a dead connection
+		if (con_up) con.stop();
+		con = c;
+		con.setNoDelay(true);
+		con_up = true;
+		SendCode('+');
+	} else if (con_up && !con.connected()) {
+		con.stop();
+		con_up = false;
+		SendCode('-');
+	}
+
+	if (!con_up || con_hold || (n = con.available()) <= 0) return;
+	n = con.read(buf, min(n, CON_CHUNK));
+	if (n <= 0) return;
+	WifiActivity();
+	frame[len++] = DLE;
+	frame[len++] = 'C';
+	for (i = 0; i < n; i++) {
+		if (buf[i] == DLE) frame[len++] = DLE;
+		frame[len++] = buf[i];
+	}
+	frame[len++] = DLE;
+	frame[len++] = 'E';
+	Serial.write(frame, len); // one write, so a log line from the WiFi event task can't land inside
 }
 
 // Wait for "!ok" / "!busy" from the H7 app
 const char *H7BootReply() {
-	char line[16];
-	uint8_t len = 0;
 	uint32_t t = millis();
 
+	h7_reply[0] = '\0';
 	while (millis() - t < 300) {
-		while (Serial.available()) {
-			char c = Serial.read();
-			if (c != '\n') {
-				if (c != '\r' && len < sizeof(line) - 1) line[len++] = c;
-				continue;
-			}
-			line[len] = '\0';
-			len = 0;
-			if (strcmp(line, "!ok") == 0) return "OK";
-			if (strcmp(line, "!busy") == 0) return "BUSY";
-		}
+		ReadH7();
+		if (strcmp(h7_reply, "!ok") == 0) return "OK";
+		if (strcmp(h7_reply, "!busy") == 0) return "BUSY";
 		delay(1);
 	}
 	return "NOANSWER";
@@ -155,9 +268,7 @@ void H7Link() {
 	if (!c) return;
 	c.setNoDelay(true);
 	h7_link = true;
-	digitalWrite(LED_BEAT, 1);
 
-	while (Serial.available()) Serial.read();
 	Serial.print("!boot\n");
 	status = H7BootReply();
 	c.printf("%s\n", status);
@@ -177,12 +288,15 @@ void H7Link() {
 			n = c.read(buf, min(n, (int)sizeof(buf)));
 			Serial.write(buf, n);
 			t = millis();
+			WifiActivity();
 		}
 		if ((n = Serial.available()) > 0) {
 			n = Serial.readBytes(buf, min(n, (int)sizeof(buf)));
 			c.write(buf, n);
 			t = millis();
+			WifiActivity();
 		}
+		LedTask();
 		delay(0);
 	}
 	c.stop();
@@ -190,7 +304,10 @@ void H7Link() {
 	Serial.flush();
 	Serial.updateBaudRate(BAUD);
 	while (Serial.available()) Serial.read();
+	rx_con = rx_dle = false;
+	con_hold = false;
 	h7_link = false;
+	SendCode(con_up ? '+' : '-'); // the new app asks too, but it may have asked mid pipe
 }
 
 void OtaSetup() {
@@ -199,7 +316,8 @@ void OtaSetup() {
 		Serial.println("OTA start");
 	});
 	ArduinoOTA.onProgress([](unsigned int done, unsigned int total) {
-		digitalWrite(LED_BEAT, (done / 4096) & 1);
+		WifiActivity();
+		LedTask();
 	});
 	ArduinoOTA.onEnd([]() {
 		Serial.println("OTA done, rebooting");
@@ -212,9 +330,11 @@ void OtaSetup() {
 
 void setup() {
 	Serial.setRxBufferSize(4096);
+	Serial.setTxBufferSize(1024);
 	Serial.begin(BAUD);
+	SendCode('-'); // the H7 may still think a client is on from before our reset
 	pinMode(LED_WIFI, OUTPUT);
-	pinMode(LED_BEAT, OUTPUT);
+	pinMode(LED_PAD, OUTPUT);
 	Serial.printf("\nPnP ESP32, built " __DATE__ " " __TIME__ "\n");
 
 	WiFi.mode(WIFI_STA);
@@ -230,8 +350,11 @@ void setup() {
 	Serial.printf("Connecting to %s\n", WIFI_SSID);
 
 	OtaSetup();
+	PadSetup();
 	h7_server.begin();
 	h7_server.setNoDelay(true);
+	con_server.begin();
+	con_server.setNoDelay(true);
 }
 
 void loop() {
@@ -243,17 +366,15 @@ void loop() {
 		} else {
 			Serial.println("WiFi down");
 		}
-		digitalWrite(LED_WIFI, connected);
 		was_connected = connected;
 	}
 
-	ReadCmds();
+	ReadH7();
+	ConsoleTask();
 	H7Link();
 	ArduinoOTA.handle();
+	PadLoop();
 
-	if (millis() - beat_ms >= 500) {
-		beat_ms = millis();
-		digitalWrite(LED_BEAT, !digitalRead(LED_BEAT));
-	}
+	LedTask();
 	delay(2);
 }

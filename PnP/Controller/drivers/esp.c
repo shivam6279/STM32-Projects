@@ -12,6 +12,7 @@ static void Wait(uint32_t ms) {
 
 bool EspInit() {
 	EspUartInit(ESP_BAUD);
+	EspLinkInit();
 	return IoExpInit();
 }
 

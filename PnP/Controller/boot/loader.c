@@ -87,7 +87,10 @@ static uint32_t ImageCrc(const uint32_t *first, uint32_t size) {
 	return Crc32(Crc32(0, (uint8_t *)w, FLASH_WORD), (uint8_t *)(APP_BASE + FLASH_WORD), size - FLASH_WORD);
 }
 
-bool AppValid() {
+// Every boot runs this with crc = false: a few words read, no CRC. The flash protocol already
+// guarantees a complete image (vector table written last, after the CRC matched), and the CRC at
+// the reset clock took tens of ms with the pins still floating. crc = true after a flash only
+bool AppValid(bool crc) {
 	const uint32_t *vec = (const uint32_t *)APP_BASE;
 	const uint32_t *info;
 	uint32_t sp = vec[0], pc = vec[1], size = vec[VEC_SIZE];
@@ -101,7 +104,8 @@ bool AppValid() {
 
 	if (size < FLASH_WORD || (size % FLASH_WORD) || size + FLASH_WORD > APP_SIZE) return false;
 	info = (const uint32_t *)(APP_BASE + size);
-	return info[0] == INFO_MAGIC && info[1] == size && info[2] == ImageCrc(vec, size);
+	if (info[0] != INFO_MAGIC || info[1] != size) return false;
+	return !crc || info[2] == ImageCrc(vec, size);
 }
 
 // Same data already there is fine (resent packet)
@@ -201,7 +205,7 @@ static void CmdVerify(const uint8_t *p, uint32_t len) {
 	if (!err) err = WriteWord(APP_BASE, vec);
 	FlashLock();
 	if (err) return ReplyErr(err);
-	if (!AppValid()) return ReplyErr(ERR_READ);
+	if (!AppValid(true)) return ReplyErr(ERR_READ);
 	Reply('K');
 }
 

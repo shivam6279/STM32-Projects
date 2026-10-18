@@ -39,6 +39,7 @@ extern float motion_accel;			// path acceleration limit, mm/s^2 (M204), 0 = axis
 #define MOTION_NOMOVE	2	// nothing to do (already there)
 #define MOTION_BAD		3	// bad target / feed / config
 #define MOTION_FAULT	4	// step generator stopped (E-stop / fault), needs MotionRecover
+#define MOTION_JOG		5	// jog mode has the axes (jog.c)
 
 #define MOTION_MAX_STEP_HZ	200000	// per driver, the refill ISR is the limit (pins could do 500k)
 
@@ -47,6 +48,7 @@ void MotionDefaults();				// axis table + motion_accel back to the built in valu
 void MotionSync();					// planned position = where the steps really are, timeline reset
 uint8_t MotionMove(const float *target, uint8_t mask, float feed);	// absolute mm, axes in mask
 bool MotionIdle();					// all queued motion played out
+void MotionLock(bool lock);			// jog.c: MotionMove / MotionSteps return MOTION_JOG while locked
 float MotionPosition(uint8_t axis);	// where the planner has sent the axis (mm)
 float MotionActual(uint8_t axis);	// where the steps put out so far have it (mm)
 int64_t MotionCount(uint8_t axis);	// steps put out, in the axis' direction (its first driver)

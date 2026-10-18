@@ -6,6 +6,7 @@
 
 #define RES_TIMERS(X) \
 	X(STEPGEN, TIM6) \
+	X(JOG, TIM7) \
 	X(PWM, TIM2) \
 	X(PWM, TIM3) \
 	X(PWM, TIM5)

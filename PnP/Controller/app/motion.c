@@ -19,7 +19,9 @@
 _Static_assert(MOTION_DRIVERS == STEP_AXES, "one motion driver per step generator channel");
 
 // Driver 0 Y1, 1 Y2, 2 X, 3 Z, 4 toolhead 1 (A, rotation), 5 toolhead 2 (B), 6 / 7 spare (C, U)
-// TODO real numbers. Placeholders: 80 steps/mm, 300mm/s, 3000mm/s^2, 100000mm/s^3
+// X Y Z: 1.8deg steppers, GT2 belt, 20 tooth pulley = 40mm/rev. 200 * 16 microsteps (tmc_config) /
+// 40 = 80 steps/mm. A B C U steps/mm and every speed / accel / jerk are still placeholders:
+// TODO 300mm/s, 3000mm/s^2, 100000mm/s^3
 static const MotionAxis defaults[MOTION_AXES] = {
 	{ 'X', 1 << 2,			80, 300, 3000, 100000 },
 	{ 'Y', 1 << 0 | 1 << 1,	80, 300, 3000, 100000 },
@@ -29,8 +31,9 @@ static const MotionAxis defaults[MOTION_AXES] = {
 	{ 'C', 1 << 6,			80, 300, 3000, 100000 },
 	{ 'U', 1 << 7,			80, 300, 3000, 100000 },
 };
-// TODO set from the real directions once each motor has been checked
-#define INVERT_DEFAULT	0x00
+// Bit per driver. Y2 (driver 1) faces Y1 across the gantry, so it turns the other way.
+// TODO the rest from the real directions once each motor has been checked
+#define INVERT_DEFAULT	(1 << 1)
 
 MotionAxis motion_axes[MOTION_AXES];
 uint8_t motion_invert = INVERT_DEFAULT;
@@ -41,6 +44,7 @@ static int64_t pos_offset[MOTION_AXES];	// G92 shift between planned steps and t
 static uint64_t timeline_end;			// tick the last planned move finishes at
 static uint64_t last_start;
 static SCurve last_plan;
+static bool locked;						// jog mode has the axes
 
 static uint8_t Bits(uint8_t m) {
 	uint8_t n = 0;
@@ -121,6 +125,7 @@ uint8_t MotionMove(const float *target, uint8_t mask, float feed) {
 
 	if (feed <= 0) return MOTION_BAD;
 	if (!StepRunning()) return MOTION_FAULT;
+	if (locked) return MOTION_JOG;
 
 	// Steps each axis has to go, and the path length in mm
 	for (i = 0; i < MOTION_AXES; i++) {
@@ -210,6 +215,7 @@ uint8_t MotionSteps(uint8_t drv, int32_t steps, float rate) {
 
 	if (drv >= MOTION_DRIVERS || rate <= 0) return MOTION_BAD;
 	if (!StepRunning()) return MOTION_FAULT;
+	if (locked) return MOTION_JOG;
 	if (steps == 0) return MOTION_NOMOVE;
 	period = (uint32_t)lroundf(STEP_TICK_HZ / rate);
 	if (period < 1 / MAX_STEP_RATE) return MOTION_BAD;
@@ -225,6 +231,10 @@ uint8_t MotionSteps(uint8_t drv, int32_t steps, float rate) {
 	if (i >= 0 && Primary(i) == drv) pos_steps[i] += (motion_invert >> drv) & 1 ? -steps : steps;
 	timeline_end = start + s.duration;
 	return MOTION_OK;
+}
+
+void MotionLock(bool lock) {
+	locked = lock;
 }
 
 bool MotionIdle() {

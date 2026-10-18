@@ -16,20 +16,21 @@
 typedef struct {
 	int (*read)();
 	uint32_t (*write)(const char *, uint32_t);
+	bool (*connected)();	// NULL = always there, greeted once at boot
 	char line[LINE_LEN];
 	unsigned char len;
 	bool held;		// a whole line is waiting (G-code: the last command is still running)
 	bool diags;		// diags mode instead of G-code
+	bool was_connected;
 } con_port;
 
 static con_port ports[CON_PORTS] = {
-	{ .read = UsbReadChar, .write = UsbWrite },
+	{ .read = UsbReadChar, .write = UsbWrite, .connected = UsbConnected },
 	{ .read = UartReadChar, .write = UartWrite },
+	{ .read = EspConReadChar, .write = EspConWrite, .connected = EspConConnected },
 };
 
 static uint8_t out_mask = (1 << CON_PORTS) - 1;
-static bool was_connected = false;
-static bool booted = false;
 
 static int8_t bridge_port = -1;	// -1 = none
 static uint32_t bridge_rx_ms;	// last byte from the host
@@ -150,15 +151,23 @@ static void ReadGcode(uint8_t p) {
 bool ConsoleBridge() {
 	uint8_t p;
 
-	if (bridge_port >= 0) return false;
+	if (bridge_port >= 0) {
+		printf("Already bridged on another port\n");
+		return false;
+	}
 	for (p = 0; p < CON_PORTS; p++) {
 		if (out_mask == 1 << p) break;
 	}
 	if (p == CON_PORTS) return false;
+	if (p == CON_ESP) {
+		printf("Can't bridge the ESP32 to itself, use USB or the ST-Link UART\n");
+		return false;
+	}
 
 	printf("Bridge open at %" PRIu32 " baud. 1s quiet, +++, 1s quiet to get back\n", p == CON_USB ? UsbBaud() : ESP_BAUD);
 
 	EspBaud(p == CON_USB ? UsbBaud() : ESP_BAUD);
+	EspLinkPause(true); // WiFi console off while the UART is raw
 	EspFlushRx();
 	ports[p].len = 0;
 	bridge_plus = 0;
@@ -200,6 +209,7 @@ static void BridgeTask(uint8_t p) {
 			bridge_plus = 0;
 			bridge_port = -1;
 			EspBaud(ESP_BAUD); // esptool may have left it at 921600
+			EspLinkPause(false);
 			ConsoleOut(1 << p);
 			printf("\nBridge closed\n[PnP]: ");
 			return;
@@ -220,16 +230,13 @@ static void BridgeTask(uint8_t p) {
 void ConsoleTask() {
 	uint8_t p, diags_mask = 0;
 
-	// Greeting: UART once at boot, USB whenever a terminal opens the port
-	if (!booted) {
-		Greeting(CON_UART);
-		booted = true;
-	}
-	if (UsbConnected() && !was_connected && bridge_port != CON_USB) Greeting(CON_USB);
-	was_connected = UsbConnected();
-
 	for (p = 0; p < CON_PORTS; p++) {
 		con_port *cp = &ports[p];
+		bool up = cp->connected ? cp->connected() : true;
+
+		// Greeting: UART once at boot, USB / WiFi whenever a terminal opens the port
+		if (up && !cp->was_connected && p != bridge_port) Greeting(p);
+		cp->was_connected = up;
 		ConsoleOut(1 << p);
 
 		if (p == bridge_port) {

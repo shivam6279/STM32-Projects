@@ -19,6 +19,6 @@
 
 void LoaderInit();
 void LoaderTask();
-bool AppValid();
+bool AppValid(bool crc);
 
 #endif

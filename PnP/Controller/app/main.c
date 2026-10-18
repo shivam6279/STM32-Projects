@@ -9,9 +9,11 @@
 #include "console.h"
 #include "esp.h"
 #include "fdcan.h"
+#include "jog_timer.h"
 #include "motion.h"
 #include "mpu.h"
 #include "net.h"
+#include "pad.h"
 #include "pwm.h"
 #include "stepgen.h"
 #include "tmc.h"
@@ -50,6 +52,7 @@ int main(void) {
 #endif
 
 	BootInit(); // vector table is at APP_BASE, not 0x08000000
+	BoardStepperSafe(); // the bootloader did it too, this covers an older one
 
 	ClockInit();
 	MpuInit();
@@ -63,6 +66,7 @@ int main(void) {
 	StepStart();
 	TmcInit(); // driver UARTs, both banks
 	MotionInit();
+	JogTimerInit(); // TIM7, idle until a jog starts
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 	UartInit();
@@ -77,6 +81,7 @@ int main(void) {
 		NetTask();
 		ButtonsTask();
 		ConsoleTask();
+		PadTask(); // Xbox controller, off unless pad mode says otherwise
 		TmcTask(); // driver setup at boot, DIAG faults
 
 #ifdef STEPGEN_SELFTEST

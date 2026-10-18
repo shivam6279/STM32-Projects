@@ -109,6 +109,7 @@ static void TryMove(uint8_t p) {
 	if (res == MOTION_BUSY) return; // queue full, try again next time round
 	g->wait = WAIT_NONE;
 	if (res == MOTION_BAD) printf("Error:Bad move\n");
+	else if (res == MOTION_JOG) printf("Error:Jog mode (Xbox controller) has the axes, move ignored\n");
 	else if (res == MOTION_FAULT) {
 		halted = true;
 		printf("Error:Stopped, send M999 to resume\n");

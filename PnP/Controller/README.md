@@ -17,26 +17,40 @@ $B/cmake/4.0.1+st.3/bin/cmake --build build
 - `pnp_boot` (boot/): bootloader, sector 0 (0x08000000). Shows up as the PnP-Boot COM port (PID 0x4002), LED0 blinks fast.
 - `pnp_ctrl` (app/): app, sectors 1-3 (0x08020000). PnP-Diags COM port (PID 0x4001).
 
+GUI: double click `tools/pnp_tool.pyw`. Terminal on any COM port or WiFi (ESP32 console), and buttons for
+every flash below plus ESP32 OTA. It lets go of the port while flashing and reconnects after.
+
 Normal flashing is over USB: `python tools/flash_usb.py` (default `build/pnp_ctrl.bin`).
 It sends `M997` (or `diags` + `boot`) on PnP-Diags (or on the ST-Link UART if that's busy, or `--port COMx`), erases, writes,
 CRC checks and restarts the app. About 2s.
 The app's vector table is written last, after the CRC matches, so an interrupted flash leaves the
 bootloader running and you just run the script again.
 
-Over WiFi: `python tools/flash_usb.py --wifi`. The ESP32 sends `!boot` to the app (ignored while
-moving), then pipes TCP port 3233 to the bootloader on UART6 at 921600. About 4s.
+Over WiFi: `python tools/flash_usb.py --wifi` (`--wifi <ip>` if mDNS doesn't resolve). The ESP32
+sends `!boot` to the app (ignored while moving or jogging), then pipes TCP port 3233 to the
+bootloader on UART6 at 921600. About 8s with the controller's BLE on (4s without).
 
-Protocol in boot/loader.h: CRC32 on every packet, bad ones get resent. The bootloader checks the
-whole image CRC on every boot (an app flashed over SWD only gets the vector check).
+If a change touches the H7 <-> ESP link (DLE framing, pad packet), flash the H7 first (USB is
+safest), then the ESP. An old H7 can't read a new ESP's traffic, so `!boot` gets lost and the WiFi
+flash fails.
 
-SWD is only needed for the bootloader itself (or if both are dead):
-`STM32_Programmer_CLI -c port=SWD mode=UR -w build/pnp_boot.elf -v -w build/pnp_ctrl.elf -v -rst`
+Protocol in boot/loader.h: CRC32 on every packet, bad ones get resent, and the whole image CRC
+once at the end of a flash. A normal boot does almost nothing: STP_EN_L driven high (ENN has no
+pull-up), the vector table and the size / magic word after the image checked, jump. No clocks,
+no CRC, a few us.
+
+SWD (ST-Link) is only needed for the bootloader itself (or if both are dead). The CLI isn't on
+PATH: `C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe`.
+`mode=UR` connects under reset, so it works whatever the firmware is doing.
+- Both: `STM32_Programmer_CLI -c port=SWD mode=UR -w build/pnp_boot.elf -v -w build/pnp_ctrl.elf -v -rst`
+- App only (bootloader left alone): `STM32_Programmer_CLI -c port=SWD mode=UR -w build/pnp_ctrl.elf -v -rst`
 
 ST's ROM DFU bootloader doesn't work reliably on this board (it usually keeps USB disconnected), so it isn't used.
 
 ## Commands (G-code / diags)
-Both ports take commands: the PnP-Diags USB COM port and the ST-Link UART (115200). Each port is
-on its own and starts in G-code mode. Replies only go back to the port that sent the command.
+Three ports take commands: the PnP-Diags USB COM port, the ST-Link UART (115200) and WiFi
+(raw TCP to `pnp-esp.local:3234`, see ESP32 below). Each port is on its own and starts in G-code
+mode. Replies only go back to the port that sent the command.
 
 G-code mode speaks Marlin's dialect, so Marlin hosts (OpenPnP's GcodeDriver, Pronterface, ...)
 work: no echo, `start` at reset, every line answered with `ok` once it's done. A move that doesn't
@@ -80,6 +94,16 @@ Firmware in `../ESP32` (PlatformIO, Arduino), WiFi + OTA as `pnp-esp.local`. 2.4
 in `ESP32/src/secrets.h`.
 - `pio run -e ota -t upload`: over WiFi
 - `pio run -e usb -t upload`: through the H7 (first time / recovery), uses `tools/flash_esp.py`
+
+WiFi console: raw TCP on port 3234 is the same G-code / diags console as the USB COM port
+(greeting on connect, one client, a new one takes over). PuTTY: Raw, local echo and line editing
+forced off. pyserial / hosts that take a URL: `socket://pnp-esp.local:3234`. It shares UART6 with
+the ESP's own traffic, DLE framed (drivers/esp_link.c), and is off while `esp bridge` is open.
+
+Xbox controller (BLE, on the ESP): `esp pad pair`, then hold the controller's pair button until
+the logo flashes fast. The ESP keeps that one (NVS) and reconnects on the Xbox button. It sends the
+state to the H7 as a `DLE P` frame on every change and every 20ms; `pad` / `pad -s` show it.
+Nothing for 150ms = let go (sticks centred, no buttons).
 
 `esp bridge` in diags wires the port straight to the ESP, 1s quiet + `+++` + 1s quiet to exit.
 `esp wifi`, `esp wifi -s`, `esp scan` ask the ESP app.

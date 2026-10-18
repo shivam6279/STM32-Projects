@@ -12,7 +12,7 @@ void JumpToApp() {
 	uint32_t sp = *(volatile uint32_t *)APP_BASE;
 	uint32_t pc = *(volatile uint32_t *)(APP_BASE + 4);
 
-	// Still in reset state: nothing to undo
+	// Still in reset state apart from STEPPER_EN, which the app keeps: nothing to undo
 	SCB->VTOR = APP_BASE;
 	__set_MSP(sp);
 	((void (*)())pc)();
@@ -23,7 +23,8 @@ int main(void) {
 	uint32_t blink_tick = 0;
 	bool led = false;
 
-	if (BOOT_FLAG != BOOT_STAY && AppValid()) JumpToApp();
+	BoardStepperSafe(); // drivers off first, ENN has no pull-up
+	if (BOOT_FLAG != BOOT_STAY && AppValid(false)) JumpToApp();
 	BOOT_FLAG = 0;
 
 	ClockInit();

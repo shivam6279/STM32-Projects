@@ -124,6 +124,8 @@ firmware(pnp_ctrl mem_app.ld
 	app/gcode.c
 	app/motion.c
 	app/scurve.c
+	app/jog.c
+	app/pad.c
 	drivers/uart.c
 	drivers/fdcan.c
 	drivers/pwm.c
@@ -135,6 +137,8 @@ firmware(pnp_ctrl mem_app.ld
 	drivers/i2c.c
 	drivers/ioexp.c
 	drivers/esp.c
+	drivers/esp_link.c
+	drivers/jog_timer.c
 	drivers/esp_uart.c
 	platform/boot.c
 	platform/mpu.c
