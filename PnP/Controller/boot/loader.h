@@ -3,19 +3,21 @@
 
 #include <stdbool.h>
 
-// Flashing protocol over the USB COM port. Every packet is
-//   [cmd 1][len 2, little endian][payload len]
-// and every reply is 'K' (+ data) or 'E' + error code.
+// Flashing over USB or UART6 (ESP32, 921600)
+// Packet: [cmd 1][len 2][payload][crc32 4 of all of it]
+// Reply: 'K' (+ data) or 'E' + error code. Bad packet = resend it, E/W/V can be repeated
 //
-//   'I'  -> K + "PNPB" + version u16 + app base u32 + app size u32
-//   'E'  sector u32                  erase one app sector (1-3)
-//   'W'  offset u32 + data           write, offset/len multiples of 32
-//   'V'  size u32 + crc32 u32        check CRC of the image, then write the first 32 bytes
-//   'R'                              reset into the app
+//   'I'                     -> K + "PNPB" + version u16 + app base u32 + app size u32
+//   'E'  sector u32         erase app sector 1-3
+//   'W'  offset u32 + data  write, multiples of 32
+//   'V'  size u32 + crc32   check the CRC, write the info word + vector table
+//   'R'                     run the app
 //
-// The first 32 bytes (vector table) are held back and only written once the CRC matches,
-// so an interrupted flash leaves no valid app and the bootloader stays.
+// Vector table goes in last so a half done flash never boots.
+// Vector 7 = image size, info word (size + CRC) right after the image, checked every boot.
+// Erase up to size + 32.
 
+void LoaderInit();
 void LoaderTask();
 bool AppValid();
 

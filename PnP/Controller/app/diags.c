@@ -1022,6 +1022,32 @@ uint8_t diags_boot(char *cmd) {
 
 // ---- ESP32 ----
 
+static char esp_line[64];
+static uint8_t esp_line_len = 0;
+
+// Lines from the ESP32 app, "!boot" = reboot to the bootloader (flash over WiFi). Rest is log
+void DiagsEspTask() {
+	int c;
+
+	while ((c = EspReadChar()) >= 0) {
+		if (c != '\r' && c != '\n') {
+			if (esp_line_len < sizeof(esp_line) - 1) esp_line[esp_line_len++] = c;
+			continue;
+		}
+		esp_line[esp_line_len] = '\0';
+		esp_line_len = 0;
+		if (strcmp(esp_line, "!boot") == 0) {
+			if (!MotionIdle()) {
+				EspWrite("!busy\n", 6);
+				continue;
+			}
+			EspWrite("!ok\n", 4);
+			while (!EspTxIdle());
+			diags_boot("");
+		}
+	}
+}
+
 // EN / BOOT pin levels, false if the IO expander doesn't answer
 bool espLevels(uint8_t *en, uint8_t *boot) {
 	uint16_t lv;

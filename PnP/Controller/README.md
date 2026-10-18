@@ -23,6 +23,12 @@ CRC checks and restarts the app. About 2s.
 The app's vector table is written last, after the CRC matches, so an interrupted flash leaves the
 bootloader running and you just run the script again.
 
+Over WiFi: `python tools/flash_usb.py --wifi`. The ESP32 sends `!boot` to the app (ignored while
+moving), then pipes TCP port 3233 to the bootloader on UART6 at 921600. About 4s.
+
+Protocol in boot/loader.h: CRC32 on every packet, bad ones get resent. The bootloader checks the
+whole image CRC on every boot (an app flashed over SWD only gets the vector check).
+
 SWD is only needed for the bootloader itself (or if both are dead):
 `STM32_Programmer_CLI -c port=SWD mode=UR -w build/pnp_boot.elf -v -w build/pnp_ctrl.elf -v -rst`
 

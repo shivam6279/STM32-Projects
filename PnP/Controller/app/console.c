@@ -259,6 +259,8 @@ void ConsoleTask() {
 		if (cp->diags) diags_mask |= 1 << p;
 	}
 
+	if (bridge_port < 0) DiagsEspTask();
+
 	// Monitor output only goes to ports in diags mode
 	if (diags_mask) {
 		ConsoleOut(diags_mask);

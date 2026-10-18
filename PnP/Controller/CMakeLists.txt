@@ -151,6 +151,7 @@ firmware(pnp_boot mem_boot.ld
 	boot/main.c
 	boot/loader.c
 	boot/flash.c
+	drivers/esp_uart.c
 )
 target_compile_definitions(pnp_boot PRIVATE
 	USB_PID=0x4002

@@ -8,12 +8,13 @@
 // EN and BOOT (IO9) are on the IO expander
 
 #define ESP_BAUD		115200	// ESP app, also its ROM bootloader
+#define ESP_BOOT_BAUD	921600	// our bootloader, flashing over WiFi
 
 // esp.c
 bool EspInit();						// false if the IO expander doesn't answer
 bool EspReset(bool download);		// pulse EN. download: BOOT held low through it = ROM bootloader
 
-// esp_uart.c
+// esp_uart.c, bootloader uses this too
 void EspUartInit(uint32_t baud);
 void EspBaud(uint32_t baud);		// waits for TX to finish first
 uint32_t EspGetBaud();

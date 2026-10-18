@@ -5,7 +5,8 @@
 #include "usb.h"
 
 // Bootloader, sector 0. Goes straight to the app unless the app asked us to stay
-// (BOOT_FLAG) or there's no valid app. Otherwise shows up as the PnP-Boot COM port.
+// (BOOT_FLAG) or there's no valid app. Otherwise shows up as the PnP-Boot COM port, and
+// listens on UART6 (ESP32) too.
 
 void JumpToApp() {
 	uint32_t sp = *(volatile uint32_t *)APP_BASE;
@@ -28,6 +29,7 @@ int main(void) {
 	ClockInit();
 	BoardIoInit(); // same safe pin states as the app, drivers disabled
 	UsbInit();
+	LoaderInit(); // UART6 to the ESP32, for flashing over WiFi
 
 	while (1) {
 		UsbTask();
