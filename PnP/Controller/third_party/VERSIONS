@@ -1,0 +1,4 @@
+cmsis_core       github.com/STMicroelectronics/cmsis_core       tag v5.9.0_20250520
+cmsis_device_h7  github.com/STMicroelectronics/cmsis_device_h7  tag v1.10.7
+tinyusb          github.com/hathach/tinyusb                     tag 0.21.0 (src subset: core, device, cdc, dwc2)
+lwip             github.com/lwip-tcpip/lwip                     tag STABLE-2_2_1_RELEASE (src/core, core/ipv4, netif/ethernet.c, include)
