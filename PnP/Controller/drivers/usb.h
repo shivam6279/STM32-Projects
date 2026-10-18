@@ -10,9 +10,12 @@
 bool UsbInit();			// false if VDD33USB never came up
 void UsbTask();			// call from the main loop
 bool UsbConnected();	// terminal open (DTR set)
-uint32_t UsbWrite(const char *buf, uint32_t len);
+uint32_t UsbWrite(const char *buf, uint32_t len);	// dropped if no terminal (DTR clear)
+uint32_t UsbWriteNow(const char *buf, uint32_t len);	// what fits, doesn't wait, ignores DTR
+uint32_t UsbWriteRoom();
 int UsbReadChar();		// -1 if nothing
 uint32_t UsbRead(char *buf, uint32_t len);	// returns bytes read, doesn't wait
 void UsbDetach();		// drop off the bus (pull-up off)
+uint32_t UsbBaud();		// baud the PC set
 
 #endif

@@ -55,6 +55,17 @@ uint32_t UsbWrite(const char *buf, uint32_t len) {
 	return done;
 }
 
+// No DTR check, esptool opens the port with DTR off
+uint32_t UsbWriteNow(const char *buf, uint32_t len) {
+	uint32_t n = tud_cdc_write(buf, len);
+	tud_cdc_write_flush();
+	return n;
+}
+
+uint32_t UsbWriteRoom() {
+	return tud_cdc_write_available();
+}
+
 uint32_t UsbRead(char *buf, uint32_t len) {
 	return tud_cdc_read(buf, len);
 }
@@ -62,6 +73,12 @@ uint32_t UsbRead(char *buf, uint32_t len) {
 int UsbReadChar() {
 	if (!tud_cdc_available()) return -1;
 	return tud_cdc_read_char();
+}
+
+uint32_t UsbBaud() {
+	cdc_line_coding_t lc;
+	tud_cdc_get_line_coding(&lc);
+	return lc.bit_rate;
 }
 
 void UsbDetach() {

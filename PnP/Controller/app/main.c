@@ -7,6 +7,7 @@
 #include "buttons.h"
 #include "clock.h"
 #include "console.h"
+#include "esp.h"
 #include "fdcan.h"
 #include "motion.h"
 #include "mpu.h"
@@ -69,6 +70,7 @@ int main(void) {
 	CanInit(); // both buses, 1M / 5M FD
 	AdcInit(); // pressure sensors, not running until AdcStart()
 	NetInit(); // ethernet + lwIP, 10.77.0.2
+	EspInit(); // UART6 + IO expander, ESP32 left running
 
 	while (1) {
 		UsbTask();

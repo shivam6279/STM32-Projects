@@ -8,6 +8,7 @@
 // Each one is independently in one of two modes:
 //   G-code (default)  Marlin style: no echo, every line answered with "ok"
 //   diags             typed "diags": the menu, echo and [PnP]: prompt. "exit" goes back
+//   ESP bridge        "esp bridge" in diags: straight to the ESP32 UART. 1s quiet, +++, 1s quiet to exit
 // printf goes to whichever port is being served, so a reply never shows up on the other one.
 
 #define CON_USB		0
@@ -18,5 +19,6 @@ void ConsoleTask();					// main loop
 void ConsoleOut(uint8_t mask);		// where printf goes, bit per port
 uint8_t ConsoleOutMask();
 int ConsoleReadChar();				// from the port(s) being served, -1 if nothing (for diags streaming)
+bool ConsoleBridge();				// port being served -> ESP bridge
 
 #endif

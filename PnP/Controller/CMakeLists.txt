@@ -132,6 +132,10 @@ firmware(pnp_ctrl mem_app.ld
 	drivers/stepgen.c
 	drivers/stepgen_fill.c
 	drivers/tmc.c
+	drivers/i2c.c
+	drivers/ioexp.c
+	drivers/esp.c
+	drivers/esp_uart.c
 	platform/boot.c
 	platform/mpu.c
 	drivers/eth.c

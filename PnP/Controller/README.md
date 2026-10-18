@@ -66,6 +66,13 @@ command is still waiting.
 
 Typing `diags` switches that port to the diags menu (echo, `[PnP]: ` prompt); `exit` goes back.
 
+## ESP32
+ESP32-C3-MINI-1 (U3) on UART6 (PC6/PC7). EN and BOOT (IO9) on the IO expander (U1, I2C3, 0x20)
+P0_0 / P0_1.
+
+`python tools/flash_esp.py write-flash 0x0 app.bin` flashes it through the H7 (needs esptool).
+`esp bridge` in diags wires the port straight to the ESP, 1s quiet + `+++` + 1s quiet to exit.
+
 ## Clocks
 25MHz HSE -> 520MHz SYSCLK (VOS0, LDO). HCLK 260, APBs 130, APB1 timers 260.
 

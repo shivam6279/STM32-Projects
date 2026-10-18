@@ -5,8 +5,10 @@
 #include "boot.h"
 #include "clock.h"
 #include "console.h"
+#include "esp.h"
 #include "eth.h"
 #include "fdcan.h"
+#include "ioexp.h"
 #include "motion.h"
 #include "net.h"
 #include "scurve.h"
@@ -39,6 +41,7 @@ uint8_t diags_btn(char*);
 uint8_t diags_press(char*);
 uint8_t diags_eth(char*);
 uint8_t diags_tmc(char*);
+uint8_t diags_esp(char*);
 void printDiagsMenu();
 
 typedef uint8_t (*diags_function)(char*);
@@ -63,6 +66,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Pressure sensors",		.cmd = "press",	.func = diags_press	},
 	{ .name = "Ethernet",				.cmd = "eth",	.func = diags_eth	},
 	{ .name = "Stepper drivers (TMC2209 UART)",	.cmd = "tmc",	.func = diags_tmc	},
+	{ .name = "ESP32: reset, bootloader, UART bridge",	.cmd = "esp",	.func = diags_esp	},
 	{ .name = "Reboot to the USB bootloader",	.cmd = "boot",	.func = diags_boot	},
 };
 
@@ -1013,6 +1017,109 @@ uint8_t diags_boot(char *cmd) {
 	t = Millis();
 	while (Millis() - t < 20);
 	BootToLoader();
+	return true;
+}
+
+// ---- ESP32 ----
+
+// EN / BOOT pin levels, false if the IO expander doesn't answer
+bool espLevels(uint8_t *en, uint8_t *boot) {
+	uint16_t lv;
+	if (!IoExpRead(&lv)) {
+		printf("IO expander not answering at 0x%02X\n", IOEXP_ADDR);
+		return false;
+	}
+	*en = (lv >> IOEXP_ESP_EN) & 1;
+	*boot = (lv >> IOEXP_ESP_BOOT) & 1;
+	return true;
+}
+
+uint8_t diags_esp(char *cmd) {
+	EspStats st;
+	uint32_t period, t, v;
+	uint8_t en, boot;
+	char *p;
+
+	const char help_str[] = "\
+esp : EN / BOOT pin levels, UART6 baud and byte counts\n\
+-s : stream EN, BOOT until 'x' is entered\n\
+-f [x] : streaming frequency in Hz [1, 10000], default 10\n\
+esp reset : reset, runs the app\n\
+esp boot : reset into the ROM bootloader (BOOT low through the reset)\n\
+esp en <0|1> : 0 = hold EN low (in reset), 1 = let go\n\
+esp io9 <0|1> : BOOT pin (IO9), 0 = pull low, 1 = let go\n\
+esp baud <n> : UART6 baud. In the bridge the USB port sets it\n\
+esp bridge : this port <-> ESP32 UART0. 1s quiet, +++, 1s quiet to get back\n";
+
+	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
+		fputs(help_str, stdout);
+		return true;
+	}
+
+	p = cmd + 3;
+	while (*p == ' ') p++;
+
+	if (*p == '\0' || *p == '-') {
+		if (argFlag(cmd, "-s")) {
+			if (!streamPeriod(cmd, &period)) return false;
+			printf("EN, BOOT\n");
+			while (1) {
+				t = Millis();
+				if (!espLevels(&en, &boot)) return false;
+				printf("%d, %d\n", en, boot);
+				if (streamWait(t, period)) return true;
+			}
+		}
+		if (espLevels(&en, &boot)) {
+			printf("EN: %d%s\n", en, IoExpIsLow(IOEXP_ESP_EN) ? " (held low)" : "");
+			printf("BOOT: %d%s\n", boot, IoExpIsLow(IOEXP_ESP_BOOT) ? " (held low)" : "");
+		}
+		EspGetStats(&st);
+		printf("UART6: %" PRIu32 " baud, rx %" PRIu32 ", tx %" PRIu32 ", overrun %" PRIu32 ", framing %" PRIu32 ", dropped %" PRIu32 "\n",
+			EspGetBaud(), st.rx, st.tx, st.overrun, st.frame, st.rx_dropped);
+	} else if (strncmp(p, "reset", 5) == 0) {
+		if (!EspReset(false)) {
+			printf("IO expander not answering at 0x%02X\n", IOEXP_ADDR);
+			return false;
+		}
+		printf("ESP32 reset\n");
+	} else if (strncmp(p, "boot", 4) == 0) {
+		EspFlushRx();
+		if (!EspReset(true)) {
+			printf("IO expander not answering at 0x%02X\n", IOEXP_ADDR);
+			return false;
+		}
+		printf("ESP32 in download mode\n");
+	} else if (strncmp(p, "en", 2) == 0 || strncmp(p, "io9", 3) == 0) {
+		uint8_t pin = p[0] == 'e' ? IOEXP_ESP_EN : IOEXP_ESP_BOOT;
+		p += pin == IOEXP_ESP_EN ? 2 : 3;
+		while (*p == ' ') p++;
+		if (*p != '0' && *p != '1') {
+			fputs(help_str, stdout);
+			return false;
+		}
+		if (!IoExpLow(pin, *p == '0')) {
+			printf("IO expander not answering at 0x%02X\n", IOEXP_ADDR);
+			return false;
+		}
+		printf("%s %s\n", pin == IOEXP_ESP_EN ? "EN" : "BOOT", *p == '0' ? "held low" : "let go");
+	} else if (strncmp(p, "baud", 4) == 0) {
+		v = strtoul(p + 4, NULL, 10);
+		if (v == 0) {
+			fputs(help_str, stdout);
+			return false;
+		}
+		EspBaud(v);
+		printf("UART6 at %" PRIu32 " baud\n", EspGetBaud());
+	} else if (strncmp(p, "bridge", 6) == 0) {
+		if (!ConsoleBridge()) {
+			printf("Already bridged on the other port\n");
+			return false;
+		}
+	} else {
+		fputs(help_str, stdout);
+		return false;
+	}
 	return true;
 }
 
