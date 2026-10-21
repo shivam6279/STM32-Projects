@@ -14,6 +14,13 @@
 // DIAG1-8 (PD8-15) go high on a driver error (datasheet 15.4): power-on reset, charge pump
 // undervoltage, overtemperature, short. The rising edge stops the steppers in the interrupt,
 // TmcTask reads the driver over UART, reports, and turns the drivers off.
+//
+// StallGuard4 (datasheet 11), for homing against the hard stops: in StealthChop the driver
+// estimates the load as SG_RESULT (0-510, lower = more load). DIAG goes high when
+// SG_RESULT <= 2 * SGTHRS, but only while TSTEP <= TCOOLTHRS, i.e. faster than a set speed.
+// TCOOLTHRS stays 0 (off) except while homing, so outside homing DIAG still only means a fault.
+// Drivers armed with TmcStallArm treat DIAG as a stall instead: the interrupt halts their
+// STEP output (StepHalt) and nothing else stops.
 
 #define TMC_DRIVERS			8
 #define TMC_BANKS			2
@@ -21,6 +28,7 @@
 #define TMC_BAUD_DEFAULT	115200	// datasheet: 9000 to fCLK/16
 #define TMC_RSENSE			0.11f	// ohms, BRA/BRB
 #define TMC_IRMS_MAX		1.4f	// A RMS, datasheet design guideline per coil
+#define TMC_FCLK			12000000	// internal clock, datasheet typical (TSTEP / TCOOLTHRS units)
 
 // Registers
 #define TMC_GCONF			0x00
@@ -29,6 +37,10 @@
 #define TMC_NODECONF		0x03	// SENDDELAY in bits 11..8, >= 2 with several nodes on a wire
 #define TMC_IOIN			0x06
 #define TMC_IHOLD_IRUN		0x10	// write only
+#define TMC_TSTEP			0x12	// time between 1/256 microsteps, 1/fCLK units
+#define TMC_TCOOLTHRS		0x14	// write only, StallGuard on DIAG while TSTEP <= this (20 bit)
+#define TMC_SGTHRS			0x40	// write only, stall when SG_RESULT <= 2 * SGTHRS
+#define TMC_SG_RESULT		0x41	// 0-510, 0 = most load
 #define TMC_CHOPCONF		0x6C
 #define TMC_DRV_STATUS		0x6F
 
@@ -115,5 +127,14 @@ void TmcFaultText(uint32_t gstat, uint32_t drv, char *buf, uint32_t len);	// "uv
 // current that really gives
 float TmcCurrent(float amps, bool vsense, uint8_t *cs);
 bool TmcVsenseFor(float run);
+uint8_t TmcRunCurrent(uint8_t drv, float run);	// IRUN only, vsense stays (0 = back to tmc_config)
+
+// StallGuard (homing)
+uint32_t TmcTcoolFor(uint8_t drv, float step_hz);	// TCOOLTHRS for "on above step_hz" (full STEP pulses/s)
+uint8_t TmcStallSetup(uint8_t drv, uint8_t sgthrs, uint32_t tcoolthrs);	// tcoolthrs 0 = off
+void TmcStallArm(uint8_t mask);		// DIAG on these = stall: halt that STEP, record it. Clears the record
+void TmcStallDisarm();				// DIAG = fault again for every driver
+uint8_t TmcStalled();				// bit per driver that stalled since TmcStallArm
+uint8_t TmcStallCheck(uint8_t mask);	// after disarming: drivers with DIAG still high or an error flag. Faults them (like a DIAG edge)
 
 #endif

@@ -9,12 +9,14 @@
 #include "console.h"
 #include "esp.h"
 #include "fdcan.h"
+#include "home.h"
 #include "jog_timer.h"
 #include "motion.h"
 #include "mpu.h"
 #include "net.h"
 #include "pad.h"
 #include "pwm.h"
+#include "settings.h"
 #include "stepgen.h"
 #include "tmc.h"
 #include "uart.h"
@@ -67,6 +69,7 @@ int main(void) {
 	TmcInit(); // driver UARTs, both banks
 	MotionInit();
 	JogTimerInit(); // TIM7, idle until a jog starts
+	SettingsBoot(); // saved settings over the built in ones, before TmcTask sets the drivers up
 
 	setvbuf(stdout, NULL, _IONBF, 0); // Disable printf buffering
 	UartInit();
@@ -82,6 +85,7 @@ int main(void) {
 		ButtonsTask();
 		ConsoleTask();
 		PadTask(); // Xbox controller, off unless pad mode says otherwise
+		HomeTask(); // G28 / home: sensorless homing, one axis at a time
 		TmcTask(); // driver setup at boot, DIAG faults
 
 #ifdef STEPGEN_SELFTEST

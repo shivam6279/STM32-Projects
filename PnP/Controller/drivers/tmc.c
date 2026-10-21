@@ -50,6 +50,8 @@ static uint32_t baud = TMC_BAUD_DEFAULT;
 static uint8_t line_drv[16];		// EXTI line -> driver
 static volatile uint8_t pending;	// DIAG went high, not looked at yet
 static volatile uint8_t ignored;
+static volatile uint8_t stall_arm;	// DIAG on these = StallGuard stall, not a fault
+static volatile uint8_t stalled;
 static bool booted = false;
 
 // TODO real currents per axis. Until then low enough for the smallest motor here (NEMA 8)
@@ -216,7 +218,8 @@ static uint32_t Mres(uint16_t ustep) {
 //   pdn_disable         PDN_UART is the UART, not the standstill pin
 //   mstep_reg_select    MS1/MS2 are the address, microsteps come from MRES
 //   I_scale_analog = 0  internal current reference, VREF isn't used
-// Then GSTAT cleared, IFCNT checked (5 writes) and GCONF / CHOPCONF read back
+//   TCOOLTHRS = 0       StallGuard doesn't reach DIAG (homing turns it on)
+// Then GSTAT cleared, IFCNT checked (6 writes) and GCONF / CHOPCONF read back
 uint8_t TmcSetup(uint8_t drv) {
 	TmcConfig *c = &tmc_config[drv];
 	uint32_t c0, c1, gconf, chop, v;
@@ -244,15 +247,62 @@ uint8_t TmcSetup(uint8_t drv) {
 	TmcWrite(drv, TMC_GCONF, gconf);
 	TmcWrite(drv, TMC_CHOPCONF, chop);
 	TmcWrite(drv, TMC_IHOLD_IRUN, ihold | (irun << 8) | (IHOLDDELAY << 16));
+	TmcWrite(drv, TMC_TCOOLTHRS, 0); // StallGuard off on DIAG, only homing turns it on
 	TmcWrite(drv, TMC_GSTAT, TMC_GSTAT_RESET | TMC_GSTAT_DRV_ERR | TMC_GSTAT_UV_CP);
 
 	if ((e = TmcRead(drv, TMC_IFCNT, &c1)) != TMC_OK) return e;
-	if (((c1 - c0) & 0xFF) != 5) return TMC_NOT_ACCEPTED;
+	if (((c1 - c0) & 0xFF) != 6) return TMC_NOT_ACCEPTED;
 	if ((e = TmcRead(drv, TMC_GCONF, &v)) != TMC_OK) return e;
 	if ((v & 0x3FF) != (gconf & 0x3FF)) return TMC_NOT_ACCEPTED;
 	if ((e = TmcRead(drv, TMC_CHOPCONF, &v)) != TMC_OK) return e;
 	if (v != chop) return TMC_NOT_ACCEPTED;
 	return TMC_OK;
+}
+
+// Only IRUN changes, vsense stays as TmcSetup picked it for the configured run current, so
+// anything above that is capped at its full scale. Hold stays at or under run
+uint8_t TmcRunCurrent(uint8_t drv, float run) {
+	TmcConfig *c = &tmc_config[drv];
+	bool vsense = TmcVsenseFor(c->run);
+	uint8_t irun, ihold;
+
+	if (run <= 0) run = c->run;
+	TmcCurrent(run, vsense, &irun);
+	TmcCurrent(c->hold < run ? c->hold : run, vsense, &ihold);
+	return TmcWrite(drv, TMC_IHOLD_IRUN, ihold | (irun << 8) | (IHOLDDELAY << 16));
+}
+
+// ---- StallGuard ----
+
+// TSTEP = fCLK / (1/256 microstep rate) = fCLK * ustep / (256 * step_hz). On while TSTEP <= TCOOLTHRS
+uint32_t TmcTcoolFor(uint8_t drv, float step_hz) {
+	float t;
+
+	if (step_hz <= 0) return 0;
+	t = (float)TMC_FCLK * tmc_config[drv].ustep / (256 * step_hz);
+	if (t > 0xFFFFF) return 0xFFFFF;
+	return t < 1 ? 1 : (uint32_t)t;
+}
+
+uint8_t TmcStallSetup(uint8_t drv, uint8_t sgthrs, uint32_t tcoolthrs) {
+	uint8_t e;
+	if ((e = TmcWrite(drv, TMC_SGTHRS, sgthrs)) != TMC_OK) return e;
+	return TmcWrite(drv, TMC_TCOOLTHRS, tcoolthrs & 0xFFFFF);
+}
+
+void TmcStallArm(uint8_t mask) {
+	__disable_irq();
+	stalled = 0;
+	stall_arm = mask;
+	__enable_irq();
+}
+
+void TmcStallDisarm() {
+	stall_arm = 0;
+}
+
+uint8_t TmcStalled() {
+	return stalled;
 }
 
 // ---- faults ----
@@ -323,20 +373,52 @@ bool TmcReady() {
 	return ok;
 }
 
-// Rising DIAG: stop stepping now, the rest happens in TmcTask
+// Rising DIAG: stop stepping now, the rest happens in TmcTask. On an armed driver it's a stall:
+// only that driver's steps stop. It stays armed, DIAG can bounce while the motor comes to rest
 void TmcDiagIsr() {
 	uint32_t pr = EXTI_D1->PR1 & DIAG_LINES;
-	uint8_t line, hit = 0;
+	uint8_t line, hit = 0, s;
 
 	EXTI_D1->PR1 = pr;
 	for (line = 8; line < 16; line++) {
 		if (pr & (1 << line)) hit |= 1 << line_drv[line];
 	}
 	hit &= ~ignored;
+	s = hit & stall_arm;
+	if (s) {
+		StepHalt(s);
+		stalled |= s;
+		hit &= ~s;
+	}
 	if (hit) {
 		pending |= hit;
 		StepDriverFault();
 	}
+}
+
+// A stall DIAG can hide a real fault on the same pin (no new edge), so look at each driver once
+// StallGuard is off again. Anything wrong goes the normal fault way
+uint8_t TmcStallCheck(uint8_t mask) {
+	uint8_t d, bad = TmcDiagPins() & mask;
+	uint32_t g, s;
+
+	for (d = 0; d < TMC_DRIVERS; d++) {
+		if (!((mask >> d) & 1) || (bad >> d) & 1) continue;
+		if (TmcRead(d, TMC_GSTAT, &g) != TMC_OK || TmcRead(d, TMC_DRV_STATUS, &s) != TMC_OK) {
+			bad |= 1 << d;
+		} else if (g & (TMC_GSTAT_DRV_ERR | TMC_GSTAT_UV_CP)
+			|| s & (TMC_DRV_OT | TMC_DRV_S2GA | TMC_DRV_S2GB | TMC_DRV_S2VSA | TMC_DRV_S2VSB)) {
+			bad |= 1 << d;
+		}
+	}
+	bad &= ~ignored;
+	if (bad) {
+		__disable_irq();
+		pending |= bad;
+		__enable_irq();
+		StepDriverFault();
+	}
+	return bad;
 }
 
 void EXTI15_10_IRQHandler() {

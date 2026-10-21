@@ -31,6 +31,11 @@ int64_t StepPosition(uint32_t axis);	// signed step position (DIR high = +)
 uint32_t StepLate(uint32_t axis);		// segments that started behind time
 void StepAbort();
 void StepDriverFault();					// stop stepping, drivers stay enabled (DIAG interrupt)
+void StepHalt(uint8_t mask);			// these axes stop dead at the next refill, the rest carry on (any context)
+void StepRelease(uint8_t mask);			// halted axes take segments again
+uint8_t StepHalted();
+bool StepPause();						// all idle: timer + DMA stopped, no fault (flash writes stall the refill)
+void StepResume();						// after StepPause
 bool StepRunning();
 void StepRecover();						// after StepAbort / a fault: drop the queues, start again
 uint8_t StepFault();

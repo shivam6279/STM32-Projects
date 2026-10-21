@@ -15,6 +15,8 @@
 
 #define HALF		512
 #define DIR_SETUP	2
+#define Y1_DRV		6	// Y gantry drivers in the default mapping (motion.c)
+#define Y2_DRV		7
 
 static int failures;
 
@@ -36,6 +38,7 @@ bool StepAxisIdle(uint32_t axis) { return StepFillAxisIdle(&g, axis); }
 uint64_t StepNow() { return g.tick; }
 int64_t StepPosition(uint32_t axis) { return g.axis[axis].position; }
 bool StepRunning() { return true; }
+uint8_t StepHalted() { return g.halted; }
 uint32_t Millis() { return (uint32_t)(g.tick / 1000); }
 
 // ---- simulated port ----
@@ -104,9 +107,9 @@ static void RunTarget(const float *v, uint32_t ms) {
 
 static uint64_t window_start;
 
-// Y2's raw step count given Y1's: opposite if its DIR is inverted (motion_invert)
+// Y2's raw step count given Y1's: opposite if only one of them has its DIR inverted (motion_invert)
 static int64_t Y2(int64_t y1) {
-	return (motion_invert >> 1) & 1 ? -y1 : y1;
+	return ((motion_invert >> Y1_DRV) & 1) != ((motion_invert >> Y2_DRV) & 1) ? -y1 : y1;
 }
 
 static void WindowReset() {
@@ -130,7 +133,7 @@ static void Setup() {
 		pins[i].last_dir_change = -100;
 	}
 	StepFillInit(&g, step_mask, dir_mask, DIR_SETUP);
-	MotionInit(); // X driver 2, Y drivers 0 + 1, Z driver 3, 80 steps/mm, 300mm/s, 3000mm/s^2
+	MotionInit(); // X driver 2, Y drivers 6 + 7, Z driver 3, 80 steps/mm, 300mm/s, 3000mm/s^2
 	tick = 0;
 	next_jog = 0;
 }
@@ -147,7 +150,7 @@ static void TestSteady() {
 	WindowReset();
 	RunTarget(v, 100);
 	CHECK(fabs(pins[2].steps - WindowWant(50)) <= 2, "X 50mm/s: %u steps, want %.1f", pins[2].steps, WindowWant(50));
-	CHECK(pins[0].steps == 0 && pins[3].steps == 0, "only X moves");
+	CHECK(pins[Y1_DRV].steps == 0 && pins[3].steps == 0, "only X moves");
 	t1 = g.tick;
 	JogStop();
 	Run(200);
@@ -187,22 +190,22 @@ static void TestReverse() {
 
 // Nobody sets the target any more (main loop stuck, pad gone): ramps down and stops by itself
 static void TestTimeout() {
-	float v[MOTION_AXES] = { 0, 100, 0 };	// Y, ganged on drivers 0 + 1
+	float v[MOTION_AXES] = { 0, 100, 0 };	// Y, ganged on drivers 6 + 7
 	int64_t p;
 	Setup();
 	JogStart();
 	RunTarget(v, 300);
 	Run(JOG_TIMEOUT_MS + 100); // ramp is 33ms from 100mm/s
-	p = pins[0].pos;
+	p = pins[Y1_DRV].pos;
 	WindowReset();
 	Run(100);
-	CHECK(pins[0].steps == 0, "Y still moving %u steps/100ms after the timeout", pins[0].steps);
-	CHECK(pins[1].pos == Y2(pins[0].pos) && p == pins[0].pos, "Y1 %lld, Y2 %lld", (long long)pins[0].pos, (long long)pins[1].pos);
+	CHECK(pins[Y1_DRV].steps == 0, "Y still moving %u steps/100ms after the timeout", pins[Y1_DRV].steps);
+	CHECK(pins[Y2_DRV].pos == Y2(pins[Y1_DRV].pos) && p == pins[Y1_DRV].pos, "Y1 %lld, Y2 %lld", (long long)pins[Y1_DRV].pos, (long long)pins[Y2_DRV].pos);
 	CHECK(JogActive(), "timeout only stops, jog stays on");
 	// Target back: moves again
 	WindowReset();
 	RunTarget(v, 100);
-	CHECK(pins[0].steps > 500, "moving again after the timeout: %u", pins[0].steps);
+	CHECK(pins[Y1_DRV].steps > 500, "moving again after the timeout: %u", pins[Y1_DRV].steps);
 	JogStop();
 	Run(200);
 	JogTask();
@@ -227,12 +230,52 @@ static void TestFuzz() {
 	Run(300);
 	JogTask();
 	CHECK(!JogActive() && MotionIdle(), "fuzz: stopped and handed back");
-	for (k = 0; k < 4; k++) CHECK(pins[k].pos == StepPosition(k), "fuzz driver %u: replayed %lld, fill %lld", k, (long long)pins[k].pos, (long long)StepPosition(k));
-	CHECK(pins[1].pos == Y2(pins[0].pos), "fuzz: Y1 %lld, Y2 %lld", (long long)pins[0].pos, (long long)pins[1].pos);
+	for (k = 0; k < STEP_AXES; k++) CHECK(pins[k].pos == StepPosition(k), "fuzz driver %u: replayed %lld, fill %lld", k, (long long)pins[k].pos, (long long)StepPosition(k));
+	CHECK(pins[Y2_DRV].pos == Y2(pins[Y1_DRV].pos), "fuzz: Y1 %lld, Y2 %lld", (long long)pins[Y1_DRV].pos, (long long)pins[Y2_DRV].pos);
 	CHECK(JogLate() == 0, "fuzz: queue ran dry %u times", JogLate());
 	// Not checked: the fill's own late count. A reversal right after a step at the end of a half
 	// buffer puts DIR (and so the segment) into the next one. The run starts from rest, first step
 	// ~3ms in, so it costs nothing.
+}
+
+// Homing a gantry: Y1 stalls first and is halted (the DIAG interrupt's StepHalt), Y2 carries on
+// until it stalls too. The halted driver stops dead, the jog doesn't fault, positions still line up
+static void TestHalt() {
+	float v[MOTION_AXES] = { 0, -25, 0 };	// Y, 2000 steps/s
+	int64_t y1;
+
+	Setup();
+	JogStart();
+	RunTarget(v, 300);
+	g.halted |= 1 << Y1_DRV;
+	y1 = pins[Y1_DRV].pos;
+	WindowReset();
+	RunTarget(v, 100);
+	CHECK(pins[Y1_DRV].steps == 0 && pins[Y1_DRV].pos == y1, "halted Y1 still stepped %u", pins[Y1_DRV].steps);
+	CHECK(fabs(pins[Y2_DRV].steps - WindowWant(25)) <= 2, "Y2 alone: %u steps, want %.0f", pins[Y2_DRV].steps, WindowWant(25));
+	g.halted |= 1 << Y2_DRV;
+	WindowReset();
+	RunTarget(v, 100);
+	CHECK(pins[Y1_DRV].steps == 0 && pins[Y2_DRV].steps == 0, "both halted, still %u / %u steps", pins[Y1_DRV].steps, pins[Y2_DRV].steps);
+	JogStop();
+	Run(200);
+	JogTask();
+	CHECK(!JogActive() && MotionIdle(), "halt: stopped and handed back");
+	CHECK(pins[Y1_DRV].pos == StepPosition(Y1_DRV) && pins[Y2_DRV].pos == StepPosition(Y2_DRV), "halt: replayed and fill disagree");
+	CHECK(llabs(pins[Y2_DRV].pos) - llabs(pins[Y1_DRV].pos) > 190, "halt: Y2 should be ~200 steps further, Y1 %lld Y2 %lld",
+		(long long)pins[Y1_DRV].pos, (long long)pins[Y2_DRV].pos);
+	CHECK(!StepFillQueue(&g, Y1_DRV, &(StepSegment){ g.tick + 1000, 100, 1, 0, 0.01, 0, 0 }), "halted axis took a segment");
+
+	// Released: both move together again
+	g.halted = 0;
+	JogStart();
+	WindowReset();
+	RunTarget(v, 200);
+	CHECK(pins[Y1_DRV].steps == pins[Y2_DRV].steps && pins[Y1_DRV].steps > 300, "after release: %u / %u steps", pins[Y1_DRV].steps, pins[Y2_DRV].steps);
+	JogStop();
+	Run(200);
+	JogTask();
+	CHECK(JogLate() == 0, "halt: queue ran dry %u times", JogLate());
 }
 
 int main(void) {
@@ -240,6 +283,7 @@ int main(void) {
 	TestReverse();
 	TestTimeout();
 	TestFuzz();
+	TestHalt();
 	if (failures) {
 		printf("%d failures\n", failures);
 		return 1;

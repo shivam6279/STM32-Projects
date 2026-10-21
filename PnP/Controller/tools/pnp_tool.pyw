@@ -286,7 +286,9 @@ class App:
 		self.term.config(yscrollcommand=sb.set)
 		sb.pack(side=tk.RIGHT, fill=tk.Y)
 		self.term.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-		self.term.tag_config("ts", foreground="#8a8a8a")
+		self.term.tag_config("ts", foreground="#8a8a8a", elide=not self.stamps.get())
+		# Every line always gets a stamp, the toggle only shows / hides them (old lines too)
+		self.stamps.trace_add("write", lambda *_: self.term.tag_config("ts", elide=not self.stamps.get()))
 		self.term.tag_config("tx", foreground="#1f5fbf")
 		self.term.tag_config("note", foreground="#a05a00")
 
@@ -436,13 +438,13 @@ class App:
 			self.entry.insert(0, self.history[self.hist_i])
 		return "break"
 
-	# Timestamp at the start of every line, as it arrives
+	# Timestamp at the start of every line, as it arrives. Always there, hidden when they're off
 	def TermText(self, text, tag=None):
 		t = self.term
 		t.config(state=tk.NORMAL)
 		stamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3] + "  "
 		for part in text.splitlines(keepends=True):
-			if self.line_start and self.stamps.get():
+			if self.line_start:
 				t.insert(tk.END, stamp, "ts")
 			t.insert(tk.END, part, tag)
 			self.line_start = part.endswith("\n")
@@ -463,13 +465,26 @@ class App:
 		self.term.config(state=tk.DISABLED)
 		self.line_start = True
 
+	# Terminal text as shown: the stamps left out while they're hidden
+	def TermPlain(self):
+		t = self.term
+		if self.stamps.get():
+			return t.get("1.0", "end-1c")
+		out, pos = [], "1.0"
+		r = t.tag_ranges("ts")
+		for i in range(0, len(r), 2):
+			out.append(t.get(pos, r[i]))
+			pos = r[i + 1]
+		out.append(t.get(pos, "end-1c"))
+		return "".join(out)
+
 	def Save(self):
 		name = filedialog.asksaveasfilename(defaultextension=".txt",
 			initialfile=datetime.datetime.now().strftime("pnp_%Y%m%d_%H%M%S.txt"),
 			filetypes=[("Text", "*.txt"), ("All files", "*.*")])
 		if name:
 			with open(name, "w", encoding="utf-8") as f:
-				f.write(self.term.get("1.0", "end-1c"))
+				f.write(self.TermPlain())
 			self.Status(f"Saved {name}")
 
 	def Log(self, text, tag=None):

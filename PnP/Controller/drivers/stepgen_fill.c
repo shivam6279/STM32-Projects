@@ -32,6 +32,7 @@ bool StepFillQueue(StepGen *sg, uint32_t axis, const StepSegment *seg) {
 	uint32_t head;
 
 	if (axis >= STEP_AXES || seg->duration == 0 || seg->v0 < 0 || seg->v0 > 0.5) return false;
+	if ((sg->halted >> axis) & 1) return false;
 	a = &sg->axis[axis];
 	head = a->head;
 	if (head - a->tail >= STEP_QUEUE_LEN) return false;
@@ -151,6 +152,7 @@ void StepFillFlush(StepGen *sg) {
 		a->earliest = 0;
 	}
 	sg->carry = 0;
+	sg->halted = 0;
 }
 
 void StepFillWords(StepGen *sg, uint32_t *buf, uint32_t n) {
@@ -167,6 +169,14 @@ void StepFillWords(StepGen *sg, uint32_t *buf, uint32_t n) {
 		uint32_t set = sg->step_mask[ax];
 		uint32_t reset = set << 16;
 
+		if ((sg->halted >> ax) & 1) {
+			// Halted (stall while homing): whatever is queued or playing goes, no more steps.
+			// A STEP already set high in the last fill still gets its reset through carry
+			a->tail = a->head;
+			a->active = false;
+			a->have_edge = false;
+			continue;
+		}
 		while (1) {
 			if (!a->active && !LoadNext(sg, ax, buf, start, end)) break;
 			if (!a->have_edge && !NextEdge(a)) {

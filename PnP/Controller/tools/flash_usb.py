@@ -2,7 +2,8 @@
 # Flash the app through our bootloader (boot/), over USB or WiFi (through the ESP32).
 # USB: sends "boot" on the debug port (or the ST-Link UART if USB is busy), waits for PnP-Boot.
 # WiFi: pnp-esp.local:3233, the ESP sends "!boot" and passes bytes to the bootloader on UART6.
-# Usage: flash_usb.py [bin] [--port COMx] [--wifi [host]]
+# Usage: flash_usb.py [bin] [--port COMx] [--wifi [host]] [--erase-settings]
+# Sector 3 holds the settings (app/settings.c): never erased unless --erase-settings.
 import argparse
 import socket
 import struct
@@ -18,6 +19,8 @@ APP_PID, BOOT_PID = 0x4001, 0x4002
 CHUNK = 1024
 FLASH_WORD = 32
 SECTOR = 128 * 1024
+SETTINGS_SECTOR = 3
+APP_SECTORS = 2		# 1-2, the app is linked to 256K so the settings survive
 BOOT_VERSION = 2
 WIFI_PORT = 3233
 TRIES = 8
@@ -184,6 +187,8 @@ def Main():
 	ap.add_argument("--port", help="debug port to send boot on (default: find it)")
 	ap.add_argument("--wifi", nargs="?", const="pnp-esp.local", metavar="HOST",
 		help="flash through the ESP32 (default pnp-esp.local)")
+	ap.add_argument("--erase-settings", action="store_true",
+		help="also wipe the saved settings, the app comes up on its defaults")
 	args = ap.parse_args()
 
 	image = open(args.bin, "rb").read()
@@ -200,11 +205,16 @@ def Main():
 		sys.exit(f"Bootloader v{ver}, this script needs v{BOOT_VERSION} (flash pnp_boot.elf over SWD)")
 	if len(image) + FLASH_WORD > size:
 		sys.exit(f"Image is {len(image)} bytes, app area is {size} (minus 32 for the info word)")
+	if len(image) + FLASH_WORD > APP_SECTORS * SECTOR:
+		sys.exit(f"Image is {len(image)} bytes, it would run into the settings sector")
 	print(f"Bootloader v{ver} on {where}, app at 0x{base:08X}, {len(image)} bytes, CRC {crc:08X}")
 
 	# + 32 for the info word after the image
 	for sector in range(1, 1 + (len(image) + FLASH_WORD + SECTOR - 1) // SECTOR):
 		Cmd(link, b"E", struct.pack("<I", sector), timeout=10)
+	if args.erase_settings:
+		Cmd(link, b"E", struct.pack("<I", SETTINGS_SECTOR), timeout=10)
+		print("Settings erased")
 	print(f"Erased in {time.time() - t:.1f}s")
 
 	for off in range(0, len(image), CHUNK):

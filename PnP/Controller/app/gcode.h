@@ -10,7 +10,8 @@
 //
 // Supported: G0 G1 G4 G20 G21 G28 G90 G91 G92
 //            M17 M18 M84 M92 M105 M106 M107 M110 M112 M114 M115 M119 M201 M203 M204 M205
-//            M400 M500 M501 M502 M503 M800 (pressure) M997 (bootloader) M999, T (ignored)
+//            M400 M500 M501 M502 M503 M800 (pressure) M906 M914 M997 (bootloader) M999, T (ignored)
+// M500 / M501 / M502: save / load / defaults (settings.c, flash). Changes only stick after M500.
 // Line numbers + checksums (N.. *cs) as Marlin does them, with Resend on a mismatch.
 // Axes: X Y Z A B C U (see motion.c for which drivers). Marlin's I J K are accepted for A B C.
 

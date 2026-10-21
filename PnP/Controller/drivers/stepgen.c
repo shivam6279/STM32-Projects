@@ -210,6 +210,51 @@ void StepDriverFault() {
 	Stop(STEP_FAULT_DRIVER, false);
 }
 
+// Takes effect at the next refill, so the buffered half (<= 2 * STEP_HALF ticks) still plays.
+// Interrupts off: the DIAG interrupt sets bits too
+void StepHalt(uint8_t mask) {
+	uint32_t pm = __get_PRIMASK();
+	__disable_irq();
+	sg.halted |= mask;
+	__set_PRIMASK(pm);
+}
+
+void StepRelease(uint8_t mask) {
+	uint32_t pm = __get_PRIMASK();
+	__disable_irq();
+	sg.halted &= ~mask;
+	__set_PRIMASK(pm);
+}
+
+uint8_t StepHalted() {
+	return sg.halted;
+}
+
+// Settings save: while the flash is busy nothing runs from it, so the refill interrupt would miss
+// its deadline and stop everything with an underrun. Only with every axis idle: the buffers hold no
+// steps, so stopping the timer + DMA loses nothing. StepResume starts them again
+bool StepPause() {
+	uint32_t i;
+
+	if (!running) return false;
+	for (i = 0; i < STEP_AXES; i++) {
+		if (!StepAxisIdle(i)) return false;
+	}
+	running = false;
+	TIM6->CR1 &= ~TIM_CR1_CEN;
+	TIM6->DIER = 0;
+	DMA1_Stream0->CR &= ~DMA_SxCR_EN;
+	while (DMA1_Stream0->CR & DMA_SxCR_EN);
+	GPIOE->BSRR = STEP_ALL << 16;
+	return true;
+}
+
+// A fault while paused (DIAG) stays: StepStart would clear it
+void StepResume() {
+	if (running || fault != STEP_OK) return;
+	Restart(DMA1_Stream0->PAR);
+}
+
 uint8_t StepFault() {
 	return fault;
 }

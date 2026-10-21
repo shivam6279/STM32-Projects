@@ -18,22 +18,22 @@
 
 _Static_assert(MOTION_DRIVERS == STEP_AXES, "one motion driver per step generator channel");
 
-// Driver 0 Y1, 1 Y2, 2 X, 3 Z, 4 toolhead 1 (A, rotation), 5 toolhead 2 (B), 6 / 7 spare (C, U)
+// Driver 0 / 1 spare (U, C), 2 X, 3 Z, 4 toolhead 1 (A, rotation), 5 toolhead 2 (B), 6 + 7 Y gantry
 // X Y Z: 1.8deg steppers, GT2 belt, 20 tooth pulley = 40mm/rev. 200 * 16 microsteps (tmc_config) /
 // 40 = 80 steps/mm. A B C U steps/mm and every speed / accel / jerk are still placeholders:
 // TODO 300mm/s, 3000mm/s^2, 100000mm/s^3
 static const MotionAxis defaults[MOTION_AXES] = {
 	{ 'X', 1 << 2,			80, 300, 3000, 100000 },
-	{ 'Y', 1 << 0 | 1 << 1,	80, 300, 3000, 100000 },
+	{ 'Y', 1 << 6 | 1 << 7,	80, 300, 3000, 100000 },
 	{ 'Z', 1 << 3,			80, 300, 3000, 100000 },
 	{ 'A', 1 << 4,			80, 300, 3000, 100000 },
 	{ 'B', 1 << 5,			80, 300, 3000, 100000 },
-	{ 'C', 1 << 6,			80, 300, 3000, 100000 },
-	{ 'U', 1 << 7,			80, 300, 3000, 100000 },
+	{ 'C', 1 << 1,			80, 300, 3000, 100000 },
+	{ 'U', 1 << 0,			80, 300, 3000, 100000 },
 };
-// Bit per driver. Y2 (driver 1) faces Y1 across the gantry, so it turns the other way.
+// Bit per driver. Driver 6 faces driver 7 across the gantry, so it turns the other way.
 // TODO the rest from the real directions once each motor has been checked
-#define INVERT_DEFAULT	(1 << 1)
+#define INVERT_DEFAULT	(1 << 6)
 
 MotionAxis motion_axes[MOTION_AXES];
 uint8_t motion_invert = INVERT_DEFAULT;

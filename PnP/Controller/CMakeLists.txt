@@ -116,7 +116,7 @@ function(firmware name mem_ld)
 	)
 endfunction()
 
-# App, sectors 1-3 (0x08020000)
+# App, sectors 1-2 (0x08020000). Sector 3 = settings (app/settings.c)
 firmware(pnp_ctrl mem_app.ld
 	app/main.c
 	app/console.c
@@ -126,6 +126,9 @@ firmware(pnp_ctrl mem_app.ld
 	app/scurve.c
 	app/jog.c
 	app/pad.c
+	app/home.c
+	app/settings.c
+	boot/flash.c
 	drivers/uart.c
 	drivers/fdcan.c
 	drivers/pwm.c

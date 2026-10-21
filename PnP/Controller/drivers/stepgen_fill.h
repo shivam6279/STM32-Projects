@@ -70,6 +70,7 @@ typedef struct {
 	uint32_t dir_setup;				// ticks, >= 1
 	volatile uint64_t tick;			// tick of the next word to fill
 	uint32_t carry;					// STEP resets that spill into the next fill
+	volatile uint32_t halted;		// bit per axis: queue dropped every fill, StepFillQueue refuses
 } StepGen;
 
 void StepFillInit(StepGen *sg, const uint32_t *step_mask, const uint32_t *dir_mask, uint32_t dir_setup);

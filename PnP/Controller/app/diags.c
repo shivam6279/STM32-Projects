@@ -8,12 +8,14 @@
 #include "esp.h"
 #include "eth.h"
 #include "fdcan.h"
+#include "home.h"
 #include "ioexp.h"
 #include "motion.h"
 #include "net.h"
 #include "jog.h"
 #include "pad.h"
 #include "scurve.h"
+#include "settings.h"
 #include "pwm.h"
 #include "stepgen.h"
 #include "tmc.h"
@@ -45,6 +47,8 @@ uint8_t diags_eth(char*);
 uint8_t diags_tmc(char*);
 uint8_t diags_esp(char*);
 uint8_t diags_pad(char*);
+uint8_t diags_home(char*);
+uint8_t diags_config(char*);
 void printDiagsMenu();
 
 typedef uint8_t (*diags_function)(char*);
@@ -62,6 +66,8 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Move axes (mm)",			.cmd = "move",	.func = diags_move	},
 	{ .name = "Axis positions",			.cmd = "pos",	.func = diags_pos	},
 	{ .name = "Axes: drivers, direction, steps/mm",	.cmd = "axis",	.func = diags_axis	},
+	{ .name = "Sensorless homing, StallGuard tuning",	.cmd = "home",	.func = diags_home	},
+	{ .name = "Settings: save, load, defaults",	.cmd = "config",	.func = diags_config	},
 	{ .name = "Software reset",			.cmd = "reset",	.func = diags_reset	},
 	{ .name = "CAN bus commands",		.cmd = "can",	.func = diags_can	},
 	{ .name = "Coil driver PWM outputs",	.cmd = "pwm",	.func = diags_pwm	},
@@ -1247,8 +1253,10 @@ static bool padMode(char *p) {
 	}
 	if (!PadSetMode(m)) return false;
 	if (m == PAD_MODE_JOG) {
-		printf("Jog: left stick X / Y %.1f mm/s, RT / LT Z up / down %.1f mm/s%s\n",
-			(double)pad_speed_xy, (double)pad_speed_z, StepDry() ? ", dry run" : "");
+		printf("Jog: left stick X / Y %.1f mm/s (LS fast %.1f), RT / LT Z up / down %.1f mm/s%s\n",
+			(double)pad_speed_xy, (double)pad_speed_xy_fast, (double)pad_speed_z, StepDry() ? ", dry run" : "");
+		printf("Y pump (PWM%d, %.0f%%), LB valve 0 (PWM%d), RB valve 1 (PWM%d) (%.0f%%), toggles\n",
+			PAD_PWM_PUMP, (double)(PAD_PUMP_DUTY * 100), PAD_PWM_VALVE0, PAD_PWM_VALVE1, (double)(PAD_VALVE_DUTY * 100));
 		printf("Centre the sticks and let go of the triggers to start. pad mode off to stop\n");
 	} else {
 		printf("Mode: off\n");
@@ -1256,7 +1264,7 @@ static bool padMode(char *p) {
 	return true;
 }
 
-// pad speed [xy <mm/s>] [z <mm/s>]
+// pad speed [xy <mm/s>] [fast <mm/s>] [z <mm/s>]
 static bool padSpeed(char *cmd) {
 	float v;
 
@@ -1267,6 +1275,13 @@ static bool padSpeed(char *cmd) {
 		}
 		pad_speed_xy = v;
 	}
+	if (argFloat(cmd, "fast", &v)) {
+		if (v <= 0 || v > 1000) {
+			printf("fast speed must be 0 - 1000 mm/s\n");
+			return false;
+		}
+		pad_speed_xy_fast = v;
+	}
 	if (argFloat(cmd, "z", &v)) {
 		if (v <= 0 || v > 1000) {
 			printf("z speed must be 0 - 1000 mm/s\n");
@@ -1274,8 +1289,8 @@ static bool padSpeed(char *cmd) {
 		}
 		pad_speed_z = v;
 	}
-	printf("Full stick: XY %.1f mm/s, Z %.1f mm/s (still capped at each axis' max feed, M203)\n",
-		(double)pad_speed_xy, (double)pad_speed_z);
+	printf("Full stick: XY %.1f mm/s, fast %.1f mm/s, Z %.1f mm/s (still capped at each axis' max feed, M203)\n",
+		(double)pad_speed_xy, (double)pad_speed_xy_fast, (double)pad_speed_z);
 	return true;
 }
 
@@ -1292,8 +1307,9 @@ pad : Xbox controller state from the ESP32 pad packets, packet counts\n\
 -f [x] : streaming frequency in Hz [1, 10000], default 10\n\
 pad mode : what the controller does: off (default at boot) or jog\n\
 pad mode jog : left stick = X / Y, RT / LT = Z up / down. Centre the sticks to start\n\
+  LS = fast XY, Y = pump (PWM0), LB / RB = valve 0 / 1 (PWM1 / 2), toggles, off when jog ends\n\
 pad mode off : stop (ramps down), axes back to G-code\n\
-pad speed [xy <mm/s>] [z <mm/s>] : speed at full stick / trigger\n\
+pad speed [xy <mm/s>] [fast <mm/s>] [z <mm/s>] : speed at full stick / trigger\n\
 Nothing for 150ms = treated as gone (sticks centred, all let go). Pairing: esp pad pair\n";
 
 	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
@@ -1321,8 +1337,10 @@ Nothing for 150ms = treated as gone (sticks centred, all let go). Pairing: esp p
 	EspPadGetStats(&st);
 	printf("Pad: %s, battery %u%%\n", up ? "connected" : "not connected", p.battery);
 	printf("Mode: %s", PadModeName(PadMode()));
-	if (PadMode() == PAD_MODE_JOG) printf(", %s", PadArmed() ? "moving on input" : "waiting for centred sticks");
-	else if (JogFaulted()) printf(" (last jog stopped by a fault)");
+	if (PadMode() == PAD_MODE_JOG) {
+		printf(", %s%s, pump %s, valve 0 %s, valve 1 %s", PadArmed() ? "moving on input" : "waiting for centred sticks",
+			PadFast() ? ", fast" : "", PadPump() ? "on" : "off", PadValve(0) ? "on" : "off", PadValve(1) ? "on" : "off");
+	} else if (JogFaulted()) printf(" (last jog stopped by a fault)");
 	if (JogLate()) printf(", queue ran dry %" PRIu32 " times", JogLate());
 	printf("\n");
 	printf("Packets: %" PRIu32 " ok, %" PRIu32 " bad, %" PRIu32 " missed, ", st.good, st.bad, st.missed);
@@ -1330,6 +1348,391 @@ Nothing for 150ms = treated as gone (sticks centred, all let go). Pairing: esp p
 	else printf("last %" PRIu32 " ms ago\n", st.age_ms);
 	printf("connected, LX, LY, RX, RY, LT, RT, buttons\n");
 	padPrint(&p, up);
+	return true;
+}
+
+// ---- Settings storage ----
+
+uint8_t diags_config(char *cmd) {
+	char buf[32], *w[3];
+	uint8_t res;
+
+	const char help_str[] = "\
+config : where the settings are kept, newest save, what was loaded at boot, unsaved changes\n\
+config diff : every value that differs from the newest save (saved -> now)\n\
+config diff defaults : the same against the built in defaults\n\
+config save : save everything now (M500), lists what changed first\n\
+  (axes, TMC config + ignored, homing, pad speeds)\n\
+config load : back to the last save (M501)\n\
+config defaults : back to the built in values, not saved until config save (M502)\n\
+config erase : wipe the saves, the next boot comes up on the defaults\n\
+Changes (home set, tmc set, axis, pad speed, M92 ...) apply at once but only stick after a save.\n\
+Not while moving, jogging, homing or in pad mode: the steppers pause while the flash is written\n";
+
+	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
+		fputs(help_str, stdout);
+		return true;
+	}
+	tmcWords(cmd, buf, sizeof(buf), w, 3);
+	if (w[1] == NULL) {
+		SettingsInfo();
+		return true;
+	}
+	if (strcmp(w[1], "diff") == 0) {
+		bool def = w[2] && strcmp(w[2], "defaults") == 0;
+		if (SettingsDiff(def, true) == 0) printf("%s\n", def ? "No differences from the defaults" : "No unsaved changes");
+		return true;
+	}
+	if (strcmp(w[1], "save") == 0) {
+		if (SettingsDiff(false, true) == 0) printf("Nothing changed since the last save, saving anyway\n");
+		res = SettingsSave();
+	}
+	else if (strcmp(w[1], "load") == 0) res = SettingsLoad();
+	else if (strcmp(w[1], "defaults") == 0) res = SettingsDefaults();
+	else if (strcmp(w[1], "erase") == 0) res = SettingsErase();
+	else {
+		fputs(help_str, stdout);
+		return false;
+	}
+	if (res != SET_OK) {
+		printf("%s\n", SettingsError(res));
+		return false;
+	}
+	printf("Done\n");
+	if (strcmp(w[1], "save") == 0) SettingsInfo();
+	return true;
+}
+
+// ---- Sensorless homing ----
+
+static int8_t homeAxis(char c) {
+	uint8_t i;
+	if (c >= 'a' && c <= 'z') c -= 32;
+	for (i = 0; i < MOTION_AXES; i++) {
+		if (motion_axes[i].name == c) return i;
+	}
+	return -1;
+}
+
+static void homeTable() {
+	const HomeAxis *h;
+	uint8_t i;
+
+	printf("axis, end, speed mm/s, sgthrs, current A, travel mm, backoff mm, stop at mm, pre mm, state\n");
+	for (i = 0; i < MOTION_AXES; i++) {
+		h = &home_axes[i];
+		printf("%c, %s, %.1f, %u, ", motion_axes[i].name, h->dir < 0 ? "-" : (h->dir > 0 ? "+" : "off"), (double)h->speed, h->sgthrs);
+		if (h->current > 0) printf("%.2f, ", (double)h->current);
+		else printf("run, ");
+		printf("%.1f, %.1f, %.2f, %.1f, %s\n", (double)h->travel, (double)h->backoff, (double)h->pos, (double)h->pre,
+			HomeHomed(i) ? "homed" : (HomeReady(i) ? "ready" : (h->dir ? "not set up" : "-")));
+	}
+}
+
+// Until homing is done, keeping USB going. 'x' stops it
+static bool homeWait() {
+	int c;
+	while (HomeBusy()) {
+		UsbTask();
+		HomeTask();
+		while ((c = ConsoleReadChar()) >= 0) {
+			if (c == 'x') {
+				HomeAbort();
+				printf("Stopping\n");
+			}
+		}
+	}
+	return HomeResult() == HOME_OK;
+}
+
+// Drivers on, like the pad does: not in dry run, and only if they're all set up with no fault
+static bool homeDriversOn() {
+	if (BoardStepperEnabled() || StepDry()) return true;
+	if (!TmcReady()) {
+		printf("Drivers not ready, staying off\n");
+		return false;
+	}
+	BoardStepperEnable(true);
+	printf("Drivers on\n");
+	return true;
+}
+
+// home set <axis> <field> <value>
+static bool homeSet(char **w) {
+	HomeAxis *h;
+	int8_t a;
+	uint8_t d;
+	float f;
+
+	if (w[2] == NULL || w[2][1] != '\0' || (a = homeAxis(w[2][0])) < 0 || w[3] == NULL || w[4] == NULL) {
+		printf("home set <axis> <end|speed|sgthrs|current|travel|backoff|pos|pre> <value>\n");
+		return false;
+	}
+	if (HomeBusy()) {
+		printf("Homing, try again after\n");
+		return false;
+	}
+	h = &home_axes[a];
+	f = strtof(w[4], NULL);
+	if (strcmp(w[3], "end") == 0) {
+		if (strcmp(w[4], "-") == 0 || strcmp(w[4], "-1") == 0) h->dir = -1;
+		else if (strcmp(w[4], "+") == 0 || strcmp(w[4], "1") == 0 || strcmp(w[4], "+1") == 0) h->dir = 1;
+		else if (strcmp(w[4], "off") == 0 || strcmp(w[4], "0") == 0) h->dir = 0;
+		else {
+			printf("end is - (the - end), + or off\n");
+			return false;
+		}
+	} else if (strcmp(w[3], "speed") == 0) {
+		if (f <= 0 || f > motion_axes[a].v_max) {
+			printf("speed must be > 0 and <= %.1f mm/s (the axis' max feed)\n", (double)motion_axes[a].v_max);
+			return false;
+		}
+		h->speed = f;
+	} else if (strcmp(w[3], "sgthrs") == 0) {
+		if (f < 0 || f > 255 || f != (uint8_t)f) {
+			printf("sgthrs is 0 - 255 (0 = not tuned, the axis won't home)\n");
+			return false;
+		}
+		h->sgthrs = (uint8_t)f;
+	} else if (strcmp(w[3], "current") == 0) {
+		// TmcRunCurrent keeps vsense from the run current, so above it would be capped anyway
+		for (d = 0; d < MOTION_DRIVERS; d++) {
+			if ((motion_axes[a].drivers >> d) & 1 && f > tmc_config[d].run) {
+				printf("current must be 0 (= run current) - %.2f A (driver %d run current)\n", (double)tmc_config[d].run, d);
+				return false;
+			}
+		}
+		if (f < 0) {
+			printf("current must be >= 0\n");
+			return false;
+		}
+		h->current = f;
+	} else if (strcmp(w[3], "travel") == 0) {
+		if (f < 0) {
+			printf("travel must be >= 0 mm (0 = not set, the axis won't home)\n");
+			return false;
+		}
+		h->travel = f;
+	} else if (strcmp(w[3], "backoff") == 0) {
+		if (f < 0) {
+			printf("backoff must be >= 0 mm\n");
+			return false;
+		}
+		h->backoff = f;
+	} else if (strcmp(w[3], "pos") == 0) {
+		h->pos = f;
+	} else if (strcmp(w[3], "pre") == 0) {
+		if (f < 0) {
+			printf("pre must be >= 0 mm (0 = straight into the stop)\n");
+			return false;
+		}
+		h->pre = f;
+	} else {
+		printf("Fields: end, speed, sgthrs, current, travel, backoff, pos, pre\n");
+		return false;
+	}
+	homeTable();
+	return true;
+}
+
+// home sg <axis> <mm>: move at the homing speed and current, SG_RESULT of each driver along the
+// way, then what it was while cruising (not speeding up / slowing down) and an sgthrs to start from
+static bool homeSg(int8_t a, float mm) {
+	HomeAxis *h = &home_axes[a];
+	uint8_t drv = motion_axes[a].drivers & ~TmcIgnored(), d, res, i;
+	uint32_t lo[MOTION_DRIVERS], hi[MOTION_DRIVERS], sum[MOTION_DRIVERS], n = 0, ramp, end, t0, t, sg, s;
+	float target[MOTION_AXES];
+	bool stopped = false;
+
+	if (drv == 0) {
+		printf("All of %c's drivers are ignored\n", motion_axes[a].name);
+		return false;
+	}
+	if (HomeBusy() || JogActive() || !MotionIdle()) {
+		printf("Homing, jog mode or motion running, try again when idle\n");
+		return false;
+	}
+	for (d = 0; d < MOTION_DRIVERS; d++) {
+		if ((drv >> d) & 1 && tmc_config[d].spread) {
+			printf("Driver %d is in SpreadCycle, StallGuard needs StealthChop (tmc set %d mode stealth)\n", d, d);
+			return false;
+		}
+		lo[d] = UINT32_MAX;
+		hi[d] = 0;
+		sum[d] = 0;
+	}
+	if (!homeDriversOn()) return false;
+	if (StepDry()) printf("Dry run: the motor doesn't turn, SG_RESULT means nothing\n");
+
+	for (d = 0; d < MOTION_DRIVERS; d++) {
+		if ((drv >> d) & 1) TmcRunCurrent(d, h->current);
+	}
+	for (i = 0; i < MOTION_AXES; i++) target[i] = MotionPosition(i);
+	target[a] += mm;
+	res = MotionMove(target, 1 << a, h->speed);
+	if (res != MOTION_OK) {
+		printf("%s\n", res == MOTION_NOMOVE ? "Distance is 0" : (res == MOTION_FAULT ? "Stopped, step recover first" : "Can't move"));
+		for (d = 0; d < MOTION_DRIVERS; d++) {
+			if ((drv >> d) & 1) TmcRunCurrent(d, 0);
+		}
+		return false;
+	}
+	t0 = Millis();
+	ramp = (uint32_t)(h->speed / motion_axes[a].a_max * 1000) + HOME_SETTLE_MS;
+	end = MotionLastTime() / (STEP_TICK_HZ / 1000);
+
+	printf("%c %.1f mm at %.1f mm/s, 'x' to stop\nms", motion_axes[a].name, (double)mm, (double)h->speed);
+	for (d = 0; d < MOTION_DRIVERS; d++) {
+		if ((drv >> d) & 1) printf(", %s", MotionDriverName(d));
+	}
+	printf("\n");
+	while (!MotionIdle()) {
+		t = Millis();
+		s = t - t0;
+		printf("%" PRIu32, s);
+		for (d = 0; d < MOTION_DRIVERS; d++) {
+			if (!((drv >> d) & 1)) continue;
+			if (TmcRead(d, TMC_SG_RESULT, &sg) != TMC_OK) {
+				printf(", ?");
+				continue;
+			}
+			sg &= 0x3FF;
+			printf(", %" PRIu32, sg);
+			if (s >= ramp && s + ramp <= end) {
+				if (sg < lo[d]) lo[d] = sg;
+				if (sg > hi[d]) hi[d] = sg;
+				sum[d] += sg;
+			}
+		}
+		if (s >= ramp && s + ramp <= end) n++;
+		printf("\n");
+		if (streamWait(t, 20)) {
+			StepAbort();
+			printf("Stopped, drivers off. step recover, then step en\n");
+			stopped = true;
+			break;
+		}
+	}
+	for (d = 0; d < MOTION_DRIVERS; d++) {
+		if ((drv >> d) & 1) TmcRunCurrent(d, 0);
+	}
+	if (stopped) return false;
+	if (n == 0) {
+		printf("Never cruised long enough to measure, go further\n");
+		return false;
+	}
+
+	// Stall when SG_RESULT <= 2 * sgthrs: half the lowest free running value is the starting trigger
+	printf("While cruising (%" PRIu32 " samples), stall when SG_RESULT <= 2 * sgthrs:\n", n);
+	s = UINT32_MAX;
+	for (d = 0; d < MOTION_DRIVERS; d++) {
+		if (!((drv >> d) & 1)) continue;
+		printf("%s (driver %d): min %" PRIu32 ", avg %" PRIu32 ", max %" PRIu32 "\n", MotionDriverName(d), d, lo[d], sum[d] / n, hi[d]);
+		if (lo[d] < s) s = lo[d];
+	}
+	s /= 4;
+	if (s < 1) s = 1;
+	if (s > 255) s = 255;
+	printf("Start with: home set %c sgthrs %" PRIu32 ", then home %c a few times\n", motion_axes[a].name, s, motion_axes[a].name);
+	printf("Stops before the end: lower it. Doesn't stop (grinds, no stall): raise it\n");
+	return true;
+}
+
+// home sg -s: SG_RESULT of every driver, jog with the pad meanwhile (only means something while moving)
+static bool homeSgStream(char *cmd) {
+	uint32_t period, t, sg;
+	uint8_t d, drv = ((1 << TMC_DRIVERS) - 1) & ~TmcIgnored();
+
+	if (!streamPeriod(cmd, &period)) return false;
+	printf("SG_RESULT (0-510, lower = more load, 0 at standstill)\nms");
+	for (d = 0; d < TMC_DRIVERS; d++) {
+		if ((drv >> d) & 1) printf(", %d %s", d, MotionDriverName(d));
+	}
+	printf("\n");
+	while (1) {
+		t = Millis();
+		printf("%" PRIu32, t);
+		for (d = 0; d < TMC_DRIVERS; d++) {
+			if (!((drv >> d) & 1)) continue;
+			if (TmcRead(d, TMC_SG_RESULT, &sg) == TMC_OK) printf(", %" PRIu32, sg & 0x3FF);
+			else printf(", ?");
+		}
+		printf("\n");
+		if (streamWait(t, period)) return true;
+	}
+}
+
+uint8_t diags_home(char *cmd) {
+	char buf[64], *w[6];
+	uint8_t mask = 0, res, i;
+	int8_t a;
+	char *p;
+
+	const char help_str[] = "\
+home : homing settings per axis, and which are homed\n\
+home <axes|all> : home them, e.g. home z, home xy. Order Z, Y, X. 'x' stops. G28 does the same\n\
+  Moves pre mm away, runs into the stop until StallGuard sees the stall, backs off, sets the position\n\
+home set <axis> end <-|+|off> : which end it homes to\n\
+home set <axis> speed <mm/s> : into the stop. Too slow and StallGuard can't tell\n\
+home set <axis> sgthrs <0-255> : stall when SG_RESULT <= 2 * sgthrs (0 = not tuned, won't home)\n\
+home set <axis> current <A> : run current while homing, 0 = the normal one. Lower = gentler, more sensitive\n\
+home set <axis> travel <mm> : furthest it looks for the stop (0 = not set, won't home)\n\
+home set <axis> backoff <mm> : off the stop afterwards\n\
+home set <axis> pos <mm> : position of the stop itself\n\
+home set <axis> pre <mm> : away from the stop first, so it's up to speed when it gets there (0 = off)\n\
+home sg <axis> <mm> : tuning, move that far (sign = direction) at the homing speed and current,\n\
+  SG_RESULT along the way, then min / avg / max while cruising and an sgthrs to start from\n\
+home sg -s : stream SG_RESULT of every driver, jog with the pad meanwhile. -f [x] : Hz, default 10\n\
+Tuning: home sg in free air -> home set sgthrs -> home the axis a few times, it prints how far off\n\
+the last home it was. Needs StealthChop (tmc set <drv> mode stealth), drivers on, not dry run\n";
+
+	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
+		fputs(help_str, stdout);
+		return true;
+	}
+	tmcWords(cmd, buf, sizeof(buf), w, 6);
+	if (w[1] == NULL) {
+		homeTable();
+		return true;
+	}
+	if (strcmp(w[1], "set") == 0) return homeSet(w);
+	if (strcmp(w[1], "sg") == 0) {
+		if (argFlag(cmd, "-s")) return homeSgStream(cmd);
+		if (w[2] == NULL || w[2][1] != '\0' || (a = homeAxis(w[2][0])) < 0 || w[3] == NULL) {
+			fputs(help_str, stdout);
+			return false;
+		}
+		return homeSg(a, strtof(w[3], NULL));
+	}
+
+	if (strcmp(w[1], "all") == 0) {
+		mask = HomeReadyMask();
+		if (mask == 0) {
+			printf("No axis is set up for homing yet (home set)\n");
+			return false;
+		}
+	} else {
+		for (p = w[1]; *p; p++) {
+			if ((a = homeAxis(*p)) < 0) {
+				printf("Unknown axis %c\n", *p);
+				return false;
+			}
+			mask |= 1 << a;
+		}
+	}
+	res = HomeStart(mask);
+	if (res != HOME_OK) {
+		printf("%s\n", HomeError(res));
+		return false;
+	}
+	if (StepDry()) printf("Dry run: nothing turns so nothing stalls, it runs out the travel\n");
+	printf("'x' to stop\n");
+	if (!homeWait()) return false;
+	printf("Homed:");
+	for (i = 0; i < MOTION_AXES; i++) {
+		if ((mask >> i) & 1) printf(" %c%.3f", motion_axes[i].name, (double)MotionPosition(i));
+	}
+	printf("\n");
 	return true;
 }
 

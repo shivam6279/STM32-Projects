@@ -15,7 +15,8 @@ $B/cmake/4.0.1+st.3/bin/cmake --build build
 
 ## Flash layout / flashing
 - `pnp_boot` (boot/): bootloader, sector 0 (0x08000000). Shows up as the PnP-Boot COM port (PID 0x4002), LED0 blinks fast.
-- `pnp_ctrl` (app/): app, sectors 1-3 (0x08020000). PnP-Diags COM port (PID 0x4001).
+- `pnp_ctrl` (app/): app, sectors 1-2 (0x08020000). PnP-Diags COM port (PID 0x4001).
+- Settings: sector 3 (0x08060000), app/settings.c. Firmware updates leave it alone; `python tools/flash_usb.py --erase-settings` wipes it through the bootloader.
 
 GUI: double click `tools/pnp_tool.pyw`. Terminal on any COM port or WiFi (ESP32 console), and buttons for
 every flash below plus ESP32 OTA. It lets go of the port while flashing and reconnects after.
@@ -63,7 +64,7 @@ command is still waiting.
 | G0 / G1 | move. Axes X Y Z A B C U V (I J K = A B C), F in mm/min, modal. E ignored |
 | G4 P(ms) / S(s) | wait for motion to finish, then dwell |
 | G20 / G21 | inches (error) / mm |
-| G28 [axes] | no endstops yet: waits for idle and sets the position to 0 |
+| G28 [axes] | sensorless homing (StallGuard, `home` in diags), order Z, Y, X. Axes not set up for it are set to 0 |
 | G90 / G91 | absolute / relative |
 | G92 | set position |
 | M17 / M18 / M84 | drivers on / wait for idle, drivers off |
@@ -120,6 +121,15 @@ steps/s total (measured with `step bench`).
 
 Tests: `make -C test/host run` (whole motion stack on the PC), `step bench` and `step dry on` on
 the board.
+
+Homing (app/home.c) is sensorless: TMC2209 StallGuard in StealthChop, no switches. The axis jogs
+into its hard stop; once at speed TCOOLTHRS turns StallGuard on, and the DIAG interrupt halts
+just that driver's STEP output on a stall (StepHalt), so a Y1 + Y2 gantry squares itself on the
+stop. Outside homing TCOOLTHRS is 0 and DIAG still only means a fault. An axis homes once
+`home set` has its end, sgthrs and travel. Tuning per axis:
+1. `home sg <axis> <mm>` in free air: SG_RESULT while cruising at the homing speed, and an sgthrs to start from
+2. `home set <axis> sgthrs <n>`, then `home <axis>` a few times: it prints how far off the last home it stopped
+3. Stops early: lower sgthrs (or raise speed). Grinds without stopping: raise it. Lower `current` is gentler and more sensitive
 
 ## TODO
 - RM0468 / ES0491 / DS13313 refs. Couldn't get them from st.com, so values were checked against the ST CMSIS/LL headers.

@@ -5,8 +5,10 @@
 #include "buttons.h"
 #include "clock.h"
 #include "console.h"
+#include "home.h"
 #include "motion.h"
 #include "pwm.h"
+#include "settings.h"
 #include "stepgen.h"
 #include "tmc.h"
 #include "usb.h"
@@ -23,7 +25,7 @@
 #define WAIT_MOVE		1	// G0/G1 that didn't fit in the step queues yet
 #define WAIT_IDLE		2	// M400
 #define WAIT_DWELL		3	// G4: motion done, then a timed wait
-#define WAIT_HOME		4	// G28: motion done, then zero the axes
+#define WAIT_HOME		4	// G28: motion done, then home (home.c), axes that cannot home are zeroed
 #define WAIT_DISABLE	5	// M18/M84: motion done, then drivers off
 
 typedef struct {
@@ -31,7 +33,7 @@ typedef struct {
 	float target[MOTION_AXES];
 	uint8_t mask;
 	float feed;
-	bool idle_seen;			// G4: motion finished, dwell timer running
+	bool idle_seen;			// G4: motion finished, dwell timer running. G28: homing started
 	uint32_t dwell_start, dwell_ms;
 	int32_t last_line;		// Marlin style line numbers (N..)
 } gcode_port;
@@ -142,16 +144,33 @@ void GcodeResume(uint8_t p) {
 				Ok();
 			}
 			break;
-		case WAIT_HOME:
-			if (MotionIdle()) {
+		case WAIT_HOME: {
+			uint8_t res, hm;
+			if (!g->idle_seen) {
+				if (!MotionIdle() || HomeBusy()) break;
+				// Axes not set up for homing (no dir / sgthrs / travel) just get zeroed, like before
+				hm = g->mask & HomeReadyMask();
 				for (i = 0; i < MOTION_AXES; i++) {
-					if ((g->mask >> i) & 1) MotionSetPosition(i, 0);
+					if ((g->mask >> i) & 1 && !((hm >> i) & 1)) {
+						MotionSetPosition(i, 0);
+						if (home_axes[i].dir != 0) printf("echo:%c can't home yet (home set), position set to 0\n", motion_axes[i].name);
+					}
 				}
-				printf("echo:No endstops yet, G28 only sets the position to 0\n");
-				g->wait = WAIT_NONE;
-				Ok();
+				res = HomeStart(hm);
+				if (res != HOME_OK || hm == 0) {
+					if (res != HOME_OK) printf("Error:G28: %s\n", HomeError(res));
+					g->wait = WAIT_NONE;
+					Ok();
+					break;
+				}
+				g->idle_seen = true;
 			}
+			if (HomeBusy()) break;
+			if (HomeResult() != HOME_OK) printf("Error:G28: %s\n", HomeError(HomeResult()));
+			g->wait = WAIT_NONE;
+			Ok();
 			break;
+		}
 		case WAIT_DISABLE:
 			if (MotionIdle()) {
 				BoardStepperEnable(false);
@@ -175,7 +194,16 @@ static void ReportAxes(const char *code, float *v) {
 	printf("\n");
 }
 
-static void ReportSettings(uint8_t which) {
+// First driver an axis moves, -1 = none
+static int8_t FirstDriver(uint8_t ax) {
+	uint8_t d;
+	for (d = 0; d < MOTION_DRIVERS; d++) {
+		if ((motion_axes[ax].drivers >> d) & 1) return d;
+	}
+	return -1;
+}
+
+static void ReportSettings(uint16_t which) {
 	float v[MOTION_AXES];
 	uint8_t i;
 
@@ -196,6 +224,64 @@ static void ReportSettings(uint8_t which) {
 		for (i = 0; i < MOTION_AXES; i++) v[i] = motion_axes[i].j_max;
 		ReportAxes("M205", v);
 	}
+	if (which == 0 || which == 906) {
+		for (i = 0; i < MOTION_AXES; i++) v[i] = FirstDriver(i) < 0 ? 0 : tmc_config[FirstDriver(i)].run * 1000;
+		ReportAxes("M906", v);
+	}
+	if (which == 0 || which == 914) {
+		for (i = 0; i < MOTION_AXES; i++) v[i] = home_axes[i].sgthrs;
+		ReportAxes("M914", v);
+	}
+}
+
+// M906 X<mA> ...: run current of every driver on the axis (Marlin units, RMS), or report.
+// Hold stays at or under run. Written to the drivers straight away, so only while idle
+static void TmcCurrentSetting(gcode_word *w, uint8_t n) {
+	uint8_t k, d;
+	int8_t ax;
+	bool any = false;
+	float a;
+
+	for (k = 1; k < n; k++) {
+		ax = Axis(w[k].letter);
+		if (ax < 0 || !w[k].has_value) continue;
+		a = w[k].value / 1000;
+		if (a <= 0 || a > TMC_IRMS_MAX) {
+			printf("Error:%c current must be > 0 and <= %.0f mA\n", w[k].letter, (double)(TMC_IRMS_MAX * 1000));
+			continue;
+		}
+		if (!MotionIdle()) {
+			printf("Error:Not while moving\n");
+			return;
+		}
+		for (d = 0; d < MOTION_DRIVERS; d++) {
+			if (!((motion_axes[ax].drivers >> d) & 1)) continue;
+			tmc_config[d].run = a;
+			if (tmc_config[d].hold > a) tmc_config[d].hold = a;
+			if (TmcSetup(d) != TMC_OK) printf("Error:Driver %d didn't take it\n", d);
+		}
+		any = true;
+	}
+	if (!any) ReportSettings(906);
+}
+
+// M914 X<sgthrs> ...: StallGuard threshold for homing (Marlin's sensorless homing sensitivity), or report
+static void StallSetting(gcode_word *w, uint8_t n) {
+	uint8_t k;
+	int8_t ax;
+	bool any = false;
+
+	for (k = 1; k < n; k++) {
+		ax = Axis(w[k].letter);
+		if (ax < 0 || !w[k].has_value) continue;
+		if (w[k].value < 0 || w[k].value > 255) {
+			printf("Error:%c must be 0 - 255\n", w[k].letter);
+			continue;
+		}
+		home_axes[ax].sgthrs = (uint8_t)w[k].value;
+		any = true;
+	}
+	if (!any) ReportSettings(914);
 }
 
 // M92 / M201 / M203 / M205: set the per axis value for every axis letter given, or report
@@ -306,7 +392,7 @@ void GcodeLine(uint8_t p, char *line) {
 	gcode_port *g = &gp[p];
 	gcode_word w[MAX_WORDS];
 	char buf[128];
-	uint8_t n, k, i;
+	uint8_t n, k, i, res;
 	int8_t ax;
 	int code;
 
@@ -370,6 +456,7 @@ void GcodeLine(uint8_t p, char *line) {
 					if (ax >= 0) g->mask |= 1 << ax;
 				}
 				if (g->mask == 0) g->mask = (1 << MOTION_AXES) - 1;
+				g->idle_seen = false;
 				g->wait = WAIT_HOME;
 				GcodeResume(p);
 				return;
@@ -479,18 +566,31 @@ void GcodeLine(uint8_t p, char *line) {
 				GcodeResume(p);
 				return;
 			case 500:
+				res = SettingsSave();
+				if (res == SET_OK) printf("echo:Settings Stored\n");
+				else printf("Error:Settings not saved: %s\n", SettingsError(res));
+				break;
 			case 501:
-				printf("echo:No settings storage yet (FRAM not set up), nothing saved or loaded\n");
+				res = SettingsLoad();
+				if (res == SET_OK) printf("echo:Stored settings retrieved\n");
+				else printf("Error:Settings not loaded: %s\n", SettingsError(res));
 				break;
 			case 502:
-				MotionDefaults();
-				printf("echo:Hardcoded Default Settings Loaded\n");
+				res = SettingsDefaults();
+				if (res == SET_OK) printf("echo:Hardcoded Default Settings Loaded\n");
+				else printf("Error:%s\n", SettingsError(res));
 				break;
 			case 503:
 				ReportSettings(0);
 				break;
 			case 800:
 				Pressure();
+				break;
+			case 906:
+				TmcCurrentSetting(w, n);
+				break;
+			case 914:
+				StallSetting(w, n);
 				break;
 			case 997: { // firmware update: reboot into the USB bootloader, like diags boot
 				uint32_t t;

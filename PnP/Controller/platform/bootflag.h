@@ -12,7 +12,9 @@
 
 #define BOOT_BASE		0x08000000	// sector 0
 #define APP_BASE		0x08020000	// sectors 1-3
-#define APP_SIZE		(384 * 1024)
+#define APP_SIZE		(384 * 1024)	// what the bootloader allows. The app links to 256K, sector 3 is settings
+#define SETTINGS_SECTOR	3			// app/settings.c. The bootloader can still erase it (flash_usb.py --erase-settings)
+#define SETTINGS_BASE	0x08060000
 #define FLASH_SECTOR	(128 * 1024)
 
 #endif

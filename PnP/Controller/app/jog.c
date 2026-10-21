@@ -52,8 +52,10 @@ static bool Queue(uint8_t i, jog_axis *a, uint32_t d, double acc) {
 	s.j = 0;
 	for (drv = 0; drv < MOTION_DRIVERS; drv++) {
 		if (!((motion_axes[i].drivers >> drv) & 1)) continue;
+		if ((StepHalted() >> drv) & 1) continue; // stalled while homing, the others carry on
 		s.dir = pos != ((motion_invert >> drv) & 1);
-		if (!StepQueue(drv, &s)) return false;
+		// Refused because the DIAG interrupt halted it just now is fine too
+		if (!StepQueue(drv, &s) && !((StepHalted() >> drv) & 1)) return false;
 	}
 	a->p += s.v0 * d + s.a0 * d * (double)d / 2;
 	return true;
@@ -62,7 +64,7 @@ static bool Queue(uint8_t i, jog_axis *a, uint32_t d, double acc) {
 static bool Room(uint8_t i) {
 	uint8_t drv;
 	for (drv = 0; drv < MOTION_DRIVERS; drv++) {
-		if ((motion_axes[i].drivers >> drv) & 1 && StepQueueFree(drv) < 2) return false;
+		if ((motion_axes[i].drivers >> drv) & 1 && !((StepHalted() >> drv) & 1) && StepQueueFree(drv) < 2) return false;
 	}
 	return true;
 }
