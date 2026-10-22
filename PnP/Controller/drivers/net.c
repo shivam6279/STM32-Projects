@@ -8,6 +8,7 @@
 #include "lwip/netif.h"
 #include "lwip/timeouts.h"
 #include "lwip/udp.h"
+#include "lwip/tcp.h"
 #include "lwip/etharp.h"
 #include "netif/ethernet.h"
 
@@ -15,6 +16,7 @@
 #include <string.h>
 
 #define RX_PER_TASK 8	// frames per NetTask call, so a flood can't starve the main loop
+#define CON_WRITE_TIMEOUT_MS 50	// same as USB: a stuck client drops output, it doesn't stall us
 
 static struct netif nif;
 static struct udp_pcb *disc;
@@ -22,6 +24,14 @@ static uint8_t mac[6];
 static bool up = false;
 static EthLink link;
 static unsigned long rand_state;
+
+// TCP console: one client, a new one replaces it (the old one may be a dead connection)
+static struct tcp_pcb *con_listen;
+static struct tcp_pcb *con;
+static struct pbuf *con_rx;		// received, not read yet. The window only reopens as it's read
+static bool con_replaced;		// a new client took over, report one disconnect so it gets greeted
+
+static void ConListen();
 
 // ---- lwIP port hooks ----
 
@@ -138,15 +148,14 @@ bool NetInit() {
 	disc = udp_new();
 	udp_bind(disc, IP_ADDR_ANY, NET_DISCOVERY_PORT);
 	udp_recv(disc, DiscoveryRx, NULL);
+	ConListen();
 	return true;
 }
 
-void NetTask() {
+static void Pump() {
 	uint8_t *buf;
 	uint32_t len, n;
 	struct pbuf *p;
-
-	if (!up) return;
 
 	for (n = 0; n < RX_PER_TASK && (buf = EthRxPeek(&len)) != NULL; n++) {
 		p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
@@ -157,6 +166,127 @@ void NetTask() {
 		EthRxRelease();
 	}
 	sys_check_timeouts();
+}
+
+void NetTask() {
+	if (!up) return;
+	Pump();
+}
+
+// ---- TCP console ----
+
+static void ConDrop() {
+	if (con_rx) {
+		pbuf_free(con_rx);
+		con_rx = NULL;
+	}
+	con = NULL;
+}
+
+static void ConClose(struct tcp_pcb *pcb) {
+	tcp_arg(pcb, NULL);
+	tcp_recv(pcb, NULL);
+	tcp_err(pcb, NULL);
+	if (tcp_close(pcb) != ERR_OK) tcp_abort(pcb);
+}
+
+// lwIP already freed the pcb (reset, or aborted)
+static void ConErr(void *arg, err_t err) {
+	(void)err;
+	if (arg == con) ConDrop();
+}
+
+static err_t ConRecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
+	(void)arg;
+	(void)err;
+
+	if (pcb != con) {
+		if (p) pbuf_free(p);
+		return ERR_OK;
+	}
+	if (p == NULL) {
+		// Client closed its side
+		ConDrop();
+		ConClose(pcb);
+		return ERR_OK;
+	}
+	if (con_rx) pbuf_cat(con_rx, p);
+	else con_rx = p;
+	return ERR_OK;
+}
+
+static err_t ConAccept(void *arg, struct tcp_pcb *pcb, err_t err) {
+	(void)arg;
+
+	if (err != ERR_OK || pcb == NULL) return ERR_VAL;
+	if (con) {
+		struct tcp_pcb *old = con;
+		ConDrop();
+		ConClose(old);
+		con_replaced = true;
+	}
+	con = pcb;
+	tcp_arg(pcb, pcb);
+	tcp_recv(pcb, ConRecv);
+	tcp_err(pcb, ConErr);
+	tcp_nagle_disable(pcb); // "ok" goes out now, not after the Pi's delayed ACK
+	return ERR_OK;
+}
+
+static void ConListen() {
+	struct tcp_pcb *pcb = tcp_new();
+
+	if (pcb == NULL) return;
+	if (tcp_bind(pcb, IP_ADDR_ANY, NET_CON_PORT) != ERR_OK) {
+		tcp_close(pcb);
+		return;
+	}
+	con_listen = tcp_listen(pcb);
+	if (con_listen) tcp_accept(con_listen, ConAccept);
+}
+
+int NetConReadChar() {
+	uint8_t c;
+
+	if (con_rx == NULL || con == NULL) return -1;
+	c = pbuf_get_at(con_rx, 0);
+	con_rx = pbuf_free_header(con_rx, 1);
+	tcp_recved(con, 1);
+	return c;
+}
+
+// Copies into lwIP's send buffer, waits (running the RX side for ACKs) while it's full
+uint32_t NetConWrite(const char *buf, uint32_t len) {
+	uint32_t done = 0, n, t = Millis();
+	struct tcp_pcb *pcb = con;
+
+	if (pcb == NULL) return len; // nobody listening, drop it
+	while (done < len && con == pcb) {
+		n = tcp_sndbuf(pcb);
+		if (n > len - done) n = len - done;
+		if (n > 0 && tcp_write(pcb, buf + done, n, TCP_WRITE_FLAG_COPY) == ERR_OK) {
+			done += n;
+			continue;
+		}
+		// Full: send what's queued and wait for ACKs
+		tcp_output(pcb);
+		Pump();
+		if (Millis() - t > CON_WRITE_TIMEOUT_MS) break;
+	}
+	if (con == pcb) tcp_output(pcb);
+	return done;
+}
+
+bool NetConConnected() {
+	if (con_replaced) {
+		con_replaced = false;
+		return false;
+	}
+	return con != NULL;
+}
+
+uint32_t NetConPeer() {
+	return con ? ip4_addr_get_u32(ip_2_ip4(&con->remote_ip)) : 0;
 }
 
 bool NetUp() {

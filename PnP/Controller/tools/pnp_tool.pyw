@@ -6,6 +6,7 @@
 #   H7:  the terminal's own connection if it's open (WiFi / board USB / ST-Link UART), else
 #        board USB > ESP answers a ping (WiFi) > ST-Link plugged in (SWD). Bootloader = SWD only.
 #   ESP: OTA if it answers a ping, else through the H7 (board USB).
+# The ESP host is resolved with our own mDNS query (esp_host.py), Windows often can't do .local.
 # The terminal lets go of its port while a flash runs and reconnects after.
 import ctypes
 import datetime
@@ -20,6 +21,8 @@ from tkinter import ttk, filedialog
 
 import serial
 from serial.tools import list_ports
+
+from esp_host import Resolve
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))	# Controller/
 ESP_DIR = os.path.join(os.path.dirname(ROOT), "ESP32")
@@ -70,7 +73,9 @@ def Ping(host):
 def Detect(host, term, h7_over, esp_over, boot):
 	app, loader, stlink = BoardPort(APP_PID), BoardPort(BOOT_PID), StlinkPort()
 	usb = app or loader
-	wifi = Ping(host)
+	ip = Resolve(host)	# Windows can't always resolve pnp-esp.local itself
+	wifi = bool(ip) and Ping(ip)
+	where = host if ip == host else f"{host}, {ip}"
 
 	if boot:
 		h7 = ("ST-Link", "bootloader needs SWD")
@@ -85,7 +90,7 @@ def Detect(host, term, h7_over, esp_over, boot):
 	elif usb:
 		h7 = ("USB", usb + (" (in bootloader)" if loader and not app else ""))
 	elif wifi:
-		h7 = ("WiFi", host)
+		h7 = ("WiFi", where)
 	elif stlink:
 		h7 = ("ST-Link", "ST-Link plugged in")
 	else:
@@ -94,12 +99,12 @@ def Detect(host, term, h7_over, esp_over, boot):
 	if esp_over != "Auto":
 		esp = (esp_over, "override")
 	elif wifi:
-		esp = ("OTA", host)
+		esp = ("OTA", where)
 	elif app:
 		esp = ("Through H7", app)
 	else:
 		esp = (None, "ESP not reachable")
-	return {"h7": h7, "esp": esp, "wifi": wifi, "usb": usb, "stlink": stlink}
+	return {"h7": h7, "esp": esp, "wifi": wifi, "usb": usb, "stlink": stlink, "host": host, "ip": ip}
 
 
 # ---- commands ----
@@ -346,9 +351,16 @@ class App:
 		usb = [n for n in names if "PnP board" in n]
 		self.port.set(usb[0] if usb else WIFI)
 
+	# The ESP's IP from the last detect (it runs every DETECT_MS), else the name as typed
+	def EspAddr(self):
+		host = self.host.get().strip()
+		if self.found and self.found["host"] == host and self.found["ip"]:
+			return self.found["ip"]
+		return host
+
 	def Open(self, name):
 		if name == WIFI:
-			return serial.serial_for_url(f"socket://{self.host.get()}:{CON_PORT}", timeout=0.1)
+			return serial.serial_for_url(f"socket://{self.EspAddr()}:{CON_PORT}", timeout=0.1)
 		return serial.Serial(name.split(" ")[0], 115200, timeout=0.1)
 
 	def Connect(self, name, quiet=False):
@@ -534,7 +546,7 @@ class App:
 	def Go(self):
 		if self.busy or not self.found:
 			return
-		host = self.host.get()
+		host = self.EspAddr()
 		boot = self.h7_boot.get()
 		h7_method = self.found["h7"][0]
 		esp_method = self.found["esp"][0]

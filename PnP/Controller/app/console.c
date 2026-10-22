@@ -3,6 +3,7 @@
 #include "diags.h"
 #include "esp.h"
 #include "gcode.h"
+#include "net.h"
 #include "uart.h"
 #include "usb.h"
 
@@ -28,6 +29,7 @@ static con_port ports[CON_PORTS] = {
 	{ .read = UsbReadChar, .write = UsbWrite, .connected = UsbConnected },
 	{ .read = UartReadChar, .write = UartWrite },
 	{ .read = EspConReadChar, .write = EspConWrite, .connected = EspConConnected },
+	{ .read = NetConReadChar, .write = NetConWrite, .connected = NetConConnected },
 };
 
 static uint8_t out_mask = (1 << CON_PORTS) - 1;
@@ -234,7 +236,7 @@ void ConsoleTask() {
 		con_port *cp = &ports[p];
 		bool up = cp->connected ? cp->connected() : true;
 
-		// Greeting: UART once at boot, USB / WiFi whenever a terminal opens the port
+		// Greeting: UART once at boot, USB / WiFi / ethernet whenever a terminal opens the port
 		if (up && !cp->was_connected && p != bridge_port) Greeting(p);
 		cp->was_connected = up;
 		ConsoleOut(1 << p);

@@ -1012,6 +1012,10 @@ loop [n] : n raw frames through the PHY loopback, no cable needed\n";
 	printf(" / ");
 	printIp(NetMask());
 	printf(", discovery on UDP %d\n", NET_DISCOVERY_PORT);
+	printf("Console: TCP %d, ", NET_CON_PORT);
+	if (NetConConnected()) printIp(NetConPeer());
+	else printf("no client");
+	printf("\n");
 	printf("Frames: rx %" PRIu32 ", tx %" PRIu32 ", rx errors %" PRIu32 ", rx overruns %" PRIu32 ", tx busy %" PRIu32 "\n",
 		s.rx_frames, s.tx_frames, s.rx_errors, s.rx_overruns, s.tx_busy);
 	return true;

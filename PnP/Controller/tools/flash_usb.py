@@ -14,6 +14,8 @@ import zlib
 import serial
 from serial.tools import list_ports
 
+from esp_host import Resolve
+
 VID = 0xCAFE
 APP_PID, BOOT_PID = 0x4001, 0x4002
 CHUNK = 1024
@@ -163,6 +165,12 @@ def OpenUsb(port_arg):
 
 
 def OpenWifi(host):
+	ip = Resolve(host)	# Windows can't always resolve pnp-esp.local itself
+	if not ip:
+		sys.exit(f"Can't find {host} (no mDNS or DNS answer)")
+	if ip != host:
+		print(f"{host} is {ip}")
+		host = ip
 	try:
 		sock = socket.create_connection((host, WIFI_PORT), timeout=5)
 	except OSError as e:
