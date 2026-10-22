@@ -9,10 +9,21 @@ extern "C" {
 
 #include <stdint.h>
 
-// tap_mV = raw * TABn_SCALER (calibrate per board)
-#define TAB1_SCALER   1.6214971967605f
-#define TAB2_SCALER   3.3202432870043f
-#define TAB3_SCALER   6.3087186081308f
+/* tap_mV = raw * TABn_SCALER -- one independent scaler per channel, since each
+ * tap has its own divider ratio and its own source impedance.
+ *
+ * Calibrated 2026-09-26 against the baseline raw counts, which have been
+ * consistent (~2570 / 2510 / 1990 at ~4.17 V/cell) across many boots and builds:
+ *   metered cells : 4175 / 4170 / 4185 mV
+ *   tab targets   : 4175 / 8345 / 12530 mV   (cumulative)
+ *   raw counts    : 2579 / 2520 / 1994
+ * Within 0.4% of the original factory values (1.6215 / 3.3202 / 6.3087), which
+ * were correct all along. A short run of boots once read ~8-26% high on raw; do
+ * NOT calibrate against a reading unless it matches this baseline.
+ * To redo: meter each cell, take RAW from the boot line, scaler = tab_mV / raw. */
+#define TAB1_SCALER   1.6188445f
+#define TAB2_SCALER   3.3115079f
+#define TAB3_SCALER   6.2838516f
 
 // Settling time (ms) after raising the analog-enable before sampling. The
 // divider low-pass caps must charge through the taps first (slowest node

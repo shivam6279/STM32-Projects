@@ -403,6 +403,11 @@ bq_status_t BQ25798_EnableADC(uint8_t enable, uint8_t one_shot) {
 	return BQ25798_UpdateBits(BQ_REG_ADC_CTRL, mask, val);
 }
 
+bq_status_t BQ25798_SetAdcSample(bq_adc_sample_t sel) {
+	return BQ25798_UpdateBits(BQ_REG_ADC_CTRL, BQ_ADC_CTRL_SAMPLE_Msk,
+							  (uint8_t)((uint8_t)sel << 4));
+}
+
 /* ===========================================================================
  * Telemetry / status
  * ===========================================================================*/

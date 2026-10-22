@@ -31,6 +31,18 @@ extern "C" {
 
 #define BAL_CHECK_PERIOD_MS   30000u  // pause-measure-decide interval
 #define BAL_SETTLE_MS         300u    // relaxation before sampling
+
+/* A single corrupted tap reading used to be acted on immediately, which could
+ * suspend charging and trim VREG below the real pack voltage -- and a VREG under
+ * VBAT trips the charger's own VBAT_OVP, latching a fault for a whole check
+ * period. So any measurement that would trigger either action is treated as
+ * SUSPECT first: nothing is applied, and the check rate speeds up to
+ * BAL_CONFIRM_PERIOD_MS until either BAL_CONFIRM_COUNT consecutive readings
+ * agree (then act) or one clean reading arrives (then back to the slow rate).
+ * Deferring a few seconds is safe: BAL_CELL_OV_MV sits well below any damaging
+ * cell voltage, and the charge delivered in that window is negligible. */
+#define BAL_CONFIRM_PERIOD_MS 1000u   // re-check interval while confirming
+#define BAL_CONFIRM_COUNT     3u      // consecutive suspect readings before acting
 #define BAL_MIN_CELL_MV       3900u   // never bleed below this (flat OCV region)
 #define BAL_START_DELTA_MV    12u     // start bleeding this far above the lowest
 #define BAL_STOP_DELTA_MV     8u      // stop once back within this of the lowest

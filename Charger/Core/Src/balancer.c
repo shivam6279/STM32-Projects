@@ -13,6 +13,7 @@ static uint8_t  s_bleed_mask;     // bit n = cell n+1 bleeding
 static uint8_t  s_ov_suspended;   // charging held off: a cell went over BAL_CELL_OV_MV
 static uint8_t  s_balanced;       // last clean check: no bleed active or wanted
 static uint8_t  s_bled_at_full;   // bled after termination -> pack needs a top-up
+static uint8_t  s_suspect_count;  // consecutive OV/clamp-triggering readings seen
 static uint32_t s_last_check_ms;
 static batt_cells_t s_clean_cells;  // last clean measurement (charge+bleeds paused)
 static uint8_t  s_have_clean;       // s_clean_cells holds a real measurement
@@ -43,6 +44,7 @@ void Balancer_Init(void) {
 	s_ov_suspended  = 0u;
 	s_balanced      = 0u;
 	s_bled_at_full  = 0u;
+	s_suspect_count = 0u;
 	s_have_clean    = 0u;
 	s_vreg_mV       = BAL_PACK_VREG_MV;   // what BQ25798_Configure programs
 	// backdate so the first Balancer_Task call measures immediately
@@ -63,7 +65,11 @@ const batt_cells_t *Balancer_CleanCells(void) {
 }
 
 void Balancer_Task(bq_chg_state_t chg_state) {
-	if ((uint32_t)(HAL_GetTick() - s_last_check_ms) < BAL_CHECK_PERIOD_MS) {
+	/* Mid-confirmation we re-measure at the fast rate so a suspect reading is
+	 * resolved in a couple of seconds instead of a couple of check periods. */
+	uint32_t period = (s_suspect_count > 0u) ? BAL_CONFIRM_PERIOD_MS
+											 : BAL_CHECK_PERIOD_MS;
+	if ((uint32_t)(HAL_GetTick() - s_last_check_ms) < period) {
 		return;
 	}
 	s_last_check_ms = HAL_GetTick();
@@ -92,6 +98,31 @@ void Balancer_Task(bq_chg_state_t chg_state) {
 		if (s_clean_cells.cell_mV[i] < min_mV) { min_mV = s_clean_cells.cell_mV[i]; }
 		if (s_clean_cells.cell_mV[i] > max_mV) { max_mV = s_clean_cells.cell_mV[i]; }
 	}
+
+	/* Gate the two destructive actions -- OV suspend and the VREG trim -- behind
+	 * repeated agreement. A lone corrupted tap reading is far more likely than a
+	 * cell genuinely jumping past BAL_CELL_VMAX_MV between checks, and acting on
+	 * one costs a stuck VBAT_OVP fault. Leave the bleed mask and VREG exactly as
+	 * they were while confirming; the clean snapshot is still published so the
+	 * rejected reading is visible in the log. */
+	uint8_t suspect = (uint8_t)(max_mV >= BAL_CELL_OV_MV ||
+								max_mV > BAL_CELL_VMAX_MV);
+	if (suspect) {
+		if (s_suspect_count < BAL_CONFIRM_COUNT) {
+			s_suspect_count++;
+			printf("BAL: suspect %u/%u cells=%u/%u/%u mV (max %u) -- recheck\n",
+				   (unsigned)s_suspect_count, (unsigned)BAL_CONFIRM_COUNT,
+				   s_clean_cells.cell_mV[0], s_clean_cells.cell_mV[1],
+				   s_clean_cells.cell_mV[2], max_mV);
+			ApplyBleeds(s_bleed_mask);                       // restore, unchanged
+			BQ25798_EnableCharging(s_ov_suspended ? 0u : 1u);
+			return;
+		}
+		// Confirmed by BAL_CONFIRM_COUNT readings in a row: fall through and act.
+		printf("BAL: suspect confirmed after %u readings\n",
+			   (unsigned)BAL_CONFIRM_COUNT);
+	}
+	s_suspect_count = 0u;
 
 	// Per-cell hysteresis: start at lowest+START_DELTA, stop at lowest+STOP_DELTA.
 	uint8_t mask = s_bleed_mask;

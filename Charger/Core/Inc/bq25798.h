@@ -62,7 +62,19 @@ extern "C" {
 #define BQ_CTRL3_EN_OTG         (1u << 6)   // REG12: OTG (boost) enable
 #define BQ_ADC_CTRL_EN          (1u << 7)   // REG2E: ADC enable
 #define BQ_ADC_CTRL_ONESHOT     (1u << 6)   // REG2E: 1 = one-shot, 0 = cont.
+#define BQ_ADC_CTRL_SAMPLE_Msk  (0x3u << 4) // REG2E: ADC sample speed
 #define BQ_ADC_FN_DIS0_TS       (1u << 2)   // REG2F: disable TS ADC channel
+
+/* REG2E ADC_SAMPLE[1:0]: conversion time per channel, which sets the effective
+ * resolution. The time is PER CHANNEL, so a full cycle is this times the number
+ * of enabled channels. POR default is the 3 ms setting, which TI marks
+ * "not recommended". */
+typedef enum {
+	BQ_ADC_SAMPLE_15BIT = 0x0u,   // 24 ms per channel
+	BQ_ADC_SAMPLE_14BIT = 0x1u,   // 12 ms per channel
+	BQ_ADC_SAMPLE_13BIT = 0x2u,   // 6 ms per channel
+	BQ_ADC_SAMPLE_12BIT = 0x3u,   // 3 ms per channel (POR; not recommended)
+} bq_adc_sample_t;
 
 // Watchdog timer settings (REG10 WATCHDOG[2:0]).
 typedef enum {
@@ -141,6 +153,7 @@ bq_status_t BQ25798_EnableHIZ(uint8_t enable);
 bq_status_t BQ25798_SetWatchdog(bq_watchdog_t sel);
 bq_status_t BQ25798_KickWatchdog(void);                     // WD_RST = 1
 bq_status_t BQ25798_EnableADC(uint8_t enable, uint8_t one_shot);
+bq_status_t BQ25798_SetAdcSample(bq_adc_sample_t sel);
 
 // ---- Telemetry / status ---------------------------------------------------
 bq_status_t BQ25798_ReadADC(bq_adc_t *out);

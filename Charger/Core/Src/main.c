@@ -7,13 +7,17 @@
 #include "debug_uart.h"
 #include "battery_adc.h"
 #include "balancer.h"
+#include "stusb4500.h"
 #include <stdio.h>
 
 // SoC colour: avg cell = tab3 / count; <=RED red, >=GREEN green, gradient between.
 #define BATT_CELL_COUNT      3u
 #define BATT_GREEN_MV        4100u
 #define BATT_RED_MV          3800u
-#define BATT_DISPLAY_MS      3000u   // touch-display duration
+#define BATT_DISPLAY_MS      3000u   // touch-display duration (then sleep)
+// On a USB wake the same SoC colour is held this long, then morphs into the
+// charging breath. Kept short so plugging in feels immediate.
+#define BATT_SOC_HOLD_MS     1500u
 #define BATT_CHG_START_MA    64      // IBAT to consider charging started
 // Charging-progress hue: CC ramps red->yellow (capped below green), CV ramps
 // yellow->green as IBAT tapers ICHG->ITERM. Keep these in sync with cfg.
@@ -29,6 +33,14 @@
 // from any firmware/pin load. Recover by reflashing under reset. Set back to 0
 // for normal operation.
 #define LOWPOWER_FLOOR_TEST  0
+/* Which pin configuration the floor test sleeps with:
+ *   0 = every pin analog Hi-Z, no pulls at all (bare-silicon floor, but it
+ *       leaves the PA11 divider-enable and the balance FET gates FLOATING,
+ *       so an external network can bleed and read higher than production).
+ *   1 = the same pulls production uses in enter_standby(): PA12/13/14 up so
+ *       the active-low LED stays dark, PA3/PA11/PC14/PC15 down so the cell-tap
+ *       dividers and bleed FETs are held off. No wake source armed either way. */
+#define LOWPOWER_FLOOR_PULLS 1
 /* USER CODE END PD */
 
 // Private macro -------------------------------------------------------------
@@ -56,6 +68,14 @@ static void MX_ADC1_Init(void);
 #if LOWPOWER_FLOOR_TEST
 // Force every pin to analog Hi-Z, then Standby forever -- bare MCU + LDO floor.
 static void LowPowerFloorTest(void) {
+  /* Recovery window. Everything below kills SWD (PA13/PA14 go analog) and then
+   * sleeps with NO wake source armed, so the only way back in is a reflash
+   * under reset. Hold here first, with the debug pins still alive, so a
+   * programmer can connect even if NRST is not wired to the ST-Link.
+   * SystemClock_Config() has not run yet, so this is HSI-rate and approximate --
+   * err long. The current meter will show the drop when it finally sleeps. */
+  HAL_Delay(10000);
+
   // DBGMCU keeps the clocks alive through Standby (mA-level drain) -- clear it.
   __HAL_RCC_DBGMCU_CLK_ENABLE();
   DBG->CR = 0u;
@@ -82,7 +102,19 @@ static void LowPowerFloorTest(void) {
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF4);
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
 
-  // No GPIO pull-through-standby config enabled => every pin stays true Hi-Z.
+#if LOWPOWER_FLOOR_PULLS
+  /* Production standby pin state (mirrors enter_standby() in lowpower.c), minus
+   * the wake sources. PA12/13/14 held high keeps the active-low LED dark; the
+   * pull-downs hold the cell-tap divider enable and the three bleed FET gates
+   * off so nothing external can bleed while we measure. */
+  HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A,
+                             PWR_GPIO_BIT_12 | PWR_GPIO_BIT_13 | PWR_GPIO_BIT_14);
+  HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, PWR_GPIO_BIT_3 | PWR_GPIO_BIT_11);
+  HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_C, PWR_GPIO_BIT_14 | PWR_GPIO_BIT_15);
+  HAL_PWREx_EnablePullUpPullDownConfig();
+#endif
+
+  // With LOWPOWER_FLOOR_PULLS = 0, no pull config is enabled => all pins Hi-Z.
   HAL_PWR_EnterSTANDBYMode();         // wake = reset; never returns
   while (1) { }                       // belt-and-suspenders
 }
@@ -178,6 +210,11 @@ int main(void) {
    * connect, then hand PA12/PA13/PA14 to the RGB driver (SWD is lost after this).
    * Skip the wait when we just woke from standby so the rainbow resumes at once. */
   uint8_t woke_from_standby = LowPower_WokeFromStandby();
+  /* Which wake pin fired, read before anything clears the flags (enter_standby
+   * clears them right before sleeping, so at boot they name the wake source).
+   * PA4 = WKUP2 (USB), PA2 = WKUP4 (touch). */
+  uint8_t wk_pa4 = __HAL_PWR_GET_FLAG(PWR_FLAG_WUF2) ? 1u : 0u;
+  uint8_t wk_pa2 = __HAL_PWR_GET_FLAG(PWR_FLAG_WUF4) ? 1u : 0u;
   if (!woke_from_standby) {
 	HAL_Delay(1000);
   }
@@ -187,8 +224,10 @@ int main(void) {
 
   // Debug console on PA0/PA1 @ 115200 8N1 (printf retargeted here).
   DebugUART_Init();
-  printf("\n=== Charger boot ===  woke=%u PA4=%u\n",
-		 woke_from_standby, LowPower_UsbPresent());
+  printf("\n=== Charger boot ===  woke=%u src=%s PA4=%u\n",
+		 woke_from_standby,
+		 wk_pa4 ? (wk_pa2 ? "PA4+PA2" : "PA4") : (wk_pa2 ? "PA2" : "-"),
+		 LowPower_UsbPresent());
 
   // Cell-tap ADC on PA6/PA7/PA8, analog-enable on PA11.
   BatteryADC_Init();
@@ -196,47 +235,35 @@ int main(void) {
   // Cell-balance bleeds on PA3/PC14/PC15: outputs, all off.
   Balancer_Init();
 
-  // Charger answers on I2C => USB present => charge; else touch wake => show SoC.
+  /* PA4 (the REGN-derived rail) is the USB-present signal. I2C init success is
+   * NOT a proxy for it: with the pull-ups on the always-on rail the charger
+   * answers on battery too, so a failed init now means a real fault. */
+  uint8_t usb_present = LowPower_UsbPresent();
+
+  /* Show the pack SoC straight away, whichever woke us. This needs only the
+   * STM32's own tap ADC, so doing it before any I2C traffic gets the LED lit
+   * within a few ms of reset instead of waiting on charger enumeration. On a USB
+   * wake the same colour then morphs into the charging breath (see below). */
+  batt_cells_t cells;
+  BatteryADC_Read(&cells);
+  uint16_t avg_cell_mV = (uint16_t)(cells.tab_mV[2] / BATT_CELL_COUNT);
+  uint16_t soc_hue_now = soc_hue(avg_cell_mV);
+  show_battery_color(avg_cell_mV);
+  uint32_t soc_shown_ms = HAL_GetTick();
+  printf("wake: PA4=%u  RAW=%u/%u/%u  TAB=%u/%u/%u mV  CELL=%u/%u/%u mV  avg=%u mV\n",
+		 usb_present, cells.raw[0], cells.raw[1], cells.raw[2],
+		 cells.tab_mV[0], cells.tab_mV[1], cells.tab_mV[2],
+		 cells.cell_mV[0], cells.cell_mV[1], cells.cell_mV[2], avg_cell_mV);
+
   bq_status_t bq_status = BQ25798_Init();
   if (bq_status != BQ_OK) {
 	bq_status = BQ25798_Init();   // one retry in case the bus was mid-glitch
   }
-  printf("BQ25798_Init() -> %d\n", (int)bq_status);
+  printf("BQ25798_Init() -> %d  PA4=%u\n", (int)bq_status, usb_present);
 
-  if (bq_status == BQ_OK) {
-	// ---- Charging mode: record charger status, then configure ----
-	uint8_t st[5];
-	if (BQ25798_ReadStatus(st) == BQ_OK) {
-	  printf("wake charger status REG1B-1F: %02X %02X %02X %02X %02X\n",
-			 st[0], st[1], st[2], st[3], st[4]);
-	}
 
-	// 3S Li-ion, ~2400 mAh pack.
-	static const bq_config_t cfg = {
-	  .cell_count    = 3u,
-	  .charge_mV     = 12600u,   // 3 * 4.2 V
-	  .charge_mA     = 1200u,    // 0.5C; raise toward 2400 if cells allow
-	  .iprechg_mA    = 240u,     // ~0.1C
-	  .iterm_mA      = 120u,     // ~0.05C
-	  .input_ilim_mA = 2000u,    // ceiling; ICO/BC1.2 may lower it
-	  .input_vlim_mV = 4600u,    // hold a 5 V source up
-	  .watchdog      = BQ_WD_DISABLE,
-	};
-	printf("BQ25798_Configure() -> %d\n", (int)BQ25798_Configure(&cfg));
-#if DEBUG_NO_CHARGE
-	printf("DEBUG: charging disabled -> %d\n", (int)BQ25798_EnableCharging(0u));
-#endif
-	BQ25798_EnableADC(1, 0);     // continuous ADC for telemetry
-	// disable TS ADC so REGN follows VBUS (not held up in battery-only mode)
-	BQ25798_UpdateBits(BQ_REG_ADC_FN_DIS0, BQ_ADC_FN_DIS0_TS, BQ_ADC_FN_DIS0_TS);
-  } else {
-	// ---- Touch wake (charger down): show pack SoC colour, then sleep ----
-	batt_cells_t cells;
-	BatteryADC_Read(&cells);
-	uint16_t avg_cell_mV = (uint16_t)(cells.tab_mV[2] / BATT_CELL_COUNT);
-	printf("touch wake: TAB=%u/%u/%u mV  CELL=%u/%u/%u mV  avg=%u mV\n",
-		   cells.tab_mV[0], cells.tab_mV[1], cells.tab_mV[2],
-		   cells.cell_mV[0], cells.cell_mV[1], cells.cell_mV[2], avg_cell_mV);
+  if (!usb_present) {
+	// ---- Touch wake (no USB): hold the SoC colour, then sleep ----
 
 #if DEBUG_NO_CHARGE
 	// Debug: never sleep. Keep the dividers enabled and stream live reads so
@@ -255,18 +282,105 @@ int main(void) {
 	  HAL_Delay(1000);
 	}
 #else
-	show_battery_color(avg_cell_mV);
-	HAL_Delay(BATT_DISPLAY_MS);
+	/* Hold the colour for the display window, but keep watching PA4. REGN (and so
+	 * PA4) lags USB insertion by the charger's input qualification and the PD
+	 * negotiation, and plugging in can wake us early through a touch or PA4
+	 * glitch. Deciding from one PA4 sample at boot used to send a real plug-in
+	 * to sleep -- and with PA4 then already high there is no rising edge left to
+	 * wake us, so it stayed asleep with USB connected. */
+	while ((uint32_t)(HAL_GetTick() - soc_shown_ms) < BATT_DISPLAY_MS) {
+	  if (LowPower_UsbPresent()) {
+		HAL_Delay(20);                          // reject a glitch
+		if (LowPower_UsbPresent()) {
+		  usb_present = 1u;
+		  break;
+		}
+	  }
+	}
 
-	printf("display done -> standby (PA4=%u)\n", LowPower_UsbPresent());
-	Balancer_AllOff();           // bleed FETs off
-	BatteryADC_Sleep();          // analog-enable LOW
-	LowPower_EnterStandby();     // wake = reset; does not return
+	if (!usb_present) {
+	  printf("display done -> standby (PA4=%u)\n", LowPower_UsbPresent());
+	  /* The charger answers on battery now, so clear EN_ADC from here too: a
+	   * one-shot cycle armed by the last charge session may still be running. */
+	  if (bq_status == BQ_OK) {
+		BQ25798_EnableADC(0, 0);
+	  }
+	  Balancer_AllOff();           // bleed FETs off
+	  BatteryADC_Sleep();          // analog-enable LOW
+	  LowPower_EnterStandby();     // wake = reset; does not return
+	}
+
+	// USB arrived during the display: carry on into the charging path. The
+	// startup init ran before VBUS was up and may have failed, so redo it.
+	printf("USB up %lu ms after wake -> charging\n",
+		   (unsigned long)(HAL_GetTick() - soc_shown_ms));
+	bq_status = BQ25798_Init();
+	if (bq_status != BQ_OK) {
+	  bq_status = BQ25798_Init();
+	}
+	printf("BQ25798_Init() -> %d\n", (int)bq_status);
 #endif
   }
 
-  uint16_t led_hue     = 0u;   // progress hue (set from charger phase)
-  uint8_t  led_started = 0u;   // LED stays off until charging starts
+  // ---- USB present: configure for charging ----
+  if (bq_status != BQ_OK) {
+	/* USB is up but the charger will not answer. Nothing to configure; fall
+	 * through so the unplug path below still puts us back to sleep. */
+	printf("BQ25798 unreachable with USB present\n");
+  } else {
+	uint8_t st[5];
+	if (BQ25798_ReadStatus(st) == BQ_OK) {
+	  printf("wake charger status REG1B-1F: %02X %02X %02X %02X %02X\n",
+			 st[0], st[1], st[2], st[3], st[4]);
+	}
+
+	/* What did USB-PD actually negotiate? The STUSB4500 runs standalone off
+	 * VBUS, so this only answers here (USB present) -- which is the only time
+	 * the answer matters. Reported, not yet acted on: the input limits below
+	 * are still the static ones. */
+	stusb_status_t pd;
+	if (STUSB4500_ReadStatus(&pd) == BQ_OK) {
+	  STUSB4500_PrintStatus(&pd);
+	} else {
+	  printf("PD: STUSB4500 not responding\n");
+	}
+
+	// 3S Li-ion, ~1200 mAh pack.
+	static const bq_config_t cfg = {
+	  .cell_count    = 3u,
+	  .charge_mV     = 12600u,   // 3 * 4.2 V
+	  .charge_mA     = 1200u,    // 1C -- use 600 for 0.5C
+	  .iprechg_mA    = 240u,     // 0.2C
+	  .iterm_mA      = 120u,     // 0.1C
+	  .input_ilim_mA = 2000u,    // ceiling; ICO/BC1.2 may lower it
+	  .input_vlim_mV = 4600u,    // hold a 5 V source up
+	  .watchdog      = BQ_WD_DISABLE,
+	};
+	printf("BQ25798_Configure() -> %d\n", (int)BQ25798_Configure(&cfg));
+#if DEBUG_NO_CHARGE
+	printf("DEBUG: charging disabled -> %d\n", (int)BQ25798_EnableCharging(0u));
+#endif
+	/* POR default is the 3 ms/channel setting TI marks "not recommended";
+	 * at a 1 Hz poll there is time for the slowest, highest-resolution one. */
+	BQ25798_SetAdcSample(BQ_ADC_SAMPLE_15BIT);
+	/* One-shot rather than continuous: ADC_EN self-clears at the end of each
+	 * cycle, so losing the bus can never strand the ADC on (540 uA drawn from
+	 * the pack). The poll loop re-arms it after each read. */
+	BQ25798_EnableADC(1, 1);
+	// disable TS ADC so REGN follows VBUS (not held up in battery-only mode)
+	BQ25798_UpdateBits(BQ_REG_ADC_FN_DIS0, BQ_ADC_FN_DIS0_TS, BQ_ADC_FN_DIS0_TS);
+  }
+
+  /* The SoC colour is already lit. Seed the breath with that same hue so the
+   * static -> breathe morph is continuous in both brightness and colour; the
+   * charge-progress hue only takes over once real current is flowing. */
+  uint16_t led_hue     = soc_hue_now;
+  uint8_t  led_started = 1u;   // lit from boot, so the unplug fade always runs
+  /* Backdated so the first poll lands ~200 ms in: long enough for the one-shot
+   * ADC cycle armed during configuration to finish (~170 ms for the enabled
+   * channels at 24 ms each), without delaying the first LED update by a whole
+   * poll period. */
+  uint32_t last_poll   = HAL_GetTick() - 800u;
 
   while (1) {
 	// The LED is driven entirely by the interrupt-driven animation engine
@@ -297,8 +411,9 @@ int main(void) {
 		  while (LED_Busy() && (uint32_t)(HAL_GetTick() - t0) < BATT_FADE_MS + 100u) {
 		  }
 		}
-		/* ADC off so the BQ drops to its ~20 uA battery-only state; settings
-		 * persist on VBAT (watchdog disabled), so EN_ADC would stay set. */
+		/* ADC off so the BQ drops to its 17-24 uA battery-only state. With
+		 * one-shot this is belt-and-braces (EN_ADC self-clears at the end of
+		 * each cycle), but it also stops one that is mid-conversion. */
 		BQ25798_EnableADC(0, 0);
 		Balancer_AllOff();
 		BatteryADC_Sleep();
@@ -308,7 +423,6 @@ int main(void) {
 #endif // !DEBUG_NO_CHARGE
 
 	// Once per second: report charger telemetry/status.
-	static uint32_t last_poll = 0u;
 	if ((uint32_t)(HAL_GetTick() - last_poll) >= 1000u) {
 	  last_poll = HAL_GetTick();
 
@@ -332,8 +446,13 @@ int main(void) {
 				 (int)(m.tdie_C_x10 / 10), bq_chg_state_name(cs),
 				 vbus_present, pg, LowPower_UsbPresent(), faults[0], faults[1]);
 
-		  // Update the charging LED: hue from charge phase + current (not VBAT).
-		  led_hue = charge_progress_hue(cs, m.vbat_mV, m.ibat_mA);
+		  /* Hue from charge phase + current (not VBAT), but only once the charger
+		   * is actually doing something -- otherwise hold the SoC hue we booted
+		   * with, so the morph out of the static display doesn't jump colour. */
+		  if (m.ibat_mA >= BATT_CHG_START_MA ||
+			  cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF) {
+			led_hue = charge_progress_hue(cs, m.vbat_mV, m.ibat_mA);
+		  }
 		  uint8_t fault = (uint8_t)(faults[0] != 0u || faults[1] != 0u);
 		  // FULL only once balancing is done too: keep breathing (green) while
 		  // the post-charge top-balance runs, so unplugging early is visibly
@@ -341,22 +460,22 @@ int main(void) {
 		  uint8_t full  = (uint8_t)((cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF)
 								  && Balancer_Balanced());
 
-		  // show the LED once current flows, the charger reports done/topoff
-		  // (covers a full-on-plug-in pack that goes straight to the post-full
-		  // top-balance with IBAT=0), or full/fault. The first LED_Breathe after
-		  // this anchors the breath at its trough (OFF->breathe entry).
-		  if (!led_started &&
-			  (m.ibat_mA >= BATT_CHG_START_MA ||
-			   cs == BQ_CHG_DONE || cs == BQ_CHG_TOPOFF || full || fault)) {
-			led_started = 1u;
-		  }
-
-		  if (led_started) {
-			if (fault)     { LED_Fault(); }
-			else if (full) { LED_Full(); }
-			else           { LED_Breathe(led_hue); }
-		  }
+		  /* Hold the static SoC colour for BATT_SOC_HOLD_MS after boot, then hand
+		   * over to the breath. LED_Breathe now anchors its phase to whatever
+		   * brightness is lit, so entering from the static display is seamless.
+		   * A fault or full state overrides the hold -- those matter more than
+		   * the intro animation. */
+		  uint8_t soc_hold = (uint8_t)((uint32_t)(HAL_GetTick() - soc_shown_ms)
+									   < BATT_SOC_HOLD_MS);
+		  if (fault)          { LED_Fault(); }
+		  else if (full)      { LED_Full(); }
+		  else if (!soc_hold) { LED_Breathe(led_hue); }
 		}
+
+		/* Re-arm the one-shot ADC for the next poll. The values read above come
+		 * from the cycle armed a second ago -- long finished (a full cycle is
+		 * <= 144 ms) and plenty fresh for a status LED. */
+		BQ25798_EnableADC(1, 1);
 	  }
 	  else {
 		printf("BQ25798 not responding\n");

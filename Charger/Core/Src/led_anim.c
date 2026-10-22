@@ -51,9 +51,22 @@ static void LED_Frame(void) {
 	if (req != (uint8_t)s_cur_mode) {
 		s_busy = 0u;
 		switch (req) {
-			case LED_M_BREATHE:
-				s_breath_base = now;            // restart at the trough
+			case LED_M_BREATHE: {
+				/* Enter the breath at whatever brightness is already lit rather
+				 * than snapping to the trough, so the STATIC -> BREATHE hand-off
+				 * (SoC display morphing into the charging breath) is seamless.
+				 * Solve the triangle for the current value to get the phase to
+				 * anchor at; from dark this yields 0, preserving the original
+				 * OFF -> breathe-up entry. */
+				uint32_t half = BATT_BREATH_MS / 2u;
+				uint32_t span = 255u - BATT_BREATH_MIN_V;
+				uint32_t tri  = (s_shown_val > BATT_BREATH_MIN_V)
+							  ? ((uint32_t)(s_shown_val - BATT_BREATH_MIN_V) * half) / span
+							  : 0u;
+				if (tri > half) { tri = half; }
+				s_breath_base = now - tri;
 				break;
+			}
 			case LED_M_FULL:
 			case LED_M_FADEOUT:
 				s_start_hue   = s_shown_hue;    // ease from whatever is lit now
