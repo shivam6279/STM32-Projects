@@ -196,22 +196,27 @@ void PadSend(bool up, bool force) {
 	Serial.write(frame, len); // one write, so a log line can't land inside
 }
 
+// NimBLE connects at its default 30-50ms interval: sticks at 20Hz, choppy jog. Ask for this
+// instead (1.25ms units), the controller / radio picks within it
+#define ITVL_MIN	6	// 7.5ms
+#define ITVL_MAX	12	// 15ms
+
 // A controller switched off doesn't always say goodbye: the link is only dropped after the
 // supervision timeout, and until then the H7 keeps getting the last stick state. NimBLE's default
-// is 4s. Same interval / latency as the controller picked, just the timeout shorter
+// is 4s. Fast interval, no latency, short timeout
 void ShortTimeout() {
 	NimBLEConnInfo ci = xbox::pConnectedClient->getConnInfo();
-	uint16_t itvl = ci.getConnInterval(), lat = ci.getConnLatency();
 	// Has to be more than (1 + latency) * interval * 2: 1.25ms units vs 10ms units
-	uint16_t min_to = (uint16_t)((1 + lat) * itvl * 2 * 1.25f / 10) + 1;
+	uint16_t min_to = (uint16_t)(ITVL_MAX * 2 * 1.25f / 10) + 1;
 	uint16_t to = SUPERVISION_MS / 10 > min_to ? SUPERVISION_MS / 10 : min_to;
 
 	// Stored on the client too: when the controller asks for new parameters NimBLE answers with
-	// these, otherwise its defaults put the timeout back to seconds. Also used on a reconnect
-	xbox::pConnectedClient->setConnectionParams(itvl, itvl, lat, to);
-	bool ok = xbox::pConnectedClient->updateConnParams(itvl, itvl, lat, to);
-	pad_log.printf("Link interval %.2fms, latency %u, timeout %ums -> %ums%s\n", itvl * 1.25f, lat,
-		ci.getConnTimeout() * 10, to * 10, ok ? "" : " (update refused)");
+	// these (not what it asked for), otherwise its defaults come back. Also used on a reconnect
+	xbox::pConnectedClient->setConnectionParams(ITVL_MIN, ITVL_MAX, 0, to);
+	bool ok = xbox::pConnectedClient->updateConnParams(ITVL_MIN, ITVL_MAX, 0, to);
+	pad_log.printf("Link interval %.2fms, latency %u, timeout %ums -> %.2f-%.2fms, 0, %ums%s\n",
+		ci.getConnInterval() * 1.25f, ci.getConnLatency(), ci.getConnTimeout() * 10,
+		ITVL_MIN * 1.25f, ITVL_MAX * 1.25f, to * 10, ok ? "" : " (update refused)");
 }
 
 // Backstop: back to the short timeout if something changed it
