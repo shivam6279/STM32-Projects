@@ -15,8 +15,8 @@
 
 #define HALF		512
 #define DIR_SETUP	2
-#define Y1_DRV		6	// Y gantry drivers in the default mapping (motion.c)
-#define Y2_DRV		7
+#define Y1_DRV		0	// Y gantry drivers in the default mapping (motion.c)
+#define Y2_DRV		1
 
 static int failures;
 
@@ -133,7 +133,7 @@ static void Setup() {
 		pins[i].last_dir_change = -100;
 	}
 	StepFillInit(&g, step_mask, dir_mask, DIR_SETUP);
-	MotionInit(); // X driver 2, Y drivers 6 + 7, Z driver 3, 80 steps/mm, 300mm/s, 3000mm/s^2
+	MotionInit(); // X driver 2, Y drivers 0 + 1, Z driver 3, 80 steps/mm, 300mm/s, 3000mm/s^2
 	tick = 0;
 	next_jog = 0;
 }
@@ -190,7 +190,7 @@ static void TestReverse() {
 
 // Nobody sets the target any more (main loop stuck, pad gone): ramps down and stops by itself
 static void TestTimeout() {
-	float v[MOTION_AXES] = { 0, 100, 0 };	// Y, ganged on drivers 6 + 7
+	float v[MOTION_AXES] = { 0, 100, 0 };	// Y, ganged on drivers 0 + 1
 	int64_t p;
 	Setup();
 	JogStart();
