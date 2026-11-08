@@ -20,6 +20,7 @@
 
 #define MOTION_AXES		7
 #define MOTION_DRIVERS	8
+#define MOTION_LINEAR	3	// X Y Z, the first in the table. The rest are rotary (degrees)
 
 typedef struct {
 	char name;			// G-code letter
@@ -43,10 +44,28 @@ extern float motion_accel;			// path acceleration limit, mm/s^2 (M204), 0 = axis
 
 #define MOTION_MAX_STEP_HZ	200000	// per driver, the refill ISR is the limit (pins could do 500k)
 
+// Junction counters (G1 .. E). Every move that asked for an exit speed lands in exactly one of
+// full / limited / late / corner once the move after it (or something else) comes.
+typedef struct {
+	uint32_t asked;			// moves with E > 0 that got decided
+	uint32_t full;			// ran into the next move at the E asked for
+	uint32_t limited;		// at speed, but slower than E (speed limits, too short), or stopped for that
+	uint32_t late;			// stopped: the next G1 came after the last move's decel had started, or no G1 came next
+	uint32_t corner;		// stopped: the next move turns (more than ~1 deg)
+	uint32_t from_phase[3];	// joins re-planned from the last move's start / cruise / decel
+	float last_asked, last_used;	// mm/s, the latest decided junction (used 0 = stopped)
+} MotionJunctions;
+
 void MotionInit();
 void MotionDefaults();				// axis table + motion_accel back to the built in values (M502)
 void MotionSync();					// planned position = where the steps really are, timeline reset
 uint8_t MotionMove(const float *target, uint8_t mask, float feed);	// absolute mm, axes in mask
+// G1: same, and the next MotionMoveExit can run into it. exit > 0: try to end at that speed (mm/s
+// along the path) when the next move carries straight on. It's queued ending at rest either way,
+// the end is only swapped once the next move is here. exit < 0 = MotionMove
+uint8_t MotionMoveExit(const float *target, uint8_t mask, float feed, float exit);
+void MotionJunctionStats(MotionJunctions *s);
+void MotionJunctionsReset();
 bool MotionIdle();					// all queued motion played out
 void MotionLock(bool lock);			// jog.c: MotionMove / MotionSteps return MOTION_JOG while locked
 float MotionPosition(uint8_t axis);	// where the planner has sent the axis (mm)

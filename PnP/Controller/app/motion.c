@@ -20,14 +20,16 @@ _Static_assert(MOTION_DRIVERS == STEP_AXES, "one motion driver per step generato
 
 // Driver 0 + 1 Y gantry, 2 X, 3 Z, 4 toolhead 1 (A, rotation), 5 toolhead 2 (B), 6 / 7 spare (U, C)
 // X Y Z: 1.8deg steppers, GT2 belt, 20 tooth pulley = 40mm/rev. 200 * 16 microsteps (tmc_config) /
-// 40 = 80 steps/mm. A B C U steps/mm and every speed / accel / jerk are still placeholders:
-// TODO 300mm/s, 3000mm/s^2, 100000mm/s^3
+// 40 = 80 steps/mm. A B: tool rotation, units are degrees. 1.8deg steppers, direct drive:
+// 200 * 16 / 360 = 8.889 steps/deg. X Y Z accel / jerk cut to 65% (2026-11-04). A B: NEMA8, only
+// a nozzle with an SMT part on it, so faster. TODO tune on the machine (missed steps / part slip).
+// C U steps/mm and the X Y Z speed are still placeholders
 static const MotionAxis defaults[MOTION_AXES] = {
-	{ 'X', 1 << 2,			80, 300, 3000, 100000 },
-	{ 'Y', 1 << 0 | 1 << 1,	80, 300, 3000, 100000 },
-	{ 'Z', 1 << 3,			80, 300, 3000, 100000 },
-	{ 'A', 1 << 4,			80, 300, 3000, 100000 },
-	{ 'B', 1 << 5,			80, 300, 3000, 100000 },
+	{ 'X', 1 << 2,			80, 300, 1950, 65000 },
+	{ 'Y', 1 << 0 | 1 << 1,	80, 300, 1950, 65000 },
+	{ 'Z', 1 << 3,			80, 300, 1950, 65000 },
+	{ 'A', 1 << 4,			200 * 16 / 360.0f, 1000, 20000, 1000000 },
+	{ 'B', 1 << 5,			200 * 16 / 360.0f, 1000, 20000, 1000000 },
 	{ 'C', 1 << 7,			80, 300, 3000, 100000 },
 	{ 'U', 1 << 6,			80, 300, 3000, 100000 },
 };
@@ -45,6 +47,40 @@ static uint64_t timeline_end;			// tick the last planned move finishes at
 static uint64_t last_start;
 static SCurve last_plan;
 static bool locked;						// jog mode has the axes
+
+// ---- junctions (G1 .. E): a move that runs into the next one at speed ----
+// Every move is queued ending at rest, so whatever is in the step queues always stops by itself.
+// When the next G1 comes and carries straight on, the part of the last move that hasn't played
+// yet (from a point where its accel is 0: its start, cruise or decel) is taken back and queued
+// again ending at the junction speed, and the new move starts at that speed and ends at rest.
+// If it comes too late (that point has played), turns, or there isn't room, the last move just
+// stops like any other.
+#define JUNCTION_DIFF	0.0175	// largest change in any axis' share of the direction (~1 deg), more = a corner
+#define JUNCTION_JUMP	1.0		// mm/s, largest step in any one axis' speed at the junction
+#define JUNCTION_MIN	0.01	// mm/s, slower than this is a stop
+#define REPLAN_TICKS	(LEAD_TICKS + 2 * STEP_HALF)	// a queued piece starting this far ahead can be swapped
+
+typedef struct {
+	bool open;				// last thing on the timeline, can still be re-planned
+	float exit;				// exit speed asked for, mm/s, 0 = none
+	uint8_t moving;			// axes
+	int64_t d[MOTION_AXES];	// steps, signed
+	double len;				// path length (mm, degrees for a rotary only move)
+	double v, a, j;			// its normalized limits
+	SCurve sc;
+	uint64_t start;
+} Planned;
+
+typedef struct {
+	uint32_t phase;			// re-planned from the start of this phase (0, 3 or 4)
+	uint64_t tick;			// which starts here
+	double u;				// and at this u
+	double vj;				// junction speed, mm/s
+	SCurve rem;				// the rest of the last move, from there to the junction
+} Join;
+
+static Planned last;
+static MotionJunctions junc;
 
 static uint8_t Bits(uint8_t m) {
 	uint8_t n = 0;
@@ -97,8 +133,21 @@ void MotionDefaults() {
 	motion_accel = 0;
 }
 
+// Nothing can join the last move any more. 'cut': it asked for an exit speed and something
+// other than a G1 came next, that counts as late.
+static void Close(bool cut) {
+	if (cut && last.open && last.exit > 0) {
+		junc.asked++;
+		junc.late++;
+		junc.last_asked = last.exit;
+		junc.last_used = 0;
+	}
+	last.open = false;
+}
+
 void MotionSync() {
 	uint8_t i;
+	Close(false);
 	for (i = 0; i < MOTION_AXES; i++) pos_steps[i] = DriverPos(Primary(i)) + pos_offset[i];
 	timeline_end = 0;
 }
@@ -111,34 +160,141 @@ void MotionInit() {
 		pos_offset[i] = 0;
 	}
 	timeline_end = 0;
+	last.open = false;
+	MotionJunctionsReset();
+}
+
+void MotionJunctionsReset() {
+	MotionJunctions z = { 0 };
+	junc = z;
+}
+
+void MotionJunctionStats(MotionJunctions *s) {
+	*s = junc;
+}
+
+// Rest of the last move from vb (at u) to vj, and the new move from vj, both inside their limits
+static bool JoinOk(Join *jn, double vb, double vj, double len, double v, double a, double j) {
+	SCurve nx;
+	double dr = 1 - jn->u;
+
+	jn->vj = vj;
+	return SCurvePlanV(&jn->rem, vb / dr, vj / last.len / STEP_TICK_HZ / dr, last.v / dr, last.a / dr, last.j / dr)
+		&& SCurvePlanV(&nx, vj / len / STEP_TICK_HZ, 0, v, a, j);
+}
+
+// Junction with the last move: speed and where to re-plan it from. False if it has to stop,
+// with the counter for why already bumped.
+static bool Junction(Join *jn, const int64_t *d, uint8_t moving, double len, double v, double a, double j) {
+	double diff = 0, cap, lim, u0, u1, vb = 0, lo, hi, mid;
+	uint32_t ph, t = 0, k;
+	uint8_t i;
+
+	junc.asked++;
+	junc.last_asked = last.exit;
+	junc.last_used = 0;
+
+	// Direction: each axis' share of the path before and after. Straight on = the same shares.
+	for (i = 0; i < MOTION_AXES; i++) {
+		if (!(((moving | last.moving) >> i) & 1)) continue;
+		u0 = last.d[i] / (double)motion_axes[i].steps_per_mm / last.len;
+		u1 = d[i] / (double)motion_axes[i].steps_per_mm / len;
+		if (fabs(u0 - u1) > diff) diff = fabs(u0 - u1);
+	}
+	if (diff > JUNCTION_DIFF) {
+		junc.corner++;
+		return false;
+	}
+
+	// As asked, but inside both moves' speed limits and the speed step the turn leaves
+	cap = last.exit;
+	lim = last.v * last.len * STEP_TICK_HZ;
+	if (lim < cap) cap = lim;
+	lim = v * len * STEP_TICK_HZ;
+	if (lim < cap) cap = lim;
+	if (diff > 0) {
+		lim = JUNCTION_JUMP / diff;
+		if (lim < cap) cap = lim;
+	}
+
+	// Earliest accel 0 point of the last move that is far enough ahead to swap what follows it
+	for (ph = 0; ph <= 4; ph++) {
+		if (ph == 1 || ph == 2) continue;
+		SCurveAt(&last.sc, ph, &jn->u, &vb, &t);
+		if (last.start + t >= StepNow() + REPLAN_TICKS) break;
+	}
+	if (ph > 4 || jn->u >= 1) {
+		junc.late++;
+		return false;
+	}
+	jn->phase = ph;
+	jn->tick = last.start + t;
+
+	// Fastest both can do: the last move still has to get there from vb, and the new one is
+	// queued ending at rest so it has to be able to stop from vj
+	if (!JoinOk(jn, vb, cap, len, v, a, j)) {
+		lo = 0;
+		hi = cap;
+		for (k = 0; k < 16; k++) { // to 1/65536 of cap: plenty, and cheap enough to stay ahead of REPLAN_TICKS
+			mid = (lo + hi) / 2;
+			if (JoinOk(jn, vb, mid, len, v, a, j)) lo = mid;
+			else hi = mid;
+		}
+		if (lo < JUNCTION_MIN || !JoinOk(jn, vb, lo, len, v, a, j)) {
+			junc.limited++;
+			return false;
+		}
+	}
+	return true;
+}
+
+// 'need' free queue slots on every driver of these axes
+static bool Room(uint8_t axes, uint32_t need) {
+	uint8_t i, drv;
+	for (i = 0; i < MOTION_AXES; i++) {
+		if (!((axes >> i) & 1)) continue;
+		for (drv = 0; drv < MOTION_DRIVERS; drv++) {
+			if ((motion_axes[i].drivers >> drv) & 1 && StepQueueFree(drv) < need) return false;
+		}
+	}
+	return true;
 }
 
 uint8_t MotionMove(const float *target, uint8_t mask, float feed) {
+	return MotionMoveExit(target, mask, feed, -1);
+}
+
+uint8_t MotionMoveExit(const float *target, uint8_t mask, float feed, float exit) {
 	int64_t d[MOTION_AXES];
 	uint32_t steps[MOTION_AXES];
-	double len = 0, v, a, j, lim, mm;
+	double len = 0, rot = 0, v, a, j, lim, mm;
 	uint8_t i, drv, moving = 0;
 	uint64_t start;
 	SCurve sc;
 	StepSegment seg[SCURVE_PHASES];
 	uint32_t n, k;
+	Join jn;
+	bool want, join = false;
 
 	if (feed <= 0) return MOTION_BAD;
 	if (!StepRunning()) return MOTION_FAULT;
 	if (locked) return MOTION_JOG;
 
-	// Steps each axis has to go, and the path length in mm
+	// Steps each axis has to go, and the path length. The length is X Y Z only, so F is mm/s and
+	// rotary axes just finish with them (still held to their own limits). A rotary only move
+	// uses the degrees instead, F is deg/s then.
 	for (i = 0; i < MOTION_AXES; i++) {
 		d[i] = 0;
 		if (!((mask >> i) & 1) || motion_axes[i].drivers == 0) continue;
 		d[i] = llround((double)target[i] * motion_axes[i].steps_per_mm) - pos_steps[i];
 		if (d[i] == 0) continue;
 		mm = d[i] / (double)motion_axes[i].steps_per_mm;
-		len += mm * mm;
+		if (i < MOTION_LINEAR) len += mm * mm;
+		else rot += mm * mm;
 		moving |= 1 << i;
 	}
 	if (!moving) return MOTION_NOMOVE;
-	len = sqrt(len);
+	len = sqrt(len > 0 ? len : rot);
 
 	// Path limits on the normalized path (u = 0..1, per tick). Start from the feed, then every
 	// moving axis can only lower them: an axis moving |d| steps goes |d| times as fast as u.
@@ -175,12 +331,46 @@ uint8_t MotionMove(const float *target, uint8_t mask, float feed) {
 	}
 	if (!SCurvePlan(&sc, v, a, j)) return MOTION_BAD;
 
-	// Room for all segments on every driver, or nothing gets queued
-	for (i = 0; i < MOTION_AXES; i++) {
-		if (!((moving >> i) & 1)) continue;
-		for (drv = 0; drv < MOTION_DRIVERS; drv++) {
-			if ((motion_axes[i].drivers >> drv) & 1 && StepQueueFree(drv) < SCURVE_PHASES) return MOTION_BUSY;
+	// Room for all segments on every driver, or nothing gets queued. A junction re-queues the
+	// rest of the last move too: room for both, or wait while it can still join
+	want = last.open && last.exit > 0 && exit >= 0;
+	if (want && !Room(moving | last.moving, 2 * SCURVE_PHASES)) {
+		if (last.start + last.sc.total >= StepNow() + REPLAN_TICKS) return MOTION_BUSY;
+		want = false; // too late to join anyway
+	}
+	if (!want && !Room(moving, SCURVE_PHASES)) return MOTION_BUSY;
+
+	// Run into it from the last move?
+	if (last.open && last.exit > 0) {
+		if (want) join = Junction(&jn, d, moving, len, v, a, j);
+		else Close(true);
+	}
+	if (join) {
+		if (!SCurvePlanV(&sc, jn.vj / len / STEP_TICK_HZ, 0, v, a, j)) return MOTION_BAD;
+		// The planning took time: is the piece to swap still far enough ahead?
+		if (jn.tick < StepNow() + LEAD_TICKS) {
+			junc.late++;
+			join = false;
+			if (!SCurvePlan(&sc, v, a, j)) return MOTION_BAD;
 		}
+	}
+	if (join) {
+		for (i = 0; i < MOTION_AXES; i++) {
+			if (!((last.moving >> i) & 1)) continue;
+			uint32_t ls = (uint32_t)(last.d[i] < 0 ? -last.d[i] : last.d[i]);
+			for (drv = 0; drv < MOTION_DRIVERS; drv++) {
+				if (!((motion_axes[i].drivers >> drv) & 1)) continue;
+				bool dir = (last.d[i] > 0) != ((motion_invert >> drv) & 1);
+				StepUnqueue(drv, jn.tick);
+				n = SCurveSegmentsPart(&jn.rem, jn.u * ls, (1 - jn.u) * ls, dir, jn.tick, seg);
+				for (k = 0; k < n; k++) StepQueue(drv, &seg[k]);
+			}
+		}
+		timeline_end = jn.tick + jn.rem.total;
+		junc.last_used = (float)jn.vj;
+		if (jn.vj >= last.exit * 0.999) junc.full++;
+		else junc.limited++;
+		junc.from_phase[jn.phase == 0 ? 0 : jn.phase == 3 ? 1 : 2]++;
 	}
 
 	// Start after the last move, and never in the past
@@ -200,6 +390,18 @@ uint8_t MotionMove(const float *target, uint8_t mask, float feed) {
 	timeline_end = start + sc.total;
 	last_start = start;
 	last_plan = sc;
+
+	// This one can be run into by the next G1 (and asks for exit speed 'exit')
+	last.open = exit >= 0;
+	last.exit = exit > 0 ? exit : 0;
+	last.moving = moving;
+	for (i = 0; i < MOTION_AXES; i++) last.d[i] = d[i];
+	last.len = len;
+	last.v = v;
+	last.a = a;
+	last.j = j;
+	last.sc = sc;
+	last.start = start;
 	return MOTION_OK;
 }
 
@@ -220,6 +422,7 @@ uint8_t MotionSteps(uint8_t drv, int32_t steps, float rate) {
 	period = (uint32_t)lroundf(STEP_TICK_HZ / rate);
 	if (period < 1 / MAX_STEP_RATE) return MOTION_BAD;
 	if (StepQueueFree(drv) < 1) return MOTION_BUSY;
+	Close(true);
 
 	start = StepNow() + LEAD_TICKS;
 	if (timeline_end > start) start = timeline_end;
@@ -234,6 +437,7 @@ uint8_t MotionSteps(uint8_t drv, int32_t steps, float rate) {
 }
 
 void MotionLock(bool lock) {
+	if (lock) Close(true);
 	locked = lock;
 }
 
@@ -262,6 +466,7 @@ float MotionActual(uint8_t axis) {
 void MotionSetPosition(uint8_t axis, float mm) {
 	int64_t s;
 	if (axis >= MOTION_AXES) return;
+	Close(true);
 	s = llround((double)mm * motion_axes[axis].steps_per_mm);
 	// Planned position becomes s; the generator's count keeps going, the offset lines them up
 	pos_offset[axis] += s - pos_steps[axis];

@@ -23,6 +23,7 @@
 void StepInit();
 void StepStart();
 bool StepQueue(uint32_t axis, const StepSegment *seg);	// false if the axis queue is full
+uint32_t StepUnqueue(uint32_t axis, uint64_t from);	// take back queued segments starting >= from, keep from >= StepNow() + 2 * STEP_HALF
 uint32_t StepQueueFree(uint32_t axis);
 bool StepAxisIdle(uint32_t axis);
 uint64_t StepNow();						// earliest tick a new segment can start at without being late

@@ -1,5 +1,6 @@
 #include "home.h"
 #include "board.h"
+#include "buttons.h"
 #include "clock.h"
 #include "jog.h"
 #include "stepgen.h"
@@ -10,20 +11,31 @@
 
 #define ST_IDLE		0
 #define ST_START	1	// next axis: currents, StallGuard threshold, move off the stop first
-#define ST_PRE		2	// moving pre mm away, so it gets up to speed before the stop
+#define ST_PRE		2	// moving pre mm away, so it gets up to speed before the stop (switch: also off it before the slow touch)
 #define ST_SEEK		3	// jogging into the stop
 #define ST_STOP		4	// jog ramping down / played out
 #define ST_BACKOFF	5	// position set, moving off the stop
 
 // X / Y / Z tuned on the machine (2026-10-19), travel = axis length + margin. The rest don't home
 HomeAxis home_axes[MOTION_AXES] = {
-	{ -1, 25, 75, 0, 220, 75, 0, 5 },	// X
-	{ -1, 25, 50, 0, 220, 75, 0, 5 },	// Y
+	{ -1, 25, 75, 0, 220, 2, 0, 5 },	// X
+	{ -1, 25, 50, 0, 220, 2, 0, 5 },	// Y
 	{ 1, 25, 50, 0, 120, 29.6f, 0, 5 },	// Z
 	{ 0, 25, 0, 0, 0, 3, 0, 5 },	// A
 	{ 0, 25, 0, 0, 0, 3, 0, 5 },	// B
 	{ 0, 25, 0, 0, 0, 3, 0, 5 },	// C
 	{ 0, 25, 0, 0, 0, 3, 0, 5 },	// U
+};
+
+// Switches on X / Y added 2026-11-04, Z's isn't connected yet. 0 = pressed
+HomeSwitch home_switch[MOTION_AXES] = {
+	{ HOME_SWITCH, 1, 0 },	// X
+	{ HOME_SWITCH, 0, 0 },	// Y
+	{ HOME_SOFT, 2, 0 },	// Z
+	{ HOME_SOFT, -1, 0 },	// A
+	{ HOME_SOFT, -1, 0 },	// B
+	{ HOME_SOFT, -1, 0 },	// C
+	{ HOME_SOFT, -1, 0 },	// U
 };
 
 static uint8_t state = ST_IDLE;
@@ -32,6 +44,7 @@ static uint8_t todo;			// axes still to home
 static uint8_t ax;				// axis being homed
 static uint8_t drv;				// its drivers, ignored ones left out
 static bool armed;
+static uint8_t pass;			// switch: 0 = fast touch, 1 = slow touch
 static uint8_t fail;			// HOME_OK while it's going right
 static uint32_t t0, arm_ms;
 static int64_t start[MOTION_DRIVERS];
@@ -39,6 +52,14 @@ static uint8_t homed;
 
 static uint8_t Drivers(uint8_t a) {
 	return motion_axes[a].drivers & ~TmcIgnored();
+}
+
+static bool Switch(uint8_t a) {
+	return home_switch[a].mode == HOME_SWITCH;
+}
+
+static bool SwitchHit(uint8_t a) {
+	return home_switch[a].btn >= 0 && ButtonsAt(home_switch[a].btn, home_switch[a].level);
 }
 
 static float Travel(uint8_t d) {
@@ -65,6 +86,8 @@ static uint8_t Next() {
 static void Restore() {
 	uint8_t d;
 	TmcStallDisarm();
+	ButtonsLimitDisarm();
+	if (Switch(ax)) return; // drivers weren't touched
 	for (d = 0; d < MOTION_DRIVERS; d++) {
 		if (!((drv >> d) & 1)) continue;
 		TmcStallSetup(d, 0, 0);
@@ -89,6 +112,10 @@ static void SeekStart() {
 	for (d = 0; d < MOTION_DRIVERS; d++) {
 		if ((drv >> d) & 1) start[d] = StepPosition(d);
 	}
+	if (Switch(ax)) {
+		ButtonsLimitArm(home_switch[ax].btn, home_switch[ax].level, drv);
+		armed = true;
+	}
 	if (JogStart() != JOG_OK) {
 		Finish(HOME_MOTION);
 		return;
@@ -100,13 +127,14 @@ static void SeekStart() {
 
 static void Begin() {
 	HomeAxis *h;
-	float target[MOTION_AXES];
+	float target[MOTION_AXES], pre;
 	uint8_t d, i, res;
 
 	ax = Next();
 	h = &home_axes[ax];
 	drv = Drivers(ax);
 	armed = false;
+	pass = 0;
 	fail = HOME_OK;
 	if (drv == 0) {
 		printf("Error:%c: all its drivers are ignored\n", motion_axes[ax].name);
@@ -114,7 +142,7 @@ static void Begin() {
 		return;
 	}
 	// Threshold in, but TCOOLTHRS 0 (off) until the axis is at speed: accelerating is load too
-	for (d = 0; d < MOTION_DRIVERS; d++) {
+	for (d = 0; d < MOTION_DRIVERS && !Switch(ax); d++) {
 		if (!((drv >> d) & 1)) continue;
 		if (TmcRunCurrent(d, h->current) != TMC_OK || TmcStallSetup(d, h->sgthrs, 0) != TMC_OK) {
 			printf("Error:Driver %d didn't take the homing settings\n", d);
@@ -122,14 +150,19 @@ static void Begin() {
 			return;
 		}
 	}
-	printf("echo:Homing %c, %s end, %.1f mm/s\n", motion_axes[ax].name, h->dir < 0 ? "-" : "+", (double)h->speed);
-	if (h->pre <= 0) {
+	printf("echo:Homing %c, %s end, %.1f mm/s", motion_axes[ax].name, h->dir < 0 ? "-" : "+", (double)h->speed);
+	if (Switch(ax)) printf(", switch on btn %d", home_switch[ax].btn);
+	printf("\n");
+	pre = h->pre;
+	// Switch: no run-up needed, it's only to get off the switch if it's already pressed
+	if (Switch(ax)) pre = SwitchHit(ax) ? (pre > 0 ? pre : HOME_SW_BUMP) : 0;
+	if (pre <= 0) {
 		SeekStart();
 		return;
 	}
 	// Already on (or right next to) the stop: it would hit it before StallGuard is on
 	for (i = 0; i < MOTION_AXES; i++) target[i] = MotionPosition(i);
-	target[ax] -= h->dir * h->pre;
+	target[ax] -= h->dir * pre;
 	res = MotionMove(target, 1 << ax, h->speed);
 	if (res != MOTION_OK && res != MOTION_NOMOVE) {
 		Finish(res == MOTION_FAULT ? HOME_FAULT : HOME_MOTION);
@@ -140,7 +173,7 @@ static void Begin() {
 
 static void Seek() {
 	HomeAxis *h = &home_axes[ax];
-	float v[MOTION_AXES] = { 0 }, hz;
+	float v[MOTION_AXES] = { 0 }, hz, travel = h->travel;
 	uint8_t d, st;
 
 	if (!StepRunning()) {
@@ -149,9 +182,13 @@ static void Seek() {
 		return;
 	}
 	v[ax] = h->dir * h->speed;
+	if (pass) {
+		v[ax] *= HOME_SW_SLOW;
+		travel = HOME_SW_BUMP * 2;
+	}
 	JogSet(v);
 
-	if (!armed && Millis() - t0 >= arm_ms) {
+	if (!armed && !Switch(ax) && Millis() - t0 >= arm_ms) {
 		// Arm the interrupt first, so the first stall DIAG already counts as a stall
 		TmcStallArm(drv);
 		hz = h->speed * motion_axes[ax].steps_per_mm * HOME_ARM_FRAC;
@@ -161,14 +198,15 @@ static void Seek() {
 		armed = true;
 	}
 
-	st = TmcStalled() & drv;
+	if (Switch(ax)) st = ButtonsLimitCheck() ? drv : 0; // one switch halts them all
+	else st = TmcStalled() & drv;
 	if (armed && st == drv) {
 		JogStop(); // every driver is halted already, this just ends the jog
 		state = ST_STOP;
 		return;
 	}
 	for (d = 0; d < MOTION_DRIVERS; d++) {
-		if ((drv >> d) & 1 && !((st >> d) & 1) && Travel(d) > h->travel) {
+		if ((drv >> d) & 1 && !((st >> d) & 1) && Travel(d) > travel) {
 			fail = HOME_NO_STALL;
 			JogStop(); // the ones still moving ramp down
 			state = ST_STOP;
@@ -193,12 +231,25 @@ static void Stop() {
 
 	Restore();
 	StepRelease(motion_axes[ax].drivers);
-	if (TmcStallCheck(drv)) {
+	if (!Switch(ax) && TmcStallCheck(drv)) {
 		Finish(HOME_FAULT);
 		return;
 	}
 	if (fail != HOME_OK) {
 		Finish(fail);
+		return;
+	}
+	// Switch, fast touch done: off it, then the slow one (ST_PRE again)
+	if (Switch(ax) && pass == 0) {
+		pass = 1;
+		for (i = 0; i < MOTION_AXES; i++) target[i] = MotionPosition(i);
+		target[ax] -= h->dir * HOME_SW_BUMP;
+		res = MotionMove(target, 1 << ax, h->speed);
+		if (res != MOTION_OK && res != MOTION_NOMOVE) {
+			Finish(HOME_FAULT);
+			return;
+		}
+		state = ST_PRE;
 		return;
 	}
 
@@ -213,8 +264,8 @@ static void Stop() {
 	MotionSetPosition(ax, h->pos);
 	homed |= 1 << ax;
 
-	printf("echo:%c on the stop after %.2f mm", motion_axes[ax].name, (double)hi);
-	if (drv & (drv - 1)) printf(", drivers %.3f mm apart", (double)(hi - lo));
+	printf("echo:%c on the %s after %.2f mm", motion_axes[ax].name, Switch(ax) ? "switch" : "stop", (double)hi);
+	if (drv & (drv - 1) && !Switch(ax)) printf(", drivers %.3f mm apart", (double)(hi - lo));
 	if (again) printf(", %+.3f mm off the last home", (double)err);
 	printf("\n");
 
@@ -238,6 +289,7 @@ void HomeTask() {
 				Finish(HOME_FAULT);
 			} else if (MotionIdle()) {
 				if (fail != HOME_OK) Finish(fail); // aborted on the way
+				else if (Switch(ax) && SwitchHit(ax)) Finish(HOME_SWITCH_ON);
 				else SeekStart();
 			}
 			break;
@@ -274,10 +326,10 @@ uint8_t HomeStart(uint8_t mask) {
 	for (i = 0; i < MOTION_AXES; i++) {
 		if (!((mask >> i) & 1)) continue;
 		if (!HomeReady(i)) {
-			printf("Error:%c isn't set up for homing (dir, sgthrs, travel: home set)\n", motion_axes[i].name);
+			printf("Error:%c isn't set up for homing (dir, travel, sgthrs or switch: home set)\n", motion_axes[i].name);
 			return HOME_NOT_SET;
 		}
-		for (d = 0; d < MOTION_DRIVERS; d++) {
+		for (d = 0; d < MOTION_DRIVERS && !Switch(i); d++) {
 			if ((Drivers(i) >> d) & 1 && tmc_config[d].spread) {
 				printf("Error:Driver %d is in SpreadCycle, StallGuard needs StealthChop (tmc set %d mode stealth)\n", d, d);
 				return HOME_DRIVERS;
@@ -323,7 +375,8 @@ bool HomeReady(uint8_t a) {
 	const HomeAxis *h;
 	if (a >= MOTION_AXES) return false;
 	h = &home_axes[a];
-	return h->dir != 0 && h->sgthrs > 0 && h->travel > 0 && h->speed > 0 && Drivers(a);
+	if (Switch(a) ? (home_switch[a].btn < 0 || home_switch[a].btn >= BUTTONS) : h->sgthrs == 0) return false;
+	return h->dir != 0 && h->travel > 0 && h->speed > 0 && Drivers(a);
 }
 
 uint8_t HomeReadyMask() {
@@ -345,9 +398,10 @@ const char *HomeError(uint8_t res) {
 		case HOME_NOT_SET:	return "not set up (home set)";
 		case HOME_MOTION:	return "jog mode on or motion queued";
 		case HOME_DRIVERS:	return "drivers not ready";
-		case HOME_NO_STALL:	return "no stall within the travel (sgthrs too low, or nothing in the way)";
+		case HOME_NO_STALL:	return "nothing hit within the travel (no stall: sgthrs too low, or the switch never came)";
 		case HOME_FAULT:	return "stopped by a fault";
 		case HOME_ABORTED:	return "aborted";
+		case HOME_SWITCH_ON:	return "switch still hit after moving off it (stuck, or its level is the wrong way)";
 	}
 	return "?";
 }

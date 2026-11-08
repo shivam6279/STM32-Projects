@@ -32,6 +32,7 @@ static int failures;
 // ---- stand-ins for the hardware half of stepgen.c ----
 static StepGen g;
 bool StepQueue(uint32_t axis, const StepSegment *seg) { return StepFillQueue(&g, axis, seg); }
+uint32_t StepUnqueue(uint32_t axis, uint64_t from) { return StepFillUnqueue(&g, axis, from); }
 uint32_t StepQueueFree(uint32_t axis) { return StepFillQueueFree(&g, axis); }
 bool StepAxisIdle(uint32_t axis) { return StepFillAxisIdle(&g, axis); }
 uint64_t StepNow() { return g.tick; }

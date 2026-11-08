@@ -1,4 +1,5 @@
 #include "pwm.h"
+#include "pwm_hw.h"
 #include "board.h"
 #include "clock.h"
 #include "stm32h7xx.h"
@@ -79,7 +80,7 @@ void PwmInit() {
 	}
 }
 
-void PwmSet(uint8_t ch, float duty) {
+void PwmHwSet(uint8_t ch, float duty) {
 	if (ch >= PWM_CHANNELS) return;
 	if (duty < 0) duty = 0;
 	if (duty > 1) duty = 1;
@@ -87,12 +88,12 @@ void PwmSet(uint8_t ch, float duty) {
 	*Ccr(&pwm[ch]) = (uint32_t)(duty * (PWM_ARR + 1) + 0.5f);
 }
 
-float PwmGet(uint8_t ch) {
+float PwmHwGet(uint8_t ch) {
 	if (ch >= PWM_CHANNELS) return 0;
 	return (float)*Ccr(&pwm[ch]) / (PWM_ARR + 1);
 }
 
-void PwmAllOff() {
+void PwmHwAllOff() {
 	uint8_t i;
 	for (i = 0; i < PWM_CHANNELS; i++) *Ccr(&pwm[i]) = 0;
 	// Load the 0s now instead of at the end of the period (CCR preload)

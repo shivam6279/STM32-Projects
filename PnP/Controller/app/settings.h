@@ -9,7 +9,7 @@
 // update leaves them alone.
 //
 // Saved: axes (M92 M201 M203 M204 M205, DIR inverts), TMC2209 config + ignored drivers, homing,
-// pad speeds. Changes take effect at once and only stick after SettingsSave (M500, config save).
+// pad speeds, coil strike / hold profiles (M790). Changes take effect at once and only stick after SettingsSave (M500, config save).
 //
 // Each save goes in the next free SETTINGS_SLOT with a sequence number and CRC, the newest good
 // one wins at boot. The sector is erased only when every slot is used. A slot from another layout
@@ -18,7 +18,7 @@
 // generator around it (a write is ~ms, an erase ~1s, USB / UART can hiccup during that).
 
 #define SETTINGS_SLOT	1024
-#define SETTINGS_LAYOUT	2		// bump whenever the saved struct changes. 2: HomeAxis.pre
+#define SETTINGS_LAYOUT	5		// bump whenever the saved struct changes. 2: HomeAxis.pre, 3: coil profiles, 4: homing switches, 5: probe defaults
 
 #define SET_OK		0
 #define SET_BUSY	1	// motion, jog, homing or pad mode running

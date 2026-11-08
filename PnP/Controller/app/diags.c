@@ -66,7 +66,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Move axes (mm)",			.cmd = "move",	.func = diags_move	},
 	{ .name = "Axis positions",			.cmd = "pos",	.func = diags_pos	},
 	{ .name = "Axes: drivers, direction, steps/mm",	.cmd = "axis",	.func = diags_axis	},
-	{ .name = "Sensorless homing, StallGuard tuning",	.cmd = "home",	.func = diags_home	},
+	{ .name = "Homing, StallGuard / limit switch",	.cmd = "home",	.func = diags_home	},
 	{ .name = "Settings: save, load, defaults",	.cmd = "config",	.func = diags_config	},
 	{ .name = "Software reset",			.cmd = "reset",	.func = diags_reset	},
 	{ .name = "CAN bus commands",		.cmd = "can",	.func = diags_can	},
@@ -567,13 +567,19 @@ can mon : toggle printing received frames\n";
 }
 
 uint8_t diags_pwm(char *cmd) {
+	static const char *states[] = { "off", "duty", "strike", "hold" };
 	uint8_t ch;
 	char *p;
-	float duty;
+	float duty, strike, hold;
+	long ms;
+	PwmProfile *pr;
 
 	const char help_str[] = "\
-pwm : show all coil driver outputs\n\
-pwm <0-7> <duty %> : set an output, 0-7 = PWM1-8, e.g. pwm 2 50\n\
+pwm : show all coil driver outputs, strike / hold profiles\n\
+pwm <0-7> <duty %> : set an output, 0-7 = PWM1-8, e.g. pwm 2 50. Plain duty, no profile\n\
+pwm on <0-7> : on with its profile (strike, then hold). No profile = 100%\n\
+pwm profile <0-7> <strike %> <strike ms> <hold %> : set a profile, e.g. pwm profile 1 50 100 25\n\
+  pwm profile <0-7> 0 0 0 = none. Saved with config save (M500), G-code M790\n\
 pwm meas <0-7> : measure the duty on the pin\n\
 pwm off : all off\n";
 
@@ -581,8 +587,39 @@ pwm off : all off\n";
 	while (*p == ' ') p++;
 
 	if (*p == '\0') {
-		for (ch = 0; ch < PWM_CHANNELS; ch++) printf("PWM%d: %.1f%%\n", ch + 1, PwmGet(ch) * 100);
+		for (ch = 0; ch < PWM_CHANNELS; ch++) {
+			pr = &pwm_profiles[ch];
+			printf("PWM%d (%d): %.1f%%, %s", ch + 1, ch, (double)(PwmGet(ch) * 100), states[PwmState(ch)]);
+			if (PwmProfiled(ch)) {
+				printf(", profile strike %.0f%% %u ms, hold %.0f%%", (double)(pr->strike * 100), pr->strike_ms,
+					(double)(pr->hold * 100));
+			}
+			printf("\n");
+		}
 		printf("%d Hz\n", PWM_FREQ);
+	} else if (strncmp(p, "on", 2) == 0 && p[2] == ' ') {
+		ch = strtoul(p + 2, NULL, 10);
+		if (ch >= PWM_CHANNELS) {
+			fputs(help_str, stdout);
+			return false;
+		}
+		PwmOn(ch);
+		printf("PWM%d: on, %s %.1f%%\n", ch + 1, states[PwmState(ch)], (double)(PwmGet(ch) * 100));
+	} else if (strncmp(p, "profile", 7) == 0) {
+		ch = strtoul(p + 7, &p, 10);
+		strike = strtof(p, &p);
+		ms = strtol(p, &p, 10);
+		hold = strtof(p, NULL);
+		if (ch >= PWM_CHANNELS || strike < 0 || strike > 100 || ms < 0 || ms > 60000 || hold < 0 || hold > 100) {
+			fputs(help_str, stdout);
+			return false;
+		}
+		pr = &pwm_profiles[ch];
+		pr->strike = strike / 100;
+		pr->strike_ms = (uint16_t)ms;
+		pr->hold = hold / 100;
+		printf("PWM%d: strike %.0f%% %u ms, hold %.0f%% (from the next on)\n", ch + 1, (double)strike, pr->strike_ms,
+			(double)hold);
 	} else if (strncmp(p, "off", 3) == 0) {
 		PwmAllOff();
 		printf("All off\n");
@@ -1259,8 +1296,8 @@ static bool padMode(char *p) {
 	if (m == PAD_MODE_JOG) {
 		printf("Jog: left stick X / Y %.1f mm/s (LS fast %.1f), RT / LT Z up / down %.1f mm/s%s\n",
 			(double)pad_speed_xy, (double)pad_speed_xy_fast, (double)pad_speed_z, StepDry() ? ", dry run" : "");
-		printf("Y pump (PWM%d, %.0f%%), LB valve 0 (PWM%d), RB valve 1 (PWM%d) (%.0f%%), toggles\n",
-			PAD_PWM_PUMP, (double)(PAD_PUMP_DUTY * 100), PAD_PWM_VALVE0, PAD_PWM_VALVE1, (double)(PAD_VALVE_DUTY * 100));
+		printf("Y pump (PWM%d, %.0f%%), LB valve 0 (PWM%d), RB valve 1 (PWM%d) (strike / hold, pwm), toggles\n",
+			PAD_PWM_PUMP, (double)(PAD_PUMP_DUTY * 100), PAD_PWM_VALVE0, PAD_PWM_VALVE1);
 		printf("Centre the sticks and let go of the triggers to start. pad mode off to stop\n");
 	} else {
 		printf("Mode: off\n");
@@ -1311,7 +1348,7 @@ pad : Xbox controller state from the ESP32 pad packets, packet counts\n\
 -f [x] : streaming frequency in Hz [1, 10000], default 10\n\
 pad mode : what the controller does: off (default at boot) or jog\n\
 pad mode jog : left stick = X / Y, RT / LT = Z up / down. Centre the sticks to start\n\
-  LS = fast XY, Y = pump (PWM0), LB / RB = valve 0 / 1 (PWM1 / 2), toggles, off when jog ends\n\
+  LS = fast XY, Y = pump (PWM4), LB / RB = valve 0 / 1 (PWM1 / 2), toggles, off when jog ends\n\
 pad mode off : stop (ramps down), axes back to G-code\n\
 pad speed [xy <mm/s>] [fast <mm/s>] [z <mm/s>] : speed at full stick / trigger\n\
 Nothing for 150ms = treated as gone (sticks centred, all let go). Pairing: esp pad pair\n";
@@ -1407,7 +1444,7 @@ Not while moving, jogging, homing or in pad mode: the steppers pause while the f
 	return true;
 }
 
-// ---- Sensorless homing ----
+// ---- Homing (sensorless / limit switch) ----
 
 static int8_t homeAxis(char c) {
 	uint8_t i;
@@ -1420,14 +1457,19 @@ static int8_t homeAxis(char c) {
 
 static void homeTable() {
 	const HomeAxis *h;
+	const HomeSwitch *sw;
 	uint8_t i;
 
-	printf("axis, end, speed mm/s, sgthrs, current A, travel mm, backoff mm, stop at mm, pre mm, state\n");
+	printf("axis, mode, end, speed mm/s, sgthrs, current A, btn, level, travel mm, backoff mm, stop at mm, pre mm, state\n");
 	for (i = 0; i < MOTION_AXES; i++) {
 		h = &home_axes[i];
-		printf("%c, %s, %.1f, %u, ", motion_axes[i].name, h->dir < 0 ? "-" : (h->dir > 0 ? "+" : "off"), (double)h->speed, h->sgthrs);
+		sw = &home_switch[i];
+		printf("%c, %s, %s, %.1f, %u, ", motion_axes[i].name, sw->mode == HOME_SWITCH ? "switch" : "soft",
+			h->dir < 0 ? "-" : (h->dir > 0 ? "+" : "off"), (double)h->speed, h->sgthrs);
 		if (h->current > 0) printf("%.2f, ", (double)h->current);
 		else printf("run, ");
+		if (sw->btn >= 0) printf("%d, %u, ", sw->btn, sw->level);
+		else printf("-, -, ");
 		printf("%.1f, %.1f, %.2f, %.1f, %s\n", (double)h->travel, (double)h->backoff, (double)h->pos, (double)h->pre,
 			HomeHomed(i) ? "homed" : (HomeReady(i) ? "ready" : (h->dir ? "not set up" : "-")));
 	}
@@ -1469,7 +1511,7 @@ static bool homeSet(char **w) {
 	float f;
 
 	if (w[2] == NULL || w[2][1] != '\0' || (a = homeAxis(w[2][0])) < 0 || w[3] == NULL || w[4] == NULL) {
-		printf("home set <axis> <end|speed|sgthrs|current|travel|backoff|pos|pre> <value>\n");
+		printf("home set <axis> <mode|end|speed|sgthrs|current|btn|level|travel|backoff|pos|pre> <value>\n");
 		return false;
 	}
 	if (HomeBusy()) {
@@ -1478,7 +1520,29 @@ static bool homeSet(char **w) {
 	}
 	h = &home_axes[a];
 	f = strtof(w[4], NULL);
-	if (strcmp(w[3], "end") == 0) {
+	if (strcmp(w[3], "mode") == 0) {
+		if (strcmp(w[4], "soft") == 0) home_switch[a].mode = HOME_SOFT;
+		else if (strcmp(w[4], "switch") == 0) home_switch[a].mode = HOME_SWITCH;
+		else {
+			printf("mode is soft (StallGuard) or switch\n");
+			return false;
+		}
+	} else if (strcmp(w[3], "btn") == 0) {
+		if (strcmp(w[4], "off") == 0) {
+			home_switch[a].btn = -1;
+		} else if (f >= 0 && f < BUTTONS && f == (uint8_t)f) {
+			home_switch[a].btn = (int8_t)f;
+		} else {
+			printf("btn is 0 - %d (BTN1-%d) or off\n", BUTTONS - 1, BUTTONS);
+			return false;
+		}
+	} else if (strcmp(w[3], "level") == 0) {
+		if (strcmp(w[4], "0") != 0 && strcmp(w[4], "1") != 0) {
+			printf("level is 0 or 1, the pin level while the switch is hit (btn mon shows it)\n");
+			return false;
+		}
+		home_switch[a].level = (uint8_t)f;
+	} else if (strcmp(w[3], "end") == 0) {
 		if (strcmp(w[4], "-") == 0 || strcmp(w[4], "-1") == 0) h->dir = -1;
 		else if (strcmp(w[4], "+") == 0 || strcmp(w[4], "1") == 0 || strcmp(w[4], "+1") == 0) h->dir = 1;
 		else if (strcmp(w[4], "off") == 0 || strcmp(w[4], "0") == 0) h->dir = 0;
@@ -1532,7 +1596,7 @@ static bool homeSet(char **w) {
 		}
 		h->pre = f;
 	} else {
-		printf("Fields: end, speed, sgthrs, current, travel, backoff, pos, pre\n");
+		printf("Fields: mode, end, speed, sgthrs, current, btn, level, travel, backoff, pos, pre\n");
 		return false;
 	}
 	homeTable();
@@ -1675,15 +1739,20 @@ uint8_t diags_home(char *cmd) {
 	const char help_str[] = "\
 home : homing settings per axis, and which are homed\n\
 home <axes|all> : home them, e.g. home z, home xy. Order Z, Y, X. 'x' stops. G28 does the same\n\
-  Moves pre mm away, runs into the stop until StallGuard sees the stall, backs off, sets the position\n\
+  soft: moves pre mm away, runs into the stop until StallGuard sees the stall, backs off, sets the position\n\
+  switch: pre mm away only if the switch is already hit, then fast touch, %d mm back, slow touch at %d%% speed, then the position\n\
+home set <axis> mode <soft|switch> : StallGuard or the limit switch\n\
 home set <axis> end <-|+|off> : which end it homes to\n\
 home set <axis> speed <mm/s> : into the stop. Too slow and StallGuard can't tell\n\
-home set <axis> sgthrs <0-255> : stall when SG_RESULT <= 2 * sgthrs (0 = not tuned, won't home)\n\
-home set <axis> current <A> : run current while homing, 0 = the normal one. Lower = gentler, more sensitive\n\
+home set <axis> sgthrs <0-255> : soft, stall when SG_RESULT <= 2 * sgthrs (0 = not tuned, won't home)\n\
+home set <axis> current <A> : soft, run current while homing, 0 = the normal one. Lower = gentler, more sensitive\n\
+home set <axis> btn <0-7|off> : switch, which button input it's on (0-7 = BTN1-8)\n\
+home set <axis> level <0|1> : switch, pin level while it's hit (btn mon shows it)\n\
 home set <axis> travel <mm> : furthest it looks for the stop (0 = not set, won't home)\n\
 home set <axis> backoff <mm> : off the stop afterwards\n\
 home set <axis> pos <mm> : position of the stop itself\n\
-home set <axis> pre <mm> : away from the stop first, so it's up to speed when it gets there (0 = off)\n\
+home set <axis> pre <mm> : away from the stop first, so it's up to speed when it gets there (0 = off).\n\
+  switch: only if it starts on the switch (0 = 3 mm then)\n\
 home sg <axis> <mm> : tuning, move that far (sign = direction) at the homing speed and current,\n\
   SG_RESULT along the way, then min / avg / max while cruising and an sgthrs to start from\n\
 home sg -s : stream SG_RESULT of every driver, jog with the pad meanwhile. -f [x] : Hz, default 10\n\
@@ -1691,7 +1760,7 @@ Tuning: home sg in free air -> home set sgthrs -> home the axis a few times, it 
 the last home it was. Needs StealthChop (tmc set <drv> mode stealth), drivers on, not dry run\n";
 
 	if (argFlag(cmd, "-h") || argFlag(cmd, "--help")) {
-		fputs(help_str, stdout);
+		printf(help_str, HOME_SW_BUMP, (int)(HOME_SW_SLOW * 100));
 		return true;
 	}
 	tmcWords(cmd, buf, sizeof(buf), w, 6);
@@ -1703,7 +1772,7 @@ the last home it was. Needs StealthChop (tmc set <drv> mode stealth), drivers on
 	if (strcmp(w[1], "sg") == 0) {
 		if (argFlag(cmd, "-s")) return homeSgStream(cmd);
 		if (w[2] == NULL || w[2][1] != '\0' || (a = homeAxis(w[2][0])) < 0 || w[3] == NULL) {
-			fputs(help_str, stdout);
+			printf(help_str, HOME_SW_BUMP, (int)(HOME_SW_SLOW * 100));
 			return false;
 		}
 		return homeSg(a, strtof(w[3], NULL));
@@ -1729,7 +1798,7 @@ the last home it was. Needs StealthChop (tmc set <drv> mode stealth), drivers on
 		printf("%s\n", HomeError(res));
 		return false;
 	}
-	if (StepDry()) printf("Dry run: nothing turns so nothing stalls, it runs out the travel\n");
+	if (StepDry()) printf("Dry run: nothing turns so nothing stalls / hits a switch, it runs out the travel\n");
 	printf("'x' to stop\n");
 	if (!homeWait()) return false;
 	printf("Homed:");

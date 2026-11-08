@@ -127,11 +127,14 @@ firmware(pnp_ctrl mem_app.ld
 	app/jog.c
 	app/pad.c
 	app/home.c
+	app/probe.c
+	app/probe_detect.c
 	app/settings.c
 	boot/flash.c
 	drivers/uart.c
 	drivers/fdcan.c
 	drivers/pwm.c
+	drivers/pwm_profile.c
 	drivers/buttons.c
 	drivers/adc.c
 	drivers/stepgen.c

@@ -15,6 +15,7 @@
 #include "mpu.h"
 #include "net.h"
 #include "pad.h"
+#include "probe.h"
 #include "pwm.h"
 #include "settings.h"
 #include "stepgen.h"
@@ -86,7 +87,9 @@ int main(void) {
 		ConsoleTask();
 		PadTask(); // Xbox controller, off unless pad mode says otherwise
 		HomeTask(); // G28 / home: sensorless homing, one axis at a time
+		ProbeTask(); // G38.2 / G38.3: vacuum probe
 		TmcTask(); // driver setup at boot, DIAG faults
+		PwmTask(); // coil strike -> hold
 
 #ifdef STEPGEN_SELFTEST
 		TestFeed();

@@ -10,8 +10,12 @@
 // ADC1 runs continuously when started, circular DMA drops each result straight into
 // adc_raw[]. Off most of the time: AdcStart() / AdcStop().
 
+// Every finished pair (PRESS0, PRESS1) also lands in a ring, with a sequence number and the
+// time, from the DMA transfer complete interrupt: the vacuum probe counts fresh conversions.
+
 #define ADC_CHANNELS	2
 #define ADC_VREF		3.3f	// TODO check VREF+ on the schematic
+#define ADC_RING		4096	// pairs kept, power of 2 (~17 s at 239 Hz)
 
 extern volatile uint32_t adc_raw[ADC_CHANNELS];	// 16 bit results, written by DMA
 
@@ -21,5 +25,10 @@ void AdcStop();
 bool AdcRunning();
 float AdcVolts(uint8_t ch);
 float PressKpa(uint8_t ch);
+float PressKpaRaw(uint16_t raw);	// a ring sample in kPa
+
+uint32_t AdcSeq();		// pairs finished since boot (the next one gets this number)
+// Pair number 'seq' if it's still in the ring: raw ch value and Millis() when it came
+bool AdcSample(uint32_t seq, uint8_t ch, uint16_t *raw, uint32_t *ms);
 
 #endif

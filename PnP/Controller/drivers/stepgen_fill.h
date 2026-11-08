@@ -61,6 +61,7 @@ typedef struct {
 	uint64_t emitted;			// total steps put out
 	int64_t position;			// signed step position
 	uint32_t late;				// segments that started after their start tick
+	bool dir_wait;				// next segment held back a fill by its DIR change (not late)
 } StepAxis;
 
 typedef struct {
@@ -75,6 +76,7 @@ typedef struct {
 
 void StepFillInit(StepGen *sg, const uint32_t *step_mask, const uint32_t *dir_mask, uint32_t dir_setup);
 bool StepFillQueue(StepGen *sg, uint32_t axis, const StepSegment *seg);	// false if full or bad
+uint32_t StepFillUnqueue(StepGen *sg, uint32_t axis, uint64_t from);	// drop queued segments starting >= from (not picked up yet), how many
 uint32_t StepFillQueueFree(const StepGen *sg, uint32_t axis);
 bool StepFillAxisIdle(const StepGen *sg, uint32_t axis);
 void StepFillWords(StepGen *sg, uint32_t *buf, uint32_t n);

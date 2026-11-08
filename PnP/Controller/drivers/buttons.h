@@ -21,4 +21,11 @@ uint8_t ButtonsRaw();			// pin levels right now
 uint8_t ButtonsChanged();		// debounced changes since the last call (read and clear)
 uint32_t ButtonsEdges(uint8_t n);	// raw edge count, shows bounce
 
+// Limit switch for homing: while armed, the edge that puts button n at level stops the drivers
+// dead (StepHalt) from the interrupt. Raw pin, no debounce: the first edge counts
+void ButtonsLimitArm(uint8_t n, uint8_t level, uint8_t drivers);
+void ButtonsLimitDisarm();
+bool ButtonsLimitCheck();		// hit yet. Also halts if the pin is at level now (an edge missed)
+bool ButtonsAt(uint8_t n, uint8_t level);	// raw pin of button n at level
+
 #endif

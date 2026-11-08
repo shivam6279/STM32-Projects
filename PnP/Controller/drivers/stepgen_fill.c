@@ -43,6 +43,25 @@ bool StepFillQueue(StepGen *sg, uint32_t axis, const StepSegment *seg) {
 	return true;
 }
 
+// Take back the newest queued segments that start at or after 'from'. Only safe for segments
+// the fill can't have picked up yet (start well past sg->tick): the fill never takes a segment
+// that starts past the window it's filling, so it can't be reading one of these.
+uint32_t StepFillUnqueue(StepGen *sg, uint32_t axis, uint64_t from) {
+	StepAxis *a;
+	uint32_t head, n = 0;
+
+	if (axis >= STEP_AXES) return 0;
+	a = &sg->axis[axis];
+	head = a->head;
+	while (head != a->tail && a->queue[(head - 1) & (STEP_QUEUE_LEN - 1)].start >= from) {
+		head--;
+		n++;
+	}
+	a->head = head;
+	atomic_thread_fence(memory_order_release); // head back before the slots get written again
+	return n;
+}
+
 uint32_t StepFillQueueFree(const StepGen *sg, uint32_t axis) {
 	const StepAxis *a = &sg->axis[axis];
 	return STEP_QUEUE_LEN - (a->head - a->tail);
@@ -120,13 +139,17 @@ static bool LoadNext(StepGen *sg, uint32_t ax, uint32_t *buf, uint64_t start, ui
 		// DIR goes at the segment start, but never before STEP from the last step has fallen
 		dir_tick = s->start > start ? s->start : start;
 		if (a->has_edge && a->last_edge + 2 > dir_tick) dir_tick = a->last_edge + 2;
-		if (dir_tick >= end) return false; // retry next fill
+		if (dir_tick >= end) {
+			a->dir_wait = true; // retry next fill, it isn't late for that
+			return false;
+		}
 		buf[dir_tick - start] |= s->dir ? sg->dir_mask[ax] : (sg->dir_mask[ax] << 16);
 		a->dir = s->dir;
 		a->dir_valid = true;
 		a->earliest = dir_tick + sg->dir_setup;
 	}
-	if (s->start < start) a->late++; // planner was too slow, this segment plays behind time
+	if (s->start < start && !a->dir_wait) a->late++; // planner was too slow, this segment plays behind time
+	a->dir_wait = false;
 
 	a->seg = *s;
 	a->c2 = s->a0 / 2;
@@ -150,6 +173,7 @@ void StepFillFlush(StepGen *sg) {
 		a->active = false;
 		a->have_edge = false;
 		a->earliest = 0;
+		a->dir_wait = false;
 	}
 	sg->carry = 0;
 	sg->halted = 0;

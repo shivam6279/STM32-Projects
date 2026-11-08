@@ -152,6 +152,10 @@ bool StepQueue(uint32_t axis, const StepSegment *seg) {
 	return StepFillQueue(&sg, axis, seg);
 }
 
+uint32_t StepUnqueue(uint32_t axis, uint64_t from) {
+	return StepFillUnqueue(&sg, axis, from);
+}
+
 uint32_t StepQueueFree(uint32_t axis) {
 	return axis < STEP_AXES ? StepFillQueueFree(&sg, axis) : 0;
 }

@@ -7,6 +7,7 @@
 #include "console.h"
 #include "home.h"
 #include "motion.h"
+#include "probe.h"
 #include "pwm.h"
 #include "settings.h"
 #include "stepgen.h"
@@ -14,6 +15,7 @@
 #include "usb.h"
 
 #include <inttypes.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,14 +29,22 @@
 #define WAIT_DWELL		3	// G4: motion done, then a timed wait
 #define WAIT_HOME		4	// G28: motion done, then home (home.c), axes that cannot home are zeroed
 #define WAIT_DISABLE	5	// M18/M84: motion done, then drivers off
+#define WAIT_COIL		6	// M106/M107: motion done, then the PWM output
+#define WAIT_PROBE		7	// G38.2 / G38.3: motion done, then the vacuum probe (probe.c)
 
 typedef struct {
 	uint8_t wait;
 	float target[MOTION_AXES];
 	uint8_t mask;
 	float feed;
+	float exit;				// G1 E: exit speed, mm/s, 0 = none
 	bool idle_seen;			// G4: motion finished, dwell timer running. G28: homing started
 	uint32_t dwell_start, dwell_ms;
+	uint8_t coil_ch;		// M106/M107 waiting for motion to finish
+	ProbeConfig probe;		// G38.x: defaults + the words given
+	float probe_z;
+	bool probe_g382;		// reaching the target is an error
+	float coil_duty;		// 0-1, COIL_PROFILE = on with the channel's strike / hold profile
 	int32_t last_line;		// Marlin style line numbers (N..)
 } gcode_port;
 
@@ -43,6 +53,8 @@ typedef struct {
 	bool has_value;
 	float value;
 } gcode_word;
+
+#define COIL_PROFILE	-1.0f
 
 static gcode_port gp[CON_PORTS];
 static bool relative = false;	// G91
@@ -55,15 +67,19 @@ static void Ok() {
 
 // Split "G1 X10 Y-2.5 F3000" (or "G1X10Y-2.5F3000") into letter/value pairs
 static uint8_t Words(const char *s, gcode_word *w) {
-	uint8_t n = 0;
-	char *end;
+	uint8_t n = 0, k;
+	char num[24], *end;
 
 	while (*s && n < MAX_WORDS) {
 		if (*s >= 'A' && *s <= 'Z') {
-			w[n].letter = *s;
-			w[n].value = strtof(s + 1, &end);
-			w[n].has_value = end != s + 1;
-			s = w[n].has_value ? end : s + 1;
+			w[n].letter = *s++;
+			// Plain decimals only: strtof would read "X1E5" as X = 100000, and E is a word (G1 E)
+			while (*s == ' ' || *s == '\t') s++;
+			k = 0;
+			while (k < sizeof(num) - 1 && (*s == '-' || *s == '+' || *s == '.' || (*s >= '0' && *s <= '9'))) num[k++] = *s++;
+			num[k] = '\0';
+			w[n].value = strtof(num, &end);
+			w[n].has_value = k > 0 && end != num;
 			n++;
 		} else {
 			s++;
@@ -106,7 +122,7 @@ static bool Enable() {
 
 static void TryMove(uint8_t p) {
 	gcode_port *g = &gp[p];
-	uint8_t res = MotionMove(g->target, g->mask, g->feed);
+	uint8_t res = MotionMoveExit(g->target, g->mask, g->feed, g->exit);
 
 	if (res == MOTION_BUSY) return; // queue full, try again next time round
 	g->wait = WAIT_NONE;
@@ -178,6 +194,32 @@ void GcodeResume(uint8_t p) {
 				Ok();
 			}
 			break;
+		case WAIT_PROBE: {
+			const char *code = g->probe_g382 ? "G38.2" : "G38.3";
+			if (!g->idle_seen) {
+				if (!MotionIdle() || HomeBusy()) break;
+				if (ProbeStart(g->probe_z, &g->probe, g->probe_g382) != PROBE_OK) {
+					printf("[PRB:E why:%s]\nError:%s: %s\n", ProbeWhy(), code, ProbeWhy());
+					g->wait = WAIT_NONE;
+					Ok();
+					break;
+				}
+				g->idle_seen = true;
+			}
+			if (ProbeBusy()) break;
+			printf("%s\n", ProbeReport());
+			if (ProbeResult() == 'E') printf("Error:%s: %s\n", code, ProbeWhy());
+			g->wait = WAIT_NONE;
+			Ok();
+			break;
+		}
+		case WAIT_COIL:
+			if (!MotionIdle()) break;
+			if (g->coil_duty == COIL_PROFILE) PwmOn(g->coil_ch);
+			else PwmSet(g->coil_ch, g->coil_duty);
+			g->wait = WAIT_NONE;
+			Ok();
+			break;
 	}
 }
 
@@ -231,6 +273,12 @@ static void ReportSettings(uint16_t which) {
 	if (which == 0 || which == 914) {
 		for (i = 0; i < MOTION_AXES; i++) v[i] = home_axes[i].sgthrs;
 		ReportAxes("M914", v);
+	}
+	if (which == 0 || which == 790) {
+		for (i = 0; i < PWM_CHANNELS; i++) {
+			PwmProfile *pr = &pwm_profiles[i];
+			printf("echo:  M790 P%u S%.0f T%u H%.0f\n", i, (double)(pr->strike * 100), pr->strike_ms, (double)(pr->hold * 100));
+		}
 	}
 }
 
@@ -305,6 +353,92 @@ static void AxisSetting(uint8_t code, gcode_word *w, uint8_t n) {
 	}
 	if (!any) ReportSettings(code);
 	if (any && code == 92) MotionSync(); // positions are counted in steps, re-read them in the new units
+}
+
+// M790 P(ch) S(strike %) T(strike ms) H(hold %): strike / hold profile of a coil output, the
+// words not given stay as they are. No P = report all. S0 T0 H0 = no profile (M106 S is a duty)
+static void CoilProfile(gcode_word *w, uint8_t n) {
+	PwmProfile pr;
+	float ch = -1;
+	uint8_t k;
+
+	for (k = 1; k < n; k++) {
+		if (w[k].letter == 'P') ch = w[k].value;
+	}
+	if (ch < 0) {
+		ReportSettings(790);
+		return;
+	}
+	if (ch >= PWM_CHANNELS) {
+		printf("Error:P must be 0-%d\n", PWM_CHANNELS - 1);
+		return;
+	}
+	pr = pwm_profiles[(uint8_t)ch];
+	for (k = 1; k < n; k++) {
+		if (!w[k].has_value) continue;
+		if (w[k].letter == 'S') pr.strike = w[k].value / 100;
+		if (w[k].letter == 'H') pr.hold = w[k].value / 100;
+		if (w[k].letter == 'T') {
+			if (w[k].value < 0 || w[k].value > 60000) {
+				printf("Error:T is 0-60000 ms\n");
+				return;
+			}
+			pr.strike_ms = (uint16_t)w[k].value;
+		}
+	}
+	if (pr.strike < 0 || pr.strike > 1 || pr.hold < 0 || pr.hold > 1) {
+		printf("Error:S and H are 0-100 %%\n");
+		return;
+	}
+	pwm_profiles[(uint8_t)ch] = pr; // from the next M106
+}
+
+// Probe words onto c: F (mm/min) P S N A D R W V U T L H, Z = target. False on a bad value
+static bool ProbeWords(ProbeConfig *c, gcode_word *w, uint8_t n, float *z, bool *has_z) {
+	uint8_t k;
+	float v;
+
+	if (has_z) *has_z = false;
+	for (k = 1; k < n; k++) {
+		if (!w[k].has_value) continue;
+		v = w[k].value;
+		switch (w[k].letter) {
+			case 'Z':
+				if (z) *z = v;
+				if (has_z) *has_z = true;
+				break;
+			case 'F': c->feed = v / 60; break;
+			case 'P': c->ch = v < 0 ? 255 : (uint8_t)v; break;
+			case 'S': c->drop = v; break;
+			case 'N': c->need = v < 0 || v > 255 ? 0 : (uint8_t)v; break;
+			case 'A': c->avg = v < 0 || v > 255 ? 0 : (uint8_t)v; break;
+			case 'D': c->blank_ms = v < 0 || v > 60000 ? 0 : (uint16_t)v; break;
+			case 'R': c->ref_ms = v < 0 || v > 60000 ? 0 : (uint16_t)v; break;
+			case 'W': c->roll_ms = v < 0 || v > 60000 ? 60000 : (uint16_t)v; break;
+			case 'V': c->min_vac = v; break;
+			case 'U': c->rise = v; break;
+			case 'T': c->timeout_ms = v < 0 ? 0 : (uint32_t)v; break;
+			case 'L': c->z_lo = v; break;
+			case 'H': c->z_hi = v; break;
+		}
+	}
+	return ProbeCheck(c);
+}
+
+static void ProbeDefaults(gcode_word *w, uint8_t n) {
+	ProbeConfig c = probe_config;
+	const ProbeConfig *p = &probe_config;
+
+	if (n > 1) {
+		if (!ProbeWords(&c, w, n, NULL, NULL)) {
+			printf("Error:M821: %s, nothing changed\n", ProbeWhy());
+			return;
+		}
+		probe_config = c;
+	}
+	printf("echo:  M821 F%.1f P%u S%.2f N%u A%u D%u R%u W%u V%.2f U%.2f T%" PRIu32 " L%.3f H%.3f\n", (double)(p->feed * 60), p->ch,
+		(double)p->drop, p->need, p->avg, p->blank_ms, p->ref_ms, p->roll_ms, (double)p->min_vac, (double)p->rise, p->timeout_ms,
+		(double)p->z_lo, (double)p->z_hi);
 }
 
 static void Pressure() {
@@ -420,8 +554,10 @@ void GcodeLine(uint8_t p, char *line) {
 				if (CheckHalt()) break;
 				for (i = 0; i < MOTION_AXES; i++) g->target[i] = MotionPosition(i);
 				g->mask = 0;
+				g->exit = 0;
 				for (k = 1; k < n; k++) {
 					if (w[k].letter == 'F' && w[k].has_value && w[k].value > 0) feed = w[k].value / 60; // mm/min -> mm/s
+					if (w[k].letter == 'E' && w[k].has_value && w[k].value > 0) g->exit = w[k].value; // mm/s, not modal
 					ax = Axis(w[k].letter);
 					if (ax < 0 || !w[k].has_value) continue;
 					g->target[ax] = relative ? g->target[ax] + w[k].value : w[k].value;
@@ -460,6 +596,32 @@ void GcodeLine(uint8_t p, char *line) {
 				g->wait = WAIT_HOME;
 				GcodeResume(p);
 				return;
+			case 38: {
+				int sub = (int)lroundf(w[0].value * 10) % 10;
+				bool has_z;
+				if (sub != 2 && sub != 3) {
+					printf("Error:G38.%d isn't supported, G38.2 / G38.3 (vacuum probe)\n", sub);
+					break;
+				}
+				if (CheckHalt()) break;
+				g->probe = probe_config;
+				g->probe_z = MotionPosition(Axis('Z'));
+				if (!ProbeWords(&g->probe, w, n, &g->probe_z, &has_z)) {
+					printf("[PRB:E why:%s]\nError:G38.%d: %s\n", ProbeWhy(), sub, ProbeWhy());
+					break;
+				}
+				if (!has_z) {
+					printf("[PRB:E why:no Z target]\nError:G38.%d: no Z target\n", sub);
+					break;
+				}
+				if (relative) g->probe_z += MotionPosition(Axis('Z'));
+				if (!Enable()) break;
+				g->probe_g382 = sub == 2;
+				g->idle_seen = false;
+				g->wait = WAIT_PROBE;
+				GcodeResume(p);
+				return;
+			}
 			case 90:
 				relative = false;
 				break;
@@ -501,15 +663,24 @@ void GcodeLine(uint8_t p, char *line) {
 				return;
 			case 106:
 			case 107: {
-				uint8_t ch = 0;
-				float s = code == 106 ? 255 : 0;
+				// After the moves before it, like G4: a valve opens with the nozzle down, not on the way
+				float ch = 0, s = 255;
 				for (k = 1; k < n; k++) {
-					if (w[k].letter == 'P') ch = (uint8_t)w[k].value;
-					if (w[k].letter == 'S' && code == 106) s = w[k].value;
+					if (w[k].letter == 'P') ch = w[k].value;
+					if (w[k].letter == 'S') s = w[k].value;
 				}
-				if (ch >= PWM_CHANNELS) printf("Error:P must be 0-%d\n", PWM_CHANNELS - 1);
-				else PwmSet(ch, s / 255);
-				break;
+				if (ch < 0 || ch >= PWM_CHANNELS) {
+					printf("Error:P must be 0-%d\n", PWM_CHANNELS - 1);
+					break;
+				}
+				g->coil_ch = (uint8_t)ch;
+				// A channel with a strike / hold profile is just on / off, S is ignored
+				if (code == 107 || s <= 0) g->coil_duty = 0;
+				else if (PwmProfiled(g->coil_ch)) g->coil_duty = COIL_PROFILE;
+				else g->coil_duty = s > 255 ? 1 : s / 255;
+				g->wait = WAIT_COIL;
+				GcodeResume(p);
+				return;
 			}
 			case 110:
 				for (k = 1; k < n; k++) {
@@ -519,6 +690,7 @@ void GcodeLine(uint8_t p, char *line) {
 			case 112: {
 				uint8_t q;
 				StepAbort();
+				ProbeAbort();
 				PwmAllOff();
 				halted = true;
 				// Anything waiting on any port is dropped
@@ -583,9 +755,26 @@ void GcodeLine(uint8_t p, char *line) {
 			case 503:
 				ReportSettings(0);
 				break;
+			case 790:
+				CoilProfile(w, n);
+				break;
 			case 800:
 				Pressure();
 				break;
+			case 821:
+				ProbeDefaults(w, n);
+				break;
+			case 820: { // G1 E junctions: what the moves really did. R = reset the counters
+				MotionJunctions s;
+				for (k = 1; k < n; k++) {
+					if (w[k].letter == 'R') MotionJunctionsReset();
+				}
+				MotionJunctionStats(&s);
+				printf("echo:Junctions asked:%" PRIu32 " full:%" PRIu32 " limited:%" PRIu32 " late:%" PRIu32 " corner:%" PRIu32
+					" last:%.2f/%.2f from:%" PRIu32 "/%" PRIu32 "/%" PRIu32 "\n", s.asked, s.full, s.limited, s.late, s.corner,
+					(double)s.last_used, (double)s.last_asked, s.from_phase[0], s.from_phase[1], s.from_phase[2]);
+				break;
+			}
 			case 906:
 				TmcCurrentSetting(w, n);
 				break;

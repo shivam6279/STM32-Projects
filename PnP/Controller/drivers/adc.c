@@ -1,11 +1,12 @@
 #include "adc.h"
 #include "clock.h"
+#include "irq_prio.h"
 #include "mpu.h"
 #include "stm32h7xx.h"
 
 // Sequence, sampling and oversampling. Timing isn't critical, so make it slow and quiet:
 // 810.5 cycle sampling (max, tolerates a high source impedance) and 16x oversampling.
-// adc_ker_ck = HSE 25MHz (per_ck) / 2 = 12.5MHz -> ~1ms per channel, ~475Hz per pair.
+// adc_ker_ck = HSE 25MHz (per_ck) / 2 = 12.5MHz, measured 239 Hz per pair (G38 hz:, 2026-11-06).
 #define ADC_SMP			7		// 810.5 cycles
 #define ADC_OVS_RATIO	16
 #define ADC_OVS_SHIFT	4		// 16x sum >> 4 = back to 16 bits
@@ -16,6 +17,11 @@ static const uint8_t channels[ADC_CHANNELS] = { 18, 19 };	// INP18 = PRESS0 (PA4
 
 volatile uint32_t adc_raw[ADC_CHANNELS] DMA_BUF;
 static bool running = false;
+
+// Pair ring, written by the DMA interrupt only
+static uint16_t ring[ADC_RING][ADC_CHANNELS] RAM_D1;
+static uint32_t ring_ms[ADC_RING] RAM_D1;
+static volatile uint32_t seq;
 
 static void Wait(uint32_t ms) {
 	uint32_t t = Millis();
@@ -58,14 +64,16 @@ void AdcInit() {
 		ADC1->SMPR2 = (ADC1->SMPR2 & ~(7 << ((channels[i] - 10) * 3))) | (ADC_SMP << ((channels[i] - 10) * 3));
 	}
 
-	// DMA1 Stream1: ADC1->DR -> adc_raw[], 32 bit, circular, no interrupts
+	// DMA1 Stream1: ADC1->DR -> adc_raw[], 32 bit, circular, interrupt at the end of each pair
 	DMA1_Stream1->CR = 0;
 	while (DMA1_Stream1->CR & DMA_SxCR_EN);
 	DMA1_Stream1->PAR = (uint32_t)&ADC1->DR;
 	DMA1_Stream1->M0AR = (uint32_t)adc_raw;
 	DMA1_Stream1->FCR = 0;
-	DMA1_Stream1->CR = DMA_SxCR_MINC | DMA_SxCR_PSIZE_1 | DMA_SxCR_MSIZE_1 | DMA_SxCR_CIRC;	// DIR = 00, periph -> mem
+	DMA1_Stream1->CR = DMA_SxCR_MINC | DMA_SxCR_PSIZE_1 | DMA_SxCR_MSIZE_1 | DMA_SxCR_CIRC | DMA_SxCR_TCIE;	// DIR = 00, periph -> mem
 	DMAMUX1_Channel1->CCR = ADC_DMA_REQ;
+	NVIC_SetPriority(DMA1_Stream1_IRQn, IRQ_PRIO_ADC);
+	NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 
 	for (i = 0; i < ADC_CHANNELS; i++) adc_raw[i] = 0;
 	running = false;
@@ -117,4 +125,35 @@ float AdcVolts(uint8_t ch) {
 float PressKpa(uint8_t ch) {
 	if (ch >= ADC_CHANNELS) return 0;
 	return (AdcVolts(ch) - PRESS_ZERO_V) / PRESS_K;
+}
+
+float PressKpaRaw(uint16_t raw) {
+	return (raw * ADC_VREF / 65535.0f - PRESS_ZERO_V) / PRESS_K;
+}
+
+// A pair is done: into the ring. The DMA has already wrapped to element 0 for the next pair,
+// and its first channel takes ~1 ms, so adc_raw[] holds this pair for long enough to copy it
+void DMA1_Stream1_IRQHandler() {
+	uint32_t i = seq & (ADC_RING - 1);
+
+	DMA1->LIFCR = DMA_LIFCR_CTCIF1;
+	ring[i][0] = (uint16_t)adc_raw[0];
+	ring[i][1] = (uint16_t)adc_raw[1];
+	ring_ms[i] = Millis();
+	__DMB();
+	seq++;
+}
+
+uint32_t AdcSeq() {
+	return seq;
+}
+
+bool AdcSample(uint32_t n, uint8_t ch, uint16_t *raw, uint32_t *ms) {
+	uint32_t i = n & (ADC_RING - 1), now = seq;
+
+	if (ch >= ADC_CHANNELS || n >= now || now - n >= ADC_RING - 1) return false;
+	*raw = ring[i][ch];
+	*ms = ring_ms[i];
+	__DMB();
+	return seq - n < ADC_RING - 1; // not overwritten while copying
 }

@@ -61,8 +61,11 @@ static void Stick(const EspPad *p, float *x, float *y) {
 
 static void Pneumatics() {
 	PwmSet(PAD_PWM_PUMP, pump ? PAD_PUMP_DUTY : 0);
-	PwmSet(PAD_PWM_VALVE0, valve[0] ? PAD_VALVE_DUTY : 0);
-	PwmSet(PAD_PWM_VALVE1, valve[1] ? PAD_VALVE_DUTY : 0);
+	// Valves: strike / hold from their PWM profile (pwm_profile.c), a repeat on doesn't strike again
+	if (valve[0]) PwmOn(PAD_PWM_VALVE0);
+	else PwmOff(PAD_PWM_VALVE0);
+	if (valve[1]) PwmOn(PAD_PWM_VALVE1);
+	else PwmOff(PAD_PWM_VALVE1);
 }
 
 // Toggles on press. A button already held when the pad (re)appears doesn't count

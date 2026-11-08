@@ -2,6 +2,7 @@
 #include "board.h"
 #include "clock.h"
 #include "irq_prio.h"
+#include "stepgen.h"
 #include "stm32h7xx.h"
 #include "tmc.h"
 
@@ -24,6 +25,9 @@ static volatile uint32_t edge_ms[BUTTONS];
 static uint8_t line_btn[8];	// EXTI line -> button
 static uint8_t stable;
 static uint8_t changed;
+static volatile uint8_t lim_drv;	// 0 = no limit switch armed
+static volatile uint8_t lim_btn, lim_level;
+static volatile bool lim_hit;
 
 static const IRQn_Type irqs[] = { EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn, EXTI4_IRQn, EXTI9_5_IRQn };
 
@@ -86,6 +90,34 @@ uint32_t ButtonsEdges(uint8_t n) {
 	return n < BUTTONS ? edges[n] : 0;
 }
 
+bool ButtonsAt(uint8_t n, uint8_t level) {
+	return n < BUTTONS && ((ButtonsRaw() >> n) & 1) == level;
+}
+
+void ButtonsLimitArm(uint8_t n, uint8_t level, uint8_t drivers) {
+	if (n >= BUTTONS) return;
+	__disable_irq();
+	lim_btn = n;
+	lim_level = level;
+	lim_hit = false;
+	lim_drv = drivers;
+	__enable_irq();
+}
+
+void ButtonsLimitDisarm() {
+	lim_drv = 0;
+}
+
+bool ButtonsLimitCheck() {
+	__disable_irq();
+	if (lim_drv && !lim_hit && ButtonsAt(lim_btn, lim_level)) {
+		StepHalt(lim_drv);
+		lim_hit = true;
+	}
+	__enable_irq();
+	return lim_hit;
+}
+
 void ButtonsIsr() {
 	uint32_t pr = EXTI_D1->PR1 & BTN_LINES;
 	uint32_t now = Millis();
@@ -98,6 +130,11 @@ void ButtonsIsr() {
 			edges[b]++;
 			edge_ms[b] = now;
 		}
+	}
+	// Limit switch first edge to its level: stop now, the main loop is too slow for it
+	if (lim_drv && !lim_hit && pr & (1 << btn_pin[lim_btn]) && ButtonsAt(lim_btn, lim_level)) {
+		StepHalt(lim_drv);
+		lim_hit = true;
 	}
 }
 

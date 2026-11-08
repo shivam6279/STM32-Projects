@@ -8,6 +8,7 @@
 #define IRQ_PRIO_DIAG			2	// TMC2209 DIAG pins: stop stepping on a driver fault
 #define IRQ_PRIO_JOG			3	// TIM7: jog segments, has to keep the step queues fed
 // 2-7 motion / timebase
+#define IRQ_PRIO_ADC			6	// pressure samples into a ring (vacuum probe), cheap
 // 8-15 comms
 #define IRQ_PRIO_BUTTONS		8	// endstops may move up to 2-7 once they're defined
 #define IRQ_PRIO_CAN			9

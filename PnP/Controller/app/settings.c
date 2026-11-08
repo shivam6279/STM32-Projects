@@ -5,10 +5,13 @@
 #include "jog.h"
 #include "motion.h"
 #include "pad.h"
+#include "probe.h"
+#include "pwm.h"
 #include "stepgen.h"
 #include "tmc.h"
 #include "stm32h7xx.h"
 
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -26,7 +29,15 @@ typedef struct {
 	uint8_t tmc_ignored;
 	HomeAxis home[MOTION_AXES];
 	float pad_xy, pad_xy_fast, pad_z;
+	PwmProfile pwm[PWM_CHANNELS];	// layout 3
+	HomeSwitch home_sw[MOTION_AXES];	// layout 4
+	ProbeConfig probe;				// layout 5, keep it last (LAYOUT4_SIZE)
 } Settings;
+
+// Older layouts are this one cut short: still loaded, what they don't have comes from the defaults
+#define LAYOUT2_SIZE	offsetof(Settings, pwm)
+#define LAYOUT3_SIZE	offsetof(Settings, home_sw)
+#define LAYOUT4_SIZE	offsetof(Settings, probe)
 
 // First flash word of a slot, written last: a slot without a good header is never loaded
 typedef struct {
@@ -51,6 +62,7 @@ static uint16_t next_free;			// first slot after the last one used (SLOTS = full
 static uint32_t seq;
 static bool loaded;					// SettingsBoot found a save
 static volatile bool probing, probe_fault;
+static Settings saved;				// the save in buf, filled out to this layout
 
 static uint32_t Crc(const void *p, uint32_t n) {
 	const uint8_t *b = p;
@@ -117,8 +129,8 @@ static bool Blank(const uint32_t *w, uint32_t n) {
 
 static bool Good(const uint32_t *w) {
 	const Header *h = (const Header *)w;
-	return h->magic == MAGIC && h->layout == SETTINGS_LAYOUT && h->size == sizeof(Settings)
-		&& h->hcrc == Crc(h, sizeof(Header) - 4) && h->crc == Crc(&w[HDR_WORDS], sizeof(Settings));
+	bool layout = (h->layout == SETTINGS_LAYOUT && h->size == sizeof(Settings)) || (h->layout == 2 && h->size == LAYOUT2_SIZE) || (h->layout == 3 && h->size == LAYOUT3_SIZE) || (h->layout == 4 && h->size == LAYOUT4_SIZE);
+	return h->magic == MAGIC && layout && h->hcrc == Crc(h, sizeof(Header) - 4) && h->crc == Crc(&w[HDR_WORDS], h->size);
 }
 
 // Newest good save, and where the next one goes
@@ -151,6 +163,9 @@ static void Gather(Settings *s) {
 	s->pad_xy = pad_speed_xy;
 	s->pad_xy_fast = pad_speed_xy_fast;
 	s->pad_z = pad_speed_z;
+	memcpy(s->pwm, pwm_profiles, sizeof(s->pwm));
+	memcpy(s->home_sw, home_switch, sizeof(s->home_sw));
+	s->probe = probe_config;
 }
 
 // At boot TmcTask does the driver setup. Later every driver gets its new config now
@@ -166,6 +181,9 @@ static void Apply(const Settings *s, bool boot) {
 	pad_speed_xy = s->pad_xy;
 	pad_speed_xy_fast = s->pad_xy_fast;
 	pad_speed_z = s->pad_z;
+	memcpy(pwm_profiles, s->pwm, sizeof(s->pwm));
+	memcpy(home_switch, s->home_sw, sizeof(s->home_sw));
+	probe_config = s->probe;
 	MotionSync(); // steps/mm may have changed, positions are counted in steps
 	if (boot) return;
 	for (d = 0; d < TMC_DRIVERS; d++) {
@@ -174,15 +192,22 @@ static void Apply(const Settings *s, bool boot) {
 	printf("echo:%d of %d drivers set up with it\n", n, TMC_DRIVERS);
 }
 
+// The good save in buf: an older layout's missing fields are the defaults
+static const Settings *Saved() {
+	saved = defaults;
+	memcpy(&saved, &buf[HDR_WORDS], ((const Header *)buf)->size);
+	return &saved;
+}
+
 static bool Idle() {
-	return MotionIdle() && !JogActive() && !HomeBusy() && PadMode() == PAD_MODE_OFF;
+	return MotionIdle() && !JogActive() && !HomeBusy() && !ProbeBusy() && PadMode() == PAD_MODE_OFF;
 }
 
 void SettingsBoot() {
 	Gather(&defaults);
 	Scan();
 	if (cur < 0 || !ProbeRead(SlotAddr(cur), buf, SLOT_WORDS) || !Good(buf)) return;
-	Apply((const Settings *)&buf[HDR_WORDS], true);
+	Apply(Saved(), true);
 	loaded = true;
 }
 
@@ -227,7 +252,7 @@ uint8_t SettingsLoad() {
 	Scan();
 	if (cur < 0) return SET_NONE;
 	if (!ProbeRead(SlotAddr(cur), buf, SLOT_WORDS) || !Good(buf)) return SET_FLASH;
-	Apply((const Settings *)&buf[HDR_WORDS], false);
+	Apply(Saved(), false);
 	return SET_OK;
 }
 
@@ -326,10 +351,37 @@ static void Diff(const Settings *a, const Settings *b) {
 		DiffF(who, "backoff", x->backoff, y->backoff);
 		DiffF(who, "pos", x->pos, y->pos);
 		DiffF(who, "pre", x->pre, y->pre);
+		DiffS(who, "mode", a->home_sw[i].mode == HOME_SWITCH ? "switch" : "soft", b->home_sw[i].mode == HOME_SWITCH ? "switch" : "soft",
+			a->home_sw[i].mode == b->home_sw[i].mode);
+		DiffI(who, "btn", a->home_sw[i].btn, b->home_sw[i].btn);
+		DiffI(who, "level", a->home_sw[i].level, b->home_sw[i].level);
 	}
 	DiffF("Pad", "speed xy", a->pad_xy, b->pad_xy);
 	DiffF("Pad", "speed fast", a->pad_xy_fast, b->pad_xy_fast);
 	DiffF("Pad", "speed z", a->pad_z, b->pad_z);
+	for (i = 0; i < PWM_CHANNELS; i++) {
+		const PwmProfile *x = &a->pwm[i], *y = &b->pwm[i];
+		snprintf(who, sizeof(who), "PWM%d (%d)", i + 1, i);
+		DiffF(who, "strike", x->strike, y->strike);
+		DiffI(who, "strike ms", x->strike_ms, y->strike_ms);
+		DiffF(who, "hold", x->hold, y->hold);
+	}
+	{
+		const ProbeConfig *x = &a->probe, *y = &b->probe;
+		DiffF("Probe", "F mm/s", x->feed, y->feed);
+		DiffI("Probe", "P channel", x->ch, y->ch);
+		DiffF("Probe", "S kPa", x->drop, y->drop);
+		DiffI("Probe", "N samples", x->need, y->need);
+		DiffI("Probe", "A average", x->avg, y->avg);
+		DiffI("Probe", "D blank ms", x->blank_ms, y->blank_ms);
+		DiffI("Probe", "R reference ms", x->ref_ms, y->ref_ms);
+		DiffI("Probe", "W rolling ms", x->roll_ms, y->roll_ms);
+		DiffF("Probe", "V min vacuum kPa", x->min_vac, y->min_vac);
+		DiffF("Probe", "U rise kPa", x->rise, y->rise);
+		DiffI("Probe", "T timeout ms", (int32_t)x->timeout_ms, (int32_t)y->timeout_ms);
+		DiffF("Probe", "L z min", x->z_lo, y->z_lo);
+		DiffF("Probe", "H z max", x->z_hi, y->z_hi);
+	}
 }
 
 uint16_t SettingsDiff(bool vs_defaults, bool print) {
@@ -338,7 +390,7 @@ uint16_t SettingsDiff(bool vs_defaults, bool print) {
 	if (vs_defaults || cur < 0) {
 		base = defaults;
 	} else if (ProbeRead(SlotAddr(cur), buf, SLOT_WORDS) && Good(buf)) {
-		memcpy(&base, &buf[HDR_WORDS], sizeof(base));
+		base = *Saved();
 	} else {
 		if (print) printf("Newest save can't be read\n");
 		return 0;

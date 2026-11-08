@@ -14,7 +14,13 @@
 // Not as repeatable as a switch, and it moves with speed, current and friction: fine with the
 // camera doing the real positioning.
 //
-// An axis only homes once dir, sgthrs and travel are set (home set, X / Y / Z have defaults). Tuning: home sg.
+// Or with a limit switch on a button input (home_switch, mode HOME_SWITCH): same moves, but the
+// switch edge halts the drivers from the interrupt (ButtonsLimitArm). Hit at speed, back off
+// HOME_SW_BUMP, then a second slow touch sets the position. One switch stops every driver of the
+// axis together, so a gantry doesn't square itself that way. sgthrs / current don't apply.
+//
+// An axis only homes once dir, travel and sgthrs (soft) or the switch are set (home set, X / Y / Z
+// have defaults). Tuning: home sg.
 
 typedef struct {
 	int8_t dir;			// end it homes to: -1 = the - end, +1 = the + end, 0 = doesn't home
@@ -29,6 +35,17 @@ typedef struct {
 
 extern HomeAxis home_axes[MOTION_AXES];
 
+#define HOME_SOFT		0	// StallGuard
+#define HOME_SWITCH		1	// limit switch
+
+typedef struct {
+	uint8_t mode;		// HOME_SOFT / HOME_SWITCH
+	int8_t btn;			// button 0-7 (= BTN1-8) the switch is on, -1 = none
+	uint8_t level;		// pin level (0 / 1) while the switch is hit
+} HomeSwitch;
+
+extern HomeSwitch home_switch[MOTION_AXES];
+
 #define HOME_OK			0
 #define HOME_BUSY		1	// homing already running
 #define HOME_NOT_SET	2	// an axis has no dir / sgthrs / travel
@@ -37,17 +54,20 @@ extern HomeAxis home_axes[MOTION_AXES];
 #define HOME_NO_STALL	5	// the whole travel without a stall
 #define HOME_FAULT		6	// step generator stopped (fault / E-stop) or a driver fault
 #define HOME_ABORTED	7
+#define HOME_SWITCH_ON	8	// switch still hit after moving off it (stuck, or the level is the wrong way)
 
 #define HOME_ORDER		"ZYX"	// axes not in it go after, in table order
 #define HOME_ARM_FRAC	0.5f	// StallGuard on above this fraction of the homing speed
 #define HOME_SETTLE_MS	100		// after the speed ramp, before StallGuard goes on
+#define HOME_SW_BUMP	3		// mm off the switch between the fast and the slow touch
+#define HOME_SW_SLOW	0.2f	// slow touch at this fraction of the homing speed
 
 uint8_t HomeStart(uint8_t mask);	// axes in mask. HOME_OK = started, HomeTask does the rest
 void HomeTask();					// main loop
 void HomeAbort();					// ramps down, nothing gets homed
 bool HomeBusy();
 uint8_t HomeResult();				// of the last run, HOME_BUSY while running
-bool HomeReady(uint8_t axis);		// dir, sgthrs and travel set
+bool HomeReady(uint8_t axis);		// dir, travel and sgthrs / switch set
 uint8_t HomeReadyMask();
 bool HomeHomed(uint8_t axis);		// homed since boot
 const char *HomeError(uint8_t res);
